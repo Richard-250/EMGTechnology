@@ -1,0 +1,29 @@
+{
+  "name": "EMGTechnology",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node -e \"console.log('Use two terminals:\\n  Terminal 1: npm run dev:server\\n  Terminal 2: npm run dev:storefront')\"",
+    "dev:server": "npm run dev -w server",
+    "dev:api": "npm run dev:server -w server",
+    "dev:worker": "npm run dev:worker -w server",
+    "dev:dashboard": "npm run dev:dashboard -w server",
+    "dev:storefront": "npm run dev -w storefront",
+    "serve:storefront": "npm run serve -w storefront",
+    "serve:storefront:only": "npm run serve:only -w storefront",
+    "db:setup": "node apps/server/scripts/setup-postgres.mjs",
+    "db:seed": "npm run seed -w server",
+    "build": "npm run build -w server && npm run build -w storefront",
+    "build:server": "npm run build -w server",
+    "build:storefront": "npm run build -w storefront",
+    "start": "concurrently -n server,storefront -c blue,magenta \"npm run start -w server\" \"npm run start -w storefront\"",
+    "start:server": "npm run start -w server",
+    "start:storefront": "npm run start -w storefront"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  },
+  "workspaces": [
+    "apps/*"
+  ]
+}
