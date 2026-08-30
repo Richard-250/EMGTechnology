@@ -84,12 +84,19 @@ npm run seed -w server || true
 # Turn off synchronize for safety after initial creation
 sed -i 's/DB_SYNCHRONIZE=true/DB_SYNCHRONIZE=false/g' apps/server/.env
 
-echo ">>> [8/8] Building all applications (Server, Dashboard & Storefront)..."
-npm run build
+echo ">>> [8/8] Building Server & Admin Dashboard..."
+npm run build -w server
+
+echo ">>> Starting Vendure Backend for Storefront build..."
+pm2 start ecosystem.config.cjs --only emg-server
+sleep 6
+
+echo ">>> Building Next.js Storefront..."
+npm run build -w storefront
 
 # 7. Start PM2 services and configure Nginx
-echo ">>> [7/7] Starting apps with PM2 and configuring Nginx..."
-pm2 start ecosystem.config.cjs || pm2 restart ecosystem.config.cjs
+echo ">>> [7/7] Starting all apps with PM2 and configuring Nginx..."
+pm2 start ecosystem.config.cjs
 pm2 save
 
 cat << 'NGINX_CONF' | sudo tee /etc/nginx/sites-available/emgtechnology
