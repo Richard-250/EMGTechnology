@@ -6,6 +6,8 @@ import {Suspense} from 'react';
 import {CartSkeleton} from '@/components/shared/skeletons/cart-skeleton';
 import {noIndexRobots} from '@/lib/metadata';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'Cart'});

@@ -7,6 +7,8 @@ import {SearchTerm, SearchTermSkeleton} from "@/app/[locale]/search/search-term"
 import {SearchResultsSkeleton} from "@/components/shared/skeletons/search-results-skeleton";
 import {SITE_NAME, noIndexRobots} from '@/lib/metadata';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({
     searchParams,
 }: PageProps<'/[locale]/search'>): Promise<Metadata> {
