@@ -5,8 +5,18 @@ echo "=========================================================="
 echo "   EMG Technology - Production Automated Server Setup     "
 echo "=========================================================="
 
-# 1. Update and install packages
-echo ">>> [1/7] Updating system and installing base dependencies..."
+# 1. Setup Swap (Crucial for 2GB RAM instances during build)
+echo ">>> [1/8] Checking and creating swap space..."
+if [ ! -f /swapfile ]; then
+    sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+fi
+
+# 2. Update and install packages
+echo ">>> [2/8] Updating system and installing base dependencies..."
 sudo apt update -y
 sudo apt install -y curl git build-essential nginx postgresql postgresql-contrib certbot python3-certbot-nginx
 
