@@ -51,10 +51,9 @@ fi
 cd "$APP_DIR"
 git pull origin main
 
-# 5. Setup environment files if missing
-echo ">>> [5/7] Checking environment configurations..."
-if [ ! -f "apps/server/.env" ]; then
-    cat <<EOT > apps/server/.env
+# 5. Setup environment files
+echo ">>> [5/8] Configuring environment variables..."
+cat <<EOT > apps/server/.env
 APP_ENV=prod
 PORT=3001
 SUPERADMIN_USERNAME=superadmin
@@ -65,24 +64,27 @@ DB_PORT=5432
 DB_NAME=emgtechnology
 DB_USERNAME=emg_admin
 DB_PASSWORD=emg_prod_password_2026!
-DB_SYNCHRONIZE=false
+DB_SYNCHRONIZE=true
 EOT
-fi
 
-if [ ! -f "apps/storefront/.env.local" ]; then
-    cat <<EOT > apps/storefront/.env.local
+cat <<EOT > apps/storefront/.env.local
 NODE_ENV=production
-NEXT_PUBLIC_VENDURE_SHOP_API_URL=/shop-api
+VENDURE_SHOP_API_URL=http://127.0.0.1:3001/shop-api
+NEXT_PUBLIC_VENDURE_SHOP_API_URL=http://127.0.0.1:3001/shop-api
 NEXT_PUBLIC_VENDURE_API_URL=http://127.0.0.1:3001
-VENDURE_API_URL=http://127.0.0.1:3001/shop-api
 EOT
-fi
 
-# 6. Install dependencies and build
-echo ">>> [6/7] Installing npm packages and building all services..."
+# 6. Install dependencies, initialize database & build
+echo ">>> [6/8] Installing dependencies..."
 npm install
-npm run db:setup || true
-npm run db:seed || true
+
+echo ">>> [7/8] Seeding initial fitness store catalog..."
+npm run seed -w server || true
+
+# Turn off synchronize for safety after initial creation
+sed -i 's/DB_SYNCHRONIZE=true/DB_SYNCHRONIZE=false/g' apps/server/.env
+
+echo ">>> [8/8] Building all applications (Server, Dashboard & Storefront)..."
 npm run build
 
 # 7. Start PM2 services and configure Nginx

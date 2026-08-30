@@ -51,8 +51,8 @@ export const config: VendureConfig = {
         username: process.env.DB_USERNAME || 'emg_admin',
         password: process.env.DB_PASSWORD || 'emg_dev_password',
         database: process.env.DB_NAME || 'emgtechnology',
-        // Use synchronization only for local development. Use migrations in production.
-        synchronize: IS_DEV && process.env.DB_SYNCHRONIZE === 'true',
+        // Use synchronization for setup or local development
+        synchronize: process.env.DB_SYNCHRONIZE === 'true' || IS_DEV,
         migrations: [path.join(__dirname, './migrations/*.+(js|ts)')],
         logging: false,
     },
