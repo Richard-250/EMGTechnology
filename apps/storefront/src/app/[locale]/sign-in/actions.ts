@@ -38,7 +38,7 @@ export async function loginAction(prevState: { error?: string } | undefined, for
     // Validate redirectTo is a safe internal path
     const safeRedirect = redirectTo?.startsWith('/') && !redirectTo.startsWith('//')
         ? redirectTo
-        : '/';
+        : '/account/profile';
 
     redirect({href: safeRedirect, locale});
 

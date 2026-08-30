@@ -14,7 +14,8 @@
     "start:server": "node ./dist/index.js",
     "start:worker": "node ./dist/index-worker.js",
     "start": "vendure start all",
-    "seed": "ts-node ./src/seed.ts"
+    "seed": "ts-node ./src/seed.ts",
+    "configure-store": "ts-node ./src/configure-store.ts"
   },
   "dependencies": {
     "@vendure/asset-server-plugin": "3.7.0",

@@ -18,6 +18,11 @@ interface CurrencyPickerProps {
     activeCurrencyCode: string;
 }
 
+const CURRENCY_LABELS: Record<string, string> = {
+    RWF: 'Rwandan Franc (RWF)',
+    USD: 'US Dollar (USD)',
+};
+
 export function CurrencyPicker({availableCurrencyCodes, activeCurrencyCode}: CurrencyPickerProps) {
     const t = useTranslations('Navigation');
     const router = useRouter();
@@ -31,13 +36,24 @@ export function CurrencyPicker({availableCurrencyCodes, activeCurrencyCode}: Cur
     };
 
     if (availableCurrencyCodes.length <= 1) {
-        return null;
+        return (
+            <span
+                className="inline-flex items-center gap-1 px-1.5 text-xs font-semibold text-foreground"
+                title={activeCurrencyCode}
+            >
+                {activeCurrencyCode}
+            </span>
+        );
     }
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1.5" aria-label={t('switchCurrency')} />}>
-                <Coins className="size-4" />
+            <DropdownMenuTrigger
+                render={
+                    <Button variant="ghost" size="sm" className="gap-1 px-2 font-semibold text-foreground" aria-label={t('switchCurrency')} />
+                }
+            >
+                <Coins className="size-4 hidden sm:block" />
                 <span>{activeCurrencyCode}</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -47,7 +63,7 @@ export function CurrencyPicker({availableCurrencyCodes, activeCurrencyCode}: Cur
                         onClick={() => handleCurrencyChange(code)}
                         disabled={isPending}
                     >
-                        <span>{code}</span>
+                        <span>{CURRENCY_LABELS[code] ?? code}</span>
                         {activeCurrencyCode === code && <span className="ml-auto text-xs">✓</span>}
                     </DropdownMenuItem>
                 ))}

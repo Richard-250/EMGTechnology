@@ -1,541 +1,202 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Field, FieldLabel, FieldError, FieldGroup } from '@/components/ui/field';
-import { useForm, Controller } from 'react-hook-form';
-import { Loader2 } from 'lucide-react';
-import { useRouter } from '@/i18n/navigation';
-import { useCheckout } from '../checkout-provider';
-import { setShippingAddress, createCustomerAddress } from '../actions';
-import { CountrySelect } from '@/components/shared/country-select';
+import {useMemo, useState} from 'react';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Loader2, MapPin} from 'lucide-react';
+import {useRouter} from '@/i18n/navigation';
+import {useCheckout} from '../checkout-provider';
+import {setShippingAddress} from '../actions';
+import {RWANDA_LOCATIONS, getRwandaDistrict, getRwandaProvince} from '@/lib/rwanda-locations';
 import {useTranslations} from 'next-intl';
+import {cn} from '@/lib/utils';
 
 interface ShippingAddressStepProps {
-  onComplete: () => void;
+    onComplete: () => void;
 }
 
-interface AddressFormData {
-  fullName: string;
-  streetLine1: string;
-  streetLine2?: string;
-  city: string;
-  province: string;
-  postalCode: string;
-  countryCode: string;
-  phoneNumber: string;
-  company?: string;
-}
+export default function ShippingAddressStep({onComplete}: ShippingAddressStepProps) {
+    const t = useTranslations('Checkout');
+    const router = useRouter();
+    const {order, countries} = useCheckout();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-export default function ShippingAddressStep({ onComplete }: ShippingAddressStepProps) {
-  const t = useTranslations('Checkout');
-  const router = useRouter();
-  const { addresses, countries, order, isGuest } = useCheckout();
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(() => {
-    if (order.shippingAddress) {
-      const matchingAddress = addresses.find(
-        (a) =>
-          a.streetLine1 === order.shippingAddress?.streetLine1 &&
-          a.postalCode === order.shippingAddress?.postalCode
-      );
-      if (matchingAddress) return matchingAddress.id;
-    }
-    const defaultAddress = addresses.find((a) => a.defaultShippingAddress);
-    return defaultAddress?.id || null;
-  });
-  const [dialogOpen, setDialogOpen] = useState(addresses.length === 0 && !isGuest);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [useSameForBilling, setUseSameForBilling] = useState(true);
+    const rwanda = countries.find(c => c.code === 'RW') ?? countries[0];
+    const customerName = order.customer
+        ? `${order.customer.firstName} ${order.customer.lastName}`.trim()
+        : '';
 
-  const getDefaultFormValues = (): Partial<AddressFormData> => {
-    const customerFullName = order.customer
-      ? `${order.customer.firstName} ${order.customer.lastName}`.trim()
-      : '';
-
-    if (isGuest && order.shippingAddress?.streetLine1) {
-      return {
-        fullName: order.shippingAddress.fullName || customerFullName,
-        streetLine1: order.shippingAddress.streetLine1 || '',
-        streetLine2: order.shippingAddress.streetLine2 || '',
-        city: order.shippingAddress.city || '',
-        province: order.shippingAddress.province || '',
-        postalCode: order.shippingAddress.postalCode || '',
-        countryCode: countries.find(c => c.name === order.shippingAddress?.country)?.code || countries[0]?.code || 'US',
-        phoneNumber: order.shippingAddress.phoneNumber || order.customer?.phoneNumber || '',
-        company: order.shippingAddress.company || '',
-      };
-    }
-    return {
-      fullName: customerFullName,
-      countryCode: countries[0]?.code || 'US',
-      phoneNumber: order.customer?.phoneNumber || '',
-    };
-  };
-
-  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<AddressFormData>({
-    defaultValues: getDefaultFormValues()
-  });
-
-  const handleSelectExistingAddress = async () => {
-    if (!selectedAddressId) return;
-
-    setLoading(true);
-    try {
-      const selectedAddress = addresses.find(a => a.id === selectedAddressId);
-      if (!selectedAddress) return;
-
-      await setShippingAddress({
-        fullName: selectedAddress.fullName || '',
-        company: selectedAddress.company || '',
-        streetLine1: selectedAddress.streetLine1,
-        streetLine2: selectedAddress.streetLine2 || '',
-        city: selectedAddress.city || '',
-        province: selectedAddress.province || '',
-        postalCode: selectedAddress.postalCode || '',
-        countryCode: selectedAddress.country.code,
-        phoneNumber: selectedAddress.phoneNumber || '',
-      }, useSameForBilling);
-
-      router.refresh();
-      onComplete();
-    } catch (error) {
-      console.error('Error setting address:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onSaveNewAddress = async (data: AddressFormData) => {
-    setSaving(true);
-    try {
-      const newAddress = await createCustomerAddress(data);
-      setDialogOpen(false);
-      reset();
-      router.refresh();
-      setSelectedAddressId(newAddress.id);
-    } catch (error) {
-      console.error('Error creating address:', error);
-      alert(`Error creating address: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const onSubmitGuestAddress = async (data: AddressFormData) => {
-    setLoading(true);
-    try {
-      await setShippingAddress(data, useSameForBilling);
-      router.refresh();
-      onComplete();
-    } catch (error) {
-      console.error('Error setting address:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (isGuest) {
-    return (
-      <div className="space-y-6">
-        <form onSubmit={handleSubmit(onSubmitGuestAddress)}>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field className="col-span-2">
-                <FieldLabel htmlFor="fullName">{t('fullName')}</FieldLabel>
-                <Input
-                  id="fullName"
-                  {...register('fullName', { required: t('fullNameRequired') })}
-                />
-                <FieldError>{errors.fullName?.message}</FieldError>
-              </Field>
-
-              <Field className="col-span-2">
-                <FieldLabel htmlFor="company">{t('company')}</FieldLabel>
-                <Input id="company" {...register('company')} />
-              </Field>
-
-              <Field className="col-span-2">
-                <FieldLabel htmlFor="streetLine1">{t('streetAddress')}</FieldLabel>
-                <Input
-                  id="streetLine1"
-                  {...register('streetLine1', { required: t('streetRequired') })}
-                />
-                <FieldError>{errors.streetLine1?.message}</FieldError>
-              </Field>
-
-              <Field className="col-span-2">
-                <FieldLabel htmlFor="streetLine2">{t('apartment')}</FieldLabel>
-                <Input id="streetLine2" {...register('streetLine2')} />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="city">{t('city')}</FieldLabel>
-                <Input
-                  id="city"
-                  {...register('city', { required: t('cityRequired') })}
-                />
-                <FieldError>{errors.city?.message}</FieldError>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="province">{t('stateProvince')}</FieldLabel>
-                <Input
-                  id="province"
-                  {...register('province')}
-                />
-                <FieldError>{errors.province?.message}</FieldError>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="postalCode">{t('postalCode')}</FieldLabel>
-                <Input
-                  id="postalCode"
-                  {...register('postalCode', { required: t('postalCodeRequired') })}
-                />
-                <FieldError>{errors.postalCode?.message}</FieldError>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="countryCode">{t('country')}</FieldLabel>
-                <Controller
-                  name="countryCode"
-                  control={control}
-                  rules={{ required: t('countryRequired') }}
-                  render={({ field }) => (
-                    <CountrySelect
-                      countries={countries}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={loading}
-                    />
-                  )}
-                />
-                <FieldError>{errors.countryCode?.message}</FieldError>
-              </Field>
-
-              <Field className="col-span-2">
-                <FieldLabel htmlFor="phoneNumber">{t('phoneNumber')}</FieldLabel>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  {...register('phoneNumber', { required: t('phoneRequired') })}
-                />
-                <FieldError>{errors.phoneNumber?.message}</FieldError>
-              </Field>
-            </div>
-
-            <div className="flex items-center space-x-2 mt-4">
-              <Checkbox
-                id="same-billing-guest"
-                checked={useSameForBilling}
-                onCheckedChange={(checked) => setUseSameForBilling(checked === true)}
-              />
-              <label
-                htmlFor="same-billing-guest"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                {t('useSameForBilling')}
-              </label>
-            </div>
-
-            <Button type="submit" disabled={loading} className="w-full mt-4">
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('continue')}
-            </Button>
-          </FieldGroup>
-        </form>
-      </div>
+    const [province, setProvince] = useState(order.shippingAddress?.province || '');
+    const [district, setDistrict] = useState(order.shippingAddress?.city || '');
+    const [sector, setSector] = useState(order.shippingAddress?.streetLine2 || '');
+    const [street, setStreet] = useState(order.shippingAddress?.streetLine1 || '');
+    const [phoneNumber, setPhoneNumber] = useState(
+        order.shippingAddress?.phoneNumber || order.customer?.phoneNumber || '',
     );
-  }
+    const [fullName, setFullName] = useState(order.shippingAddress?.fullName || customerName);
 
-  return (
-    <div className="space-y-6">
-      {addresses.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="font-semibold">{t('selectSavedAddress')}</h3>
-          <RadioGroup value={selectedAddressId || ''} onValueChange={setSelectedAddressId}>
-            {addresses.map((address) => (
-              <div key={address.id} className="flex items-start space-x-3">
-                <RadioGroupItem value={address.id} id={address.id} className="mt-1" />
-                <Label htmlFor={address.id} className="flex-1 cursor-pointer">
-                  <Card className="p-4">
-                    <div className="leading-tight space-y-0">
-                      <p className="font-medium">{address.fullName}</p>
-                      {address.company && <p className="text-sm text-muted-foreground">{address.company}</p>}
-                      <p className="text-sm text-muted-foreground">
-                        {address.streetLine1}
-                        {address.streetLine2 && `, ${address.streetLine2}`}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {address.city}, {address.province} {address.postalCode}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{address.country.name}</p>
-                      <p className="text-sm text-muted-foreground">{address.phoneNumber}</p>
+    const districts = useMemo(
+        () => getRwandaProvince(province)?.districts ?? [],
+        [province],
+    );
+    const sectors = useMemo(
+        () => getRwandaDistrict(province, district)?.sectors ?? [],
+        [province, district],
+    );
+
+    const handleProvinceChange = (value: string) => {
+        setProvince(value);
+        setDistrict('');
+        setSector('');
+    };
+
+    const handleDistrictChange = (value: string) => {
+        setDistrict(value);
+        setSector('');
+    };
+
+    const handleContinue = async () => {
+        if (!province || !district || !street.trim() || !fullName.trim()) {
+            setError(t('fillDeliveryLocation'));
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            await setShippingAddress({
+                fullName: fullName.trim(),
+                streetLine1: street.trim(),
+                streetLine2: sector || undefined,
+                city: district,
+                province,
+                postalCode: '',
+                countryCode: rwanda?.code || 'RW',
+                phoneNumber: phoneNumber.trim() || '',
+                company: undefined,
+            }, true);
+            router.refresh();
+            onComplete();
+        } catch {
+            setError(t('unexpectedError'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const selectClass =
+        'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h3 className="font-semibold text-base">{t('whereDeliver')}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{t('whereDeliverHint')}</p>
+            </div>
+
+            <div className="rounded-xl border border-electric/30 bg-electric/5 p-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                    <span className="flex size-10 items-center justify-center rounded-full bg-electric text-electric-foreground shrink-0">
+                        <MapPin className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                        <p className="font-semibold">{t('shippingZoneRwanda')}</p>
+                        <p className="text-xs text-muted-foreground">{t('shippingZoneFrom')}</p>
                     </div>
-                  </Card>
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="same-billing"
-              checked={useSameForBilling}
-              onCheckedChange={(checked) => setUseSameForBilling(checked === true)}
-            />
-            <label
-              htmlFor="same-billing"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              {t('useSameForBilling')}
-            </label>
-          </div>
-
-          <div className="flex gap-3">
-            <Button
-              onClick={handleSelectExistingAddress}
-              disabled={!selectedAddressId || loading}
-              className="flex-1"
-            >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('continueWithSelected')}
-            </Button>
-
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger render={<Button type="button" variant="outline" />}>
-                {t('addNewAddress')}
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <form onSubmit={handleSubmit(onSaveNewAddress)}>
-                  <DialogHeader>
-                    <DialogTitle>{t('addNewAddress')}</DialogTitle>
-                    <DialogDescription>
-                      {t('addNewAddressDescription')}
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <FieldGroup className="my-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <Field className="col-span-2">
-                        <FieldLabel htmlFor="fullName">{t('fullNameLabel')}</FieldLabel>
-                        <Input
-                          id="fullName"
-                          {...register('fullName')}
-                        />
-                        <FieldError>{errors.fullName?.message}</FieldError>
-                      </Field>
-
-                      <Field className="col-span-2">
-                        <FieldLabel htmlFor="company">{t('company')}</FieldLabel>
-                        <Input id="company" {...register('company')} />
-                      </Field>
-
-                      <Field className="col-span-2">
-                        <FieldLabel htmlFor="streetLine1">{t('streetAddress')}</FieldLabel>
-                        <Input
-                          id="streetLine1"
-                          {...register('streetLine1', { required: t('streetRequired') })}
-                        />
-                        <FieldError>{errors.streetLine1?.message}</FieldError>
-                      </Field>
-
-                      <Field className="col-span-2">
-                        <FieldLabel htmlFor="streetLine2">{t('apartment')}</FieldLabel>
-                        <Input id="streetLine2" {...register('streetLine2')} />
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="city">{t('cityLabel')}</FieldLabel>
-                        <Input
-                          id="city"
-                          {...register('city')}
-                        />
-                        <FieldError>{errors.city?.message}</FieldError>
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="province">{t('stateProvince')}</FieldLabel>
-                        <Input
-                          id="province"
-                          {...register('province')}
-                        />
-                        <FieldError>{errors.province?.message}</FieldError>
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="postalCode">{t('postalCodeLabel')}</FieldLabel>
-                        <Input
-                          id="postalCode"
-                          {...register('postalCode')}
-                        />
-                        <FieldError>{errors.postalCode?.message}</FieldError>
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="countryCode">{t('country')}</FieldLabel>
-                        <Controller
-                          name="countryCode"
-                          control={control}
-                          rules={{ required: t('countryRequired') }}
-                          render={({ field }) => (
-                            <CountrySelect
-                              countries={countries}
-                              value={field.value}
-                              onValueChange={field.onChange}
-                              disabled={saving}
-                            />
-                          )}
-                        />
-                        <FieldError>{errors.countryCode?.message}</FieldError>
-                      </Field>
-
-                      <Field className="col-span-2">
-                        <FieldLabel htmlFor="phoneNumber">{t('phoneNumberLabel')}</FieldLabel>
-                        <Input
-                          id="phoneNumber"
-                          type="tel"
-                          {...register('phoneNumber')}
-                        />
-                        <FieldError>{errors.phoneNumber?.message}</FieldError>
-                      </Field>
-                    </div>
-                  </FieldGroup>
-
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
-                      {t('cancel')}
-                    </Button>
-                    <Button type="submit" disabled={saving}>
-                      {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {t('saveAddress')}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      )}
-
-      {addresses.length === 0 && (
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger render={<Button type="button" className="w-full" />}>
-            {t('addShippingAddress')}
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSubmit(onSaveNewAddress)}>
-              <DialogHeader>
-                <DialogTitle>{t('addShippingAddress')}</DialogTitle>
-                <DialogDescription>
-                  {t('addShippingAddressDescription')}
-                </DialogDescription>
-              </DialogHeader>
-
-              <FieldGroup className="my-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <Field className="col-span-2">
-                    <FieldLabel htmlFor="fullName">{t('fullNameLabel')}</FieldLabel>
-                    <Input
-                      id="fullName"
-                      {...register('fullName')}
-                    />
-                    <FieldError>{errors.fullName?.message}</FieldError>
-                  </Field>
-
-                  <Field className="col-span-2">
-                    <FieldLabel htmlFor="company">{t('company')}</FieldLabel>
-                    <Input id="company" {...register('company')} />
-                  </Field>
-
-                  <Field className="col-span-2">
-                    <FieldLabel htmlFor="streetLine1">{t('streetAddress')}</FieldLabel>
-                    <Input
-                      id="streetLine1"
-                      {...register('streetLine1', { required: t('streetRequired') })}
-                    />
-                    <FieldError>{errors.streetLine1?.message}</FieldError>
-                  </Field>
-
-                  <Field className="col-span-2">
-                    <FieldLabel htmlFor="streetLine2">{t('apartment')}</FieldLabel>
-                    <Input id="streetLine2" {...register('streetLine2')} />
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="city">{t('cityLabel')}</FieldLabel>
-                    <Input
-                      id="city"
-                      {...register('city')}
-                    />
-                    <FieldError>{errors.city?.message}</FieldError>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="province">{t('stateProvince')}</FieldLabel>
-                    <Input
-                      id="province"
-                      {...register('province')}
-                    />
-                    <FieldError>{errors.province?.message}</FieldError>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="postalCode">{t('postalCodeLabel')}</FieldLabel>
-                    <Input
-                      id="postalCode"
-                      {...register('postalCode')}
-                    />
-                    <FieldError>{errors.postalCode?.message}</FieldError>
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="countryCode">{t('country')}</FieldLabel>
-                    <Controller
-                      name="countryCode"
-                      control={control}
-                      rules={{ required: t('countryRequired') }}
-                      render={({ field }) => (
-                        <CountrySelect
-                          countries={countries}
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={saving}
-                        />
-                      )}
-                    />
-                    <FieldError>{errors.countryCode?.message}</FieldError>
-                  </Field>
-
-                  <Field className="col-span-2">
-                    <FieldLabel htmlFor="phoneNumber">{t('phoneNumberLabel')}</FieldLabel>
-                    <Input
-                      id="phoneNumber"
-                      type="tel"
-                      {...register('phoneNumber')}
-                    />
-                    <FieldError>{errors.phoneNumber?.message}</FieldError>
-                  </Field>
                 </div>
-              </FieldGroup>
+            </div>
 
-              <DialogFooter>
-                <Button type="submit" disabled={saving} className="w-full">
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t('saveAddress')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
+            <div className="space-y-3">
+                <p className="font-medium text-sm">{t('deliveryLocation')}</p>
+                <p className="text-xs text-muted-foreground">{t('deliveryLocationHint')}</p>
+
+                <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                        <Label>{t('province')}</Label>
+                        <select
+                            className={selectClass}
+                            value={province}
+                            onChange={e => handleProvinceChange(e.target.value)}
+                        >
+                            <option value="">{t('selectProvince')}</option>
+                            {RWANDA_LOCATIONS.map(p => (
+                                <option key={p.name} value={p.name}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>{t('district')}</Label>
+                        <select
+                            className={cn(selectClass, !province && 'opacity-60')}
+                            value={district}
+                            disabled={!province}
+                            onChange={e => handleDistrictChange(e.target.value)}
+                        >
+                            <option value="">{t('selectDistrict')}</option>
+                            {districts.map(d => (
+                                <option key={d.name} value={d.name}>
+                                    {d.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>{t('sectorCell')}</Label>
+                        <select
+                            className={cn(selectClass, !district && 'opacity-60')}
+                            value={sector}
+                            disabled={!district}
+                            onChange={e => setSector(e.target.value)}
+                        >
+                            <option value="">{t('selectSector')}</option>
+                            {sectors.map(s => (
+                                <option key={s} value={s}>
+                                    {s}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="space-y-1.5">
+                    <Label>{t('streetLandmark')}</Label>
+                    <Input
+                        value={street}
+                        onChange={e => setStreet(e.target.value)}
+                        placeholder={t('streetLandmarkPlaceholder')}
+                    />
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                        <Label>{t('fullName')}</Label>
+                        <Input value={fullName} onChange={e => setFullName(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label>{t('phoneNumber')}</Label>
+                        <Input
+                            value={phoneNumber}
+                            onChange={e => setPhoneNumber(e.target.value)}
+                            placeholder="078..."
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+
+            <Button
+                type="button"
+                onClick={handleContinue}
+                disabled={loading}
+                className="w-full bg-electric hover:bg-electric/90 text-electric-foreground"
+            >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('continue')}
+            </Button>
+        </div>
+    );
 }

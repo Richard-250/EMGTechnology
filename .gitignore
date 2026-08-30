@@ -9,3 +9,7 @@ apps/server/vendure.sqlite
 apps/server/static/assets
 apps/server/static/email/test-emails
 apps/server/.vendure
+
+# Legacy / generated files
+apps/storefront/public/tools/
+*.aspx

@@ -60,7 +60,7 @@ export async function OrderSummary({activeOrder}: { activeOrder: ActiveOrder }) 
                 </div>
             </div>
 
-            <Button render={<Link href="/checkout" />} nativeButton={false} className="w-full" size="lg">{t('proceedToCheckout')}</Button>
+            <Button render={<Link href="/checkout" />} nativeButton={false} className="w-full bg-electric hover:bg-electric/90 text-electric-foreground" size="lg">{t('checkout')}</Button>
 
             <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-muted-foreground">
                 <Lock className="h-3 w-3" />

@@ -20,7 +20,7 @@ interface AddressInput {
     streetLine2?: string;
     city: string;
     province: string;
-    postalCode: string;
+    postalCode?: string;
     countryCode: string;
     phoneNumber: string;
     company?: string;
@@ -101,19 +101,25 @@ export async function transitionToArrangingPayment() {
     revalidatePath(`/${locale}/checkout`);
 }
 
-export async function placeOrder(paymentMethodCode: string) {
+export async function placeOrder(
+    paymentMethodCode: string,
+    paymentDetails?: {
+        cardLast4?: string;
+        cardBrand?: string;
+        mobileMoneyPhone?: string;
+        mobileMoneyProvider?: string;
+    },
+) {
     // First, transition the order to ArrangingPayment state
     await transitionToArrangingPayment();
 
-    // Prepare metadata based on payment method
-    const metadata: Record<string, unknown> = {};
-
-    // For standard payment, include the required fields
-    if (paymentMethodCode === 'standard-payment') {
-        metadata.shouldDecline = false;
-        metadata.shouldError = false;
-        metadata.shouldErrorOnSettle = false;
-    }
+    // Dummy handler metadata for card and mobile-money test payments
+    const metadata: Record<string, unknown> = {
+        shouldDecline: false,
+        shouldError: false,
+        shouldErrorOnSettle: false,
+        ...paymentDetails,
+    };
 
     // Add payment to the order
     const result = await mutate(

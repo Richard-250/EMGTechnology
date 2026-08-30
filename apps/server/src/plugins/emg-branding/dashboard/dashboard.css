@@ -1,0 +1,533 @@
+/* EMG Technology — dark modern admin dashboard */
+
+@theme {
+  --color-emg-bg: #141a21;
+  --color-emg-card: #212b36;
+  --color-emg-card-hover: #28323d;
+  --color-emg-sidebar: #161c24;
+  --color-emg-border: color-mix(in oklab, #919eab 16%, transparent);
+  --color-emg-muted: #919eab;
+  --color-emg-green: #269a2d;
+  --color-emg-green-light: #5cbf60;
+  --color-emg-green-dark: #1b5e20;
+}
+
+/* Force dark shell */
+html.dark,
+html.dark body,
+html.dark #app {
+  background-color: var(--color-emg-bg) !important;
+  color: #fff;
+}
+
+/* Sidebar — reference-style dark nav */
+html.dark [data-sidebar="sidebar"] {
+  background: var(--color-emg-sidebar) !important;
+  border-right: 1px solid var(--color-emg-border) !important;
+}
+
+html.dark [data-sidebar="group-label"] {
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--color-emg-muted) !important;
+  font-weight: 600;
+}
+
+html.dark [data-sidebar="menu-button"][data-active="true"] {
+  background: color-mix(in oklab, var(--color-emg-green) 18%, transparent) !important;
+  color: var(--color-emg-green-light) !important;
+  border-radius: 0.75rem;
+}
+
+html.dark [data-sidebar="menu-button"]:hover {
+  background: var(--color-emg-card) !important;
+  border-radius: 0.75rem;
+}
+
+/* Main content area */
+html.dark [data-slot="sidebar-inset"] {
+  background: var(--color-emg-bg) !important;
+}
+
+html.dark header.sticky,
+html.dark [data-slot="sidebar-inset"] > header {
+  background: color-mix(in oklab, var(--color-emg-bg) 92%, transparent) !important;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-emg-border);
+}
+
+/* Move dashboard widgets to the very top by trimming top margins */
+html.dark [data-slot="sidebar-inset"] > div > .m-4:has([data-page-id="insights"]),
+html.dark div:has(> [data-page-id="insights"]),
+html.dark [data-page-id="insights"] {
+  margin-top: 0.25rem !important;
+}
+
+/* Hide redundant Insights title and position action bar cleanly at top right */
+[data-page-id="insights"] h1,
+[data-page-id="insights"] .page-title,
+[data-page-id="insights"] > div > div:first-child h1,
+[data-page-id="insights"] .flex.items-center.justify-between.gap-2 > div:first-child:not(:has(button)):not(:has(input)) {
+  display: none !important;
+}
+
+[data-page-id="insights"] .flex.items-center.justify-between.gap-2 {
+  justify-content: flex-end !important;
+  margin-bottom: 0.5rem !important;
+  padding: 0 4px !important;
+}
+
+/* Cards — rounded modern panels */
+html.dark .rounded-md.border.bg-card {
+  background: var(--color-emg-card) !important;
+  border-color: var(--color-emg-border) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.24), 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+html.dark .text-muted-foreground {
+  color: var(--color-emg-muted) !important;
+}
+
+html.dark .react-grid-layout {
+  margin-top: 0 !important;
+  min-height: 0 !important;
+}
+
+html.dark .react-grid-item {
+  transition: none;
+}
+
+html.dark .react-grid-item > .rounded-md.border.bg-card {
+  margin: 4px;
+}
+
+/* EMG custom widgets */
+.emg-welcome-card {
+  height: 100%;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #1b4332 0%, #212b36 55%, #1a2332 100%);
+  border: 1px solid color-mix(in oklab, var(--color-emg-green) 30%, transparent);
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.emg-welcome-card::after {
+  content: '';
+  position: absolute;
+  right: -2rem;
+  top: -2rem;
+  width: 10rem;
+  height: 10rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--color-emg-green) 25%, transparent);
+  filter: blur(40px);
+}
+
+.emg-welcome-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-emg-green) 20%, transparent);
+  color: var(--color-emg-green-light);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--color-emg-green) 35%, transparent);
+}
+
+.emg-welcome-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.35rem;
+  position: relative;
+  z-index: 1;
+}
+
+.emg-welcome-sub {
+  font-size: 0.875rem;
+  color: #c4cdd5;
+  max-width: 28rem;
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+}
+
+.emg-welcome-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.emg-welcome-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-emg-green);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  width: fit-content;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.emg-welcome-btn:hover {
+  background: var(--color-emg-green-light);
+  transform: translateY(-1px);
+}
+
+.emg-welcome-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-emg-border);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  width: fit-content;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.emg-welcome-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.emg-featured-card {
+  height: 100%;
+  border-radius: 1rem;
+  background: var(--color-emg-card);
+  border: 1px solid var(--color-emg-border);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.emg-featured-banner {
+  height: 5.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(120deg, #269a2d, #5cbf60, #f59e0b);
+  opacity: 0.9;
+}
+
+.emg-featured-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.emg-featured-desc {
+  font-size: 0.75rem;
+  color: var(--color-emg-muted);
+  line-height: 1.45;
+}
+
+.emg-stats-grid {
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.emg-stat-card {
+  border-radius: 1rem;
+  background: var(--color-emg-card);
+  border: 1px solid var(--color-emg-border);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 0;
+}
+
+.emg-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-emg-muted);
+  font-weight: 500;
+}
+
+.emg-stat-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.emg-stat-trend {
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  width: fit-content;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.35rem;
+}
+
+.emg-stat-trend.up {
+  color: #5cbf60;
+  background: color-mix(in oklab, #5cbf60 15%, transparent);
+}
+
+.emg-stat-trend.down {
+  color: #ff5630;
+  background: color-mix(in oklab, #ff5630 15%, transparent);
+}
+
+.emg-stat-spark {
+  margin-top: auto;
+  height: 2.25rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.emg-stat-spark span {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  background: var(--color-emg-green);
+  opacity: 0.75;
+}
+
+/* Chart widgets */
+html.dark .recharts-cartesian-grid line {
+  stroke: color-mix(in oklab, #919eab 20%, transparent) !important;
+}
+
+html.dark .recharts-text {
+  fill: var(--color-emg-muted) !important;
+}
+
+/* Login page */
+html.dark .login-form {
+  background: var(--color-emg-card) !important;
+  border: 1px solid var(--color-emg-border) !important;
+  border-radius: 1rem !important;
+}
+
+html.dark body:has(.login-form) {
+  background: radial-gradient(circle at top left, #1b4332 0%, #141a21 45%, #0d1117 100%) !important;
+}
+
+/* ========================================================
+   COMPLETELY HIDE AND SUPPRESS ALL VENDURE BRANDING & LINKS
+   ======================================================== */
+#vendure-branding-style,
+[data-vendure-branding],
+a[href*="vendure.io"],
+a[href*="vendure"],
+img[alt*="Vendure" i],
+svg[aria-label*="Vendure" i],
+[data-slot="dropdown-menu-item"]:has(a[href*="vendure.io"]),
+[data-slot="dropdown-menu-item"]:has(a[href*="vendure"]),
+[data-slot="dropdown-menu-item"]:has(svg.lucide-sparkles) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  overflow: hidden !important;
+  transform: scale(0) !important;
+}
+
+.login-form .text-primary.h-8 {
+  display: none !important;
+}
+
+.react-grid-item:has([data-emg-hidden-widget]) {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Chart interactions */
+.recharts-bar-rectangle,
+.recharts-area-area,
+.recharts-pie-sector {
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.recharts-bar-rectangle:hover,
+.recharts-area-area:hover {
+  opacity: 0.85;
+}
+
+.emg-toolbar-brand img {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN FOR TABLETS AND MOBILE PHONES
+   ======================================================== */
+
+/* Tablet Optimization (768px - 1024px) */
+@media (max-width: 1024px) {
+  .emg-welcome-title {
+    font-size: 1.2rem;
+  }
+  .emg-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+  .emg-stat-value {
+    font-size: 1.4rem;
+  }
+}
+
+/* Mobile Phone Optimization (<= 768px) */
+@media (max-width: 768px) {
+  /* Override react-grid-layout fixed absolute layout into clean flexible stack */
+  html.dark .react-grid-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    width: 100% !important;
+    gap: 0.75rem !important;
+  }
+
+  html.dark .react-grid-item {
+    position: relative !important;
+    transform: none !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    top: auto !important;
+    left: auto !important;
+    margin: 0 !important;
+  }
+
+  html.dark .react-grid-item > .rounded-md.border.bg-card {
+    margin: 0 !important;
+    height: auto !important;
+  }
+
+  /* Compact Welcome Hero on Mobile */
+  .emg-welcome-card {
+    padding: 1.25rem 1rem !important;
+    min-height: 170px !important;
+  }
+
+  .emg-welcome-title {
+    font-size: 1.15rem !important;
+  }
+
+  .emg-welcome-sub {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .emg-welcome-actions {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    margin-top: 0.75rem !important;
+  }
+
+  .emg-welcome-btn,
+  .emg-welcome-btn-secondary {
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Compact Featured Banner on Mobile */
+  .emg-featured-card {
+    padding: 1rem !important;
+  }
+
+  .emg-featured-banner {
+    height: 4rem !important;
+  }
+
+  .emg-featured-title {
+    font-size: 0.85rem !important;
+  }
+
+  .emg-featured-desc {
+    font-size: 0.72rem !important;
+  }
+
+  /* Stats grid stacks into 1 column on phone viewports */
+  .emg-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.65rem !important;
+    height: auto !important;
+  }
+
+  .emg-stat-card {
+    padding: 0.9rem 1rem !important;
+  }
+
+  .emg-stat-value {
+    font-size: 1.35rem !important;
+  }
+
+  /* Header & Action Bar on Mobile */
+  [data-page-id="insights"] .flex.items-center.justify-between.gap-2 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Tables horizontal scrolling for small screens */
+  table {
+    min-width: 600px;
+  }
+
+  .relative.w-full.overflow-auto,
+  [data-slot="table-container"] {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto !important;
+  }
+
+  /* Login page padding for phones */
+  .login-form {
+    padding: 1rem !important;
+  }
+}
+
+/* Small Phone Screen Tweaks (<= 480px) */
+@media (max-width: 480px) {
+  .emg-welcome-title {
+    font-size: 1.05rem !important;
+  }
+
+  .emg-stat-value {
+    font-size: 1.25rem !important;
+  }
+}
+

@@ -1,5 +1,7 @@
 import {cookies} from 'next/headers';
 
+export const DEFAULT_CURRENCY = 'RWF';
+
 const CURRENCY_COOKIE = 'vendure-currency';
 
 export async function setCurrencyCookie(currencyCode: string) {

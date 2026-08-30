@@ -3,7 +3,7 @@ import { ActiveCustomerFragment, ProductCardFragment } from './fragments';
 
 export const GetTopCollectionsQuery = graphql(`
     query GetTopCollections {
-        collections(options: { filter: { parentId: { eq: "1" } } }) {
+        collections(options: { topLevelOnly: true }) {
             items {
                 id
                 name
@@ -124,6 +124,9 @@ export const GetActiveOrderQuery = graphql(`
                         id
                         name
                         slug
+                        collections {
+                            name
+                        }
                         featuredAsset {
                             id
                             preview

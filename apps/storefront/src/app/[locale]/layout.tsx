@@ -1,7 +1,8 @@
 import type {Metadata, Viewport} from "next";
+import {Suspense} from "react";
 import {locale as rootLocale} from "next/root-params";
 import {hasLocale, NextIntlClientProvider} from "next-intl";
-import {Geist, Geist_Mono} from "next/font/google";
+import {Bebas_Neue, Manrope, Geist_Mono} from "next/font/google";
 import {getMessages, getTranslations, setRequestLocale} from "next-intl/server";
 import {notFound} from "next/navigation";
 import {routing} from "@/i18n/routing";
@@ -10,12 +11,21 @@ import {getRouteLocale} from "@/i18n/server";
 import {Toaster} from "@/components/ui/sonner";
 import {Navbar} from "@/components/layout/navbar";
 import {Footer} from "@/components/layout/footer";
+import {MobileBottomNav} from "@/components/layout/mobile-bottom-nav";
+import {CartConfirmationProvider} from "@/components/commerce/cart-confirmation-provider";
+import {CartConfirmationDrawer} from "@/components/commerce/cart-confirmation-drawer";
 import {ThemeProvider} from "@/components/providers/theme-provider";
 import {SITE_NAME, SITE_URL} from "@/lib/metadata";
 import "./globals.css";
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
+const bebasNeue = Bebas_Neue({
+    weight: "400",
+    variable: "--font-bebas",
+    subsets: ["latin"],
+});
+
+const manrope = Manrope({
+    variable: "--font-manrope",
     subsets: ["latin"],
 });
 
@@ -72,8 +82,8 @@ export const viewport: Viewport = {
     initialScale: 1,
     maximumScale: 5,
     themeColor: [
-        {media: "(prefers-color-scheme: light)", color: "#ffffff"},
-        {media: "(prefers-color-scheme: dark)", color: "#000000"},
+        {media: "(prefers-color-scheme: light)", color: "#F2F4F3"},
+        {media: "(prefers-color-scheme: dark)", color: "#0C1210"},
     ],
 };
 
@@ -90,14 +100,20 @@ export default async function LocaleLayout({children}: {children: React.ReactNod
     return (
         <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
             <body
-                className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
+                className={`${bebasNeue.variable} ${manrope.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
             >
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider>
+                        <CartConfirmationProvider>
                         <Navbar />
-                        {children}
+                        <main className="flex-1 pb-14 md:pb-0">{children}</main>
                         <Footer/>
+                        <Suspense fallback={null}>
+                            <MobileBottomNav />
+                        </Suspense>
+                        <CartConfirmationDrawer />
                         <Toaster/>
+                        </CartConfirmationProvider>
                     </ThemeProvider>
                 </NextIntlClientProvider>
             </body>

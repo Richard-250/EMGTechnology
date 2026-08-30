@@ -17,7 +17,7 @@ export function buildSearchInput({ searchParams, collectionSlug }: BuildSearchIn
     const page = Number(searchParams.page) || 1;
     const take = 12;
     const skip = (page - 1) * take;
-    const sort = (searchParams.sort as string) || 'name-asc';
+    const sort = (searchParams.sort as string) || 'newest';
     const searchTerm = searchParams.q as string;
 
     // Extract facet value IDs from search params
@@ -29,6 +29,7 @@ export function buildSearchInput({ searchParams, collectionSlug }: BuildSearchIn
 
     // Map sort parameter to Vendure SearchResultSortParameter
     const sortMapping: Record<string, { name?: 'ASC' | 'DESC'; price?: 'ASC' | 'DESC' }> = {
+        newest: {},
         'name-asc': { name: 'ASC' },
         'name-desc': { name: 'DESC' },
         'price-asc': { price: 'ASC' },
@@ -41,7 +42,7 @@ export function buildSearchInput({ searchParams, collectionSlug }: BuildSearchIn
         take,
         skip,
         groupByProduct: true,
-        sort: sortMapping[sort] || sortMapping['name-asc'],
+        sort: sortMapping[sort] || sortMapping.newest,
         ...(facetValueIds.length > 0 && {
             facetValueFilters: facetValueIds.map(id => ({ and: id }))
         })

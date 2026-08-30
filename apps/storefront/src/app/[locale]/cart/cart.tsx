@@ -1,19 +1,32 @@
-import {CartItems} from "@/app/[locale]/cart/cart-items";
-import {OrderSummary} from "@/app/[locale]/cart/order-summary";
-import {PromotionCode} from "@/app/[locale]/cart/promotion-code";
-import {getRouteLocale} from "@/i18n/server";
-import {getActiveCurrencyCode} from "@/lib/currency-server";
-import {cacheLife, cacheTag} from "next/cache";
-import {query} from "@/lib/vendure/api";
-import {GetActiveOrderQuery} from "@/lib/vendure/queries";
+import {CartProductsPanel, CartEmptyState} from '@/app/[locale]/cart/cart-products-panel';
+import {CartBasketTotals} from '@/app/[locale]/cart/cart-basket-totals';
+import {getRouteLocale} from '@/i18n/server';
+import {getActiveCurrencyCode} from '@/lib/currency-server';
+import {cacheLife, cacheTag} from 'next/cache';
+import {query} from '@/lib/vendure/api';
+import {GetActiveOrderQuery} from '@/lib/vendure/queries';
+import {Link} from '@/i18n/navigation';
+import {ShoppingCart} from 'lucide-react';
+import {getTranslations} from 'next-intl/server';
+import {getActiveCustomer} from '@/lib/vendure/actions';
+import {buildSignInHref} from '@/lib/auth-redirect';
 
 export async function Cart() {
-    "use cache: private"
+    'use cache: private';
     cacheLife('minutes');
     cacheTag('cart');
 
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
+    const t = await getTranslations({locale, namespace: 'Cart'});
+    const tAuth = await getTranslations({locale, namespace: 'Auth'});
+    const customer = await getActiveCustomer();
+    const checkoutHref = customer
+        ? '/checkout'
+        : buildSignInHref({
+              redirectTo: '/checkout',
+              message: tAuth('checkoutSignInRequired'),
+          });
     const {data} = await query(GetActiveOrderQuery, {}, {
         useAuthToken: true,
         languageCode: locale,
@@ -22,19 +35,31 @@ export async function Cart() {
 
     const activeOrder = data.activeOrder;
 
-    // Handle empty cart case
-    if (!activeOrder || activeOrder.lines.length === 0) {
-        return <CartItems activeOrder={null}/>;
-    }
-
     return (
-        <div className="grid lg:grid-cols-3 gap-8">
-            <CartItems activeOrder={activeOrder}/>
+        <>
+            {!activeOrder || activeOrder.lines.length === 0 ? (
+                <CartEmptyState />
+            ) : (
+                <>
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                        <h1 className="flex items-center gap-2 text-2xl md:text-3xl font-bold">
+                            <ShoppingCart className="size-7 text-electric" />
+                            {t('myCart')}
+                            <span className="text-muted-foreground font-normal text-lg">
+                                ({activeOrder.lines.length})
+                            </span>
+                        </h1>
+                        <Link href="/search" className="text-sm font-medium text-electric hover:underline">
+                            {t('continueShopping')}
+                        </Link>
+                    </div>
 
-            <div className="lg:col-span-1">
-                <OrderSummary activeOrder={activeOrder}/>
-                <PromotionCode activeOrder={activeOrder}/>
-            </div>
-        </div>
-    )
+                    <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start pb-24 sm:pb-0">
+                        <CartProductsPanel activeOrder={activeOrder} />
+                        <CartBasketTotals activeOrder={activeOrder} checkoutHref={checkoutHref} />
+                    </div>
+                </>
+            )}
+        </>
+    );
 }

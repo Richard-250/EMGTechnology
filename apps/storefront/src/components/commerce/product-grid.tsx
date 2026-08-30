@@ -3,6 +3,7 @@ import {ProductCard} from './product-card';
 import {Pagination} from '@/components/shared/pagination';
 import {SortDropdown} from './sort-dropdown';
 import {SearchProductsQuery} from "@/lib/vendure/queries";
+import {sortProductsNewestFirst} from '@/lib/product-sort';
 import {getRouteLocale} from '@/i18n/server';
 import {getTranslations} from 'next-intl/server';
 
@@ -13,17 +14,22 @@ interface ProductGridProps {
     }>;
     currentPage: number;
     take: number;
+    sortKey?: string;
 }
 
-export async function ProductGrid({productDataPromise, currentPage, take}: ProductGridProps) {
+export async function ProductGrid({productDataPromise, currentPage, take, sortKey = 'newest'}: ProductGridProps) {
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'Product'});
     const result = await productDataPromise;
 
     const searchResult = result.data.search;
     const totalPages = Math.ceil(searchResult.totalItems / take);
+    const products =
+        sortKey === 'newest'
+            ? sortProductsNewestFirst(searchResult.items)
+            : searchResult.items;
 
-    if (!searchResult.items.length) {
+    if (!products.length) {
         return (
             <div className="text-center py-12">
                 <p className="text-muted-foreground">{t('noProductsFound')}</p>
@@ -40,8 +46,8 @@ export async function ProductGrid({productDataPromise, currentPage, take}: Produ
                 <SortDropdown/>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {searchResult.items.map((product, i) => (
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+                {products.map((product, i) => (
                     <ProductCard key={'product-grid-item' + i} product={product}/>
                 ))}
             </div>

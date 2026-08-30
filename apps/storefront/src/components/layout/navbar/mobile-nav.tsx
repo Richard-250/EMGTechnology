@@ -1,8 +1,9 @@
 'use client';
 
 import {useState} from 'react';
+import Image from 'next/image';
 import { Link, useRouter } from '@/i18n/navigation';
-import {Menu, Search, ShoppingBag, User, Package, MapPin} from 'lucide-react';
+import {Menu, Search, ShoppingBag, User, Package, MapPin, Phone, Mail} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {
@@ -14,6 +15,8 @@ import {
     SheetClose,
 } from '@/components/ui/sheet';
 import {useTranslations} from 'next-intl';
+import {COMPANY} from '@/lib/company';
+import {SITE_LOGO} from '@/lib/metadata';
 
 interface Collection {
     id: string;
@@ -50,7 +53,16 @@ export function MobileNav({collections}: MobileNavProps) {
             </SheetTrigger>
             <SheetContent side="left" className="w-full sm:max-w-sm overflow-y-auto">
                 <SheetHeader>
-                    <SheetTitle>{t('menu')}</SheetTitle>
+                    <SheetTitle className="flex items-center gap-2">
+                        <Image
+                            src={SITE_LOGO}
+                            alt=""
+                            width={120}
+                            height={43}
+                            className="h-8 w-auto object-contain"
+                        />
+                        <span className="sr-only">{t('menu')}</span>
+                    </SheetTitle>
                 </SheetHeader>
 
                 <div className="flex flex-col gap-6 px-4 pb-6">
@@ -155,6 +167,28 @@ export function MobileNav({collections}: MobileNavProps) {
                                 {t('addresses')}
                             </SheetClose>
                         </nav>
+                    </div>
+
+                    <div className="border-t pt-4 space-y-2 text-sm text-muted-foreground">
+                        <a href={`tel:${COMPANY.phone}`} className="flex items-center gap-3 px-3 py-2 hover:text-foreground transition-colors">
+                            <Phone className="h-4 w-4 text-electric" />
+                            {COMPANY.phoneDisplay}
+                        </a>
+                        <a href={`mailto:${COMPANY.email}`} className="flex items-center gap-3 px-3 py-2 hover:text-foreground transition-colors break-all">
+                            <Mail className="h-4 w-4 text-electric shrink-0" />
+                            {COMPANY.email}
+                        </a>
+                        <a
+                            href={COMPANY.mapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-start gap-3 px-3 py-2 hover:text-foreground transition-colors"
+                        >
+                            <MapPin className="h-4 w-4 text-electric shrink-0 mt-0.5" />
+                            <span>
+                                {COMPANY.address.building}, {COMPANY.address.road}
+                            </span>
+                        </a>
                     </div>
                 </div>
             </SheetContent>

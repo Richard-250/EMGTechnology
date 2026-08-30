@@ -4,6 +4,8 @@ import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { defineConfig } from 'vite';
 
+const dashboardCss = resolve(__dirname, 'src/plugins/emg-branding/dashboard/dashboard.css');
+
 export default defineConfig({
     base: '/dashboard',
     build: {
@@ -11,29 +13,61 @@ export default defineConfig({
     },
     plugins: [
         vendureDashboardPlugin({
-            // The vendureDashboardPlugin will scan your configuration in order
-            // to find any plugins which have dashboard extensions, as well as
-            // to introspect the GraphQL schema based on any API extensions
-            // and custom fields that are configured.
             vendureConfigPath: pathToFileURL('./src/vendure-config.ts'),
-            // Points to the location of your Vendure server.
-            // In production, 'auto' lets the dashboard derive the API URL from the
-            // server that serves it. In development, we use explicit defaults so that
-            // the Vite dev server can reach the Vendure backend.
             api: process.env.NODE_ENV === 'production'
                 ? { host: 'auto', port: 'auto' }
                 : { host: 'http://localhost', port: +(process.env.PORT || 3001) },
-            // When you start the Vite server, your Admin API schema will
-            // be introspected and the types will be generated in this location.
-            // These types can be used in your dashboard extensions to provide
-            // type safety when writing queries and mutations.
             gqlOutputPath: './src/gql',
+            theme: {
+                additionalStylesheets: [dashboardCss],
+                light: {
+                    primary: 'oklch(0.58 0.16 142)',
+                    'primary-foreground': 'oklch(0.99 0 0)',
+                    brand: '#269A2D',
+                    'brand-lighter': '#5CBF60',
+                    'brand-darker': '#1B5E20',
+                    background: '#F4F6F8',
+                    foreground: '#161C24',
+                    card: '#FFFFFF',
+                    'card-foreground': '#161C24',
+                    border: 'oklch(0.88 0.01 240)',
+                    ring: 'oklch(0.58 0.16 142)',
+                    'sidebar-primary': 'oklch(0.58 0.16 142)',
+                    'sidebar-primary-foreground': 'oklch(0.99 0 0)',
+                    radius: '0.75rem',
+                },
+                dark: {
+                    primary: 'oklch(0.68 0.15 142)',
+                    'primary-foreground': 'oklch(0.14 0.02 140)',
+                    brand: '#269A2D',
+                    'brand-lighter': '#5CBF60',
+                    'brand-darker': '#1B5E20',
+                    background: '#141A21',
+                    foreground: '#FFFFFF',
+                    card: '#212B36',
+                    'card-foreground': '#FFFFFF',
+                    'muted-foreground': '#919EAB',
+                    border: 'oklch(0.32 0.02 240)',
+                    'chart-1': '#269A2D',
+                    'chart-2': '#5CBF60',
+                    'chart-3': '#8FD992',
+                    'chart-4': '#F59E0B',
+                    'chart-5': '#00B8D9',
+                    ring: 'oklch(0.68 0.15 142)',
+                    'sidebar': '#161C24',
+                    'sidebar-foreground': '#FFFFFF',
+                    'sidebar-primary': '#269A2D',
+                    'sidebar-primary-foreground': '#FFFFFF',
+                    'sidebar-accent': '#212B36',
+                    'sidebar-accent-foreground': '#FFFFFF',
+                    'sidebar-border': 'oklch(0.28 0.02 240)',
+                    radius: '1rem',
+                },
+            },
         }),
     ],
     resolve: {
         alias: {
-            // This allows all plugins to reference a shared set of
-            // GraphQL types.
             '@/gql': resolve(__dirname, './src/gql/graphql.ts'),
         },
     },

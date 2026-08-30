@@ -1,5 +1,21 @@
 import { graphql } from '@/graphql';
 
+export const AuthenticateGoogleMutation = graphql(`
+    mutation AuthenticateGoogle($input: AuthenticationInput!) {
+        authenticate(input: $input) {
+            __typename
+            ... on CurrentUser {
+                id
+                identifier
+            }
+            ... on ErrorResult {
+                errorCode
+                message
+            }
+        }
+    }
+`);
+
 export const LoginMutation = graphql(`
     mutation Login($username: String!, $password: String!) {
         login(username: $username, password: $password) {

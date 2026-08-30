@@ -2,7 +2,7 @@
   "Navigation": {
     "openMenu": "Menü öffnen",
     "menu": "Menü",
-    "searchProducts": "Produkte suchen...",
+    "searchProducts": "Equipment suchen...",
     "shopAll": "Alle Produkte",
     "collections": "Kategorien",
     "account": "Konto",
@@ -13,33 +13,61 @@
     "signOut": "Abmelden",
     "greeting": "Hallo, {name}",
     "shoppingCart": "Warenkorb",
+    "allCategories": "Alle Kategorien",
+    "more": "Mehr",
+    "viewAllInCategory": "Alle {category} ansehen",
+    "categoryDescriptions": {
+      "featured": "Top-Auswahl und Bestseller für Heim- und Studio-Training.",
+      "cardio": "Ellipsentrainer, Fahrräder, Rudergeräte und Cardio-Maschinen.",
+      "strength": "Racks, Hanteln, Kettlebells und Kraftgeräte.",
+      "home-gyms": "Multistationen und Home-Gyms für Ganzkörpertraining.",
+      "accessories": "Matten, Bänder, Seile und Trainingszubehör."
+    },
     "switchLanguage": "Sprache wechseln",
     "switchCurrency": "Währung wechseln"
   },
   "Hero": {
-    "title": "Entdecke hochwertige",
-    "titleHighlight": "Produkte",
-    "subtitle": "Hochwertige Produkte zu außergewöhnlichen Preisen. Kostenloser Versand ab 50 €.",
-    "shopNow": "Jetzt einkaufen",
-    "viewCollections": "Kategorien ansehen"
+    "banner": "Premium-Fitnessgeräte — Lieferung in ganz Ruanda",
+    "eyebrow": "EMG Technology Ltd",
+    "title": "Fitness",
+    "titleHighlight": "",
+    "subtitle": "Cardio-Geräte, Krafttraining, Home Gyms und Zubehör. Vertrauenswürdige Fitnessgeräte in Ruanda.",
+    "shopNow": "Alle Geräte",
+    "viewCollections": "Highlights",
+    "statProducts": "Alle Produkte",
+    "statCategories": "4 Kategorien",
+    "statDelivery": "Lieferung Ruanda"
   },
   "Home": {
-    "pageTitle": "Ihr One-Stop-Shop",
-    "description": "Entdecken Sie hochwertige Produkte zu wettbewerbsfähigen Preisen. Jetzt einkaufen und die besten Angebote für Elektronik, Mode, Haushaltswaren und mehr finden.",
-    "ogDescription": "Entdecken Sie hochwertige Produkte zu wettbewerbsfähigen Preisen. Jetzt die besten Angebote sichern.",
-    "whyShopWithUs": "Warum bei uns einkaufen",
+    "pageTitle": "Fitnessgeräte Shop",
+    "description": "Kaufen Sie Premium-Cardio-Geräte, Krafttraining, Home-Gyms und Zubehör bei EMG Technology.",
+    "ogDescription": "Premium-Fitnessgeräte für Heim- und Studiotraining. Cardio, Kraft und Zubehör.",
+    "shopByCategory": "Nach Kategorie shoppen",
+    "shopByCategorySubtitle": "Finden Sie das Equipment, das zu Ihrem Training passt.",
+    "fitnessCatalog": "Alle Produkte",
+    "fitnessCatalogSubtitle": "Vollständiger Fitness-Katalog — Preise in rwandischen Francs (RWF).",
+    "viewFullCatalog": "Alle Produkte ansehen",
+    "allProducts": "Alle",
+    "showingProducts": "{count} von {total} Produkten",
+    "categories": {
+      "cardio": "Cardio",
+      "strength": "Kraft",
+      "homeGyms": "Home Gyms",
+      "accessories": "Zubehör"
+    },
+    "whyShopWithUs": "Training Essentials",
     "features": {
       "highQuality": {
-        "title": "Hohe Qualität",
-        "description": "Sorgfältig ausgewählte Premiumprodukte für Sie"
+        "title": "Langlebig gebaut",
+        "description": "Geräte in Studioqualität, ausgewählt für Belastbarkeit und echte Trainingslasten"
       },
       "bestPrices": {
-        "title": "Beste Preise",
-        "description": "Wettbewerbsfähige Preise für alle unsere Produkte"
+        "title": "Experten-Support",
+        "description": "Beratung zu Setup, Maßen und der richtigen Maschine für Ihren Raum"
       },
       "fastDelivery": {
-        "title": "Schnelle Lieferung",
-        "description": "Schneller und zuverlässiger Versand weltweit"
+        "title": "Zuverlässiger Versand",
+        "description": "Nachverfolgbare Lieferung schwerer Geräte mit klaren Fristen an der Kasse"
       }
     }
   },
@@ -57,9 +85,9 @@
     "sku": "Art.-Nr.: {sku}",
     "from": "Ab",
     "noImage": "Kein Bild",
-    "featuredProducts": "Empfohlene Produkte",
+    "featuredProducts": "Ausgewähltes Equipment",
     "relatedProducts": "Ähnliche Produkte",
-    "viewAllProducts": "Alle Produkte anzeigen",
+    "viewAllProducts": "Alles Equipment anzeigen",
     "notFound": "Produkt nicht gefunden",
     "home": "Startseite",
     "noProductsFound": "Keine Produkte gefunden",
@@ -94,6 +122,7 @@
     }
   },
   "Sort": {
+    "newest": "Neueste zuerst",
     "nameAsc": "Name: A bis Z",
     "nameDesc": "Name: Z bis A",
     "priceAsc": "Preis: Niedrig bis Hoch",
@@ -425,24 +454,21 @@
     "popularCollections": "Beliebte Kategorien"
   },
   "Footer": {
-    "description": "Ein moderner, Headless-E-Commerce-Shop, erstellt mit Vendure und Next.js. Schnell, flexibel und produktionsbereit.",
-    "categories": "Kategorien",
-    "customer": "Kunde",
+    "description": "EMG Technology Ltd — Premium-Fitness- und Gym-Equipment für Athleten und Trainer in Ruanda.",
+    "categories": "Shop",
+    "customer": "Konto",
+    "contact": "Kontakt",
+    "getDirections": "Route anzeigen",
     "shopAll": "Alle Produkte",
     "orders": "Bestellungen",
     "account": "Konto",
-    "vendure": "Vendure",
-    "github": "GitHub",
-    "documentation": "Dokumentation",
-    "sourceCode": "Quellcode",
-    "copyright": "Vendure Store. Alle Rechte vorbehalten.",
-    "poweredBy": "Powered by"
+    "copyright": "EMG Technology Ltd. Alle Rechte vorbehalten."
   },
   "Common": {
     "loading": "Wird geladen...",
     "sending": "Wird gesendet...",
     "sku": "Art.-Nr.",
-    "siteDescription": "Entdecken Sie die besten Produkte bei {siteName}. Qualitätsprodukte, wettbewerbsfähige Preise und schnelle Lieferung."
+    "siteDescription": "Cardio-, Kraft- und Home-Gym-Equipment bei {siteName}. Für ernsthaftes Training."
   },
   "Errors": {
     "fieldsRequired": "Alle Felder sind erforderlich",

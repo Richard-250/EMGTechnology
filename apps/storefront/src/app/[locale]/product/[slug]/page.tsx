@@ -34,6 +34,7 @@ import {getTranslations} from 'next-intl/server';
 import {toOgLocale} from '@/i18n/locale-utils';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {getRouteLocale} from '@/i18n/server';
+import {resolveProductCarouselImages} from '@/lib/product-images';
 
 async function getProductData(slug: string, currencyCode: string) {
     'use cache';
@@ -116,10 +117,11 @@ export default async function ProductDetailPage({params, searchParams}: PageProp
     // Hide options that belong to a shared option group but have no variant on
     // this product (Vendure 3.6 shared/global option groups).
     const productForDisplay = {...product, optionGroups: getDisplayOptionGroups(product)};
+    const carouselImages = resolveProductCarouselImages(product.assets, slug);
 
     return (
         <>
-            <div className="container mx-auto px-4 py-8 mt-16">
+            <div className="container mx-auto px-4 py-8">
                 {/* Breadcrumb Navigation */}
                 <Breadcrumb className="mb-6">
                     <BreadcrumbList>
@@ -146,12 +148,17 @@ export default async function ProductDetailPage({params, searchParams}: PageProp
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                     {/* Left Column: Image Carousel */}
                     <div className="lg:sticky lg:top-20 lg:self-start">
-                        <ProductImageCarousel images={product.assets} />
+                        <ProductImageCarousel images={carouselImages} />
                     </div>
 
                     {/* Right Column: Product Info */}
                     <div>
-                        <ProductInfo product={productForDisplay} searchParams={searchParamsResolved} currencyCode={currencyCode} />
+                        <ProductInfo
+                            product={productForDisplay}
+                            searchParams={searchParamsResolved}
+                            currencyCode={currencyCode}
+                            productImage={carouselImages[0]?.preview}
+                        />
                     </div>
                 </div>
             </div>

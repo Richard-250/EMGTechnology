@@ -7,16 +7,20 @@ import {Button} from '@/components/ui/button';
 import {Label} from '@/components/ui/label';
 import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group';
 import {Separator} from '@/components/ui/separator';
-import {ShoppingCart, CheckCircle2} from 'lucide-react';
+import {ShoppingCart, CheckCircle2, Minus, Plus, Zap} from 'lucide-react';
 import {addToCart} from '@/app/[locale]/product/[slug]/actions';
+import {useCartConfirmation} from '@/components/commerce/cart-confirmation-provider';
 import {toast} from 'sonner';
 import {Price} from '@/components/commerce/price';
+import {ProductStarRating} from '@/components/commerce/product-star-rating';
+import {getDiscountPercent, getProductRating, getSoldCount, getWasPrice} from '@/lib/product-badges';
 import {useTranslations} from 'next-intl';
 
 interface ProductInfoProps {
     product: {
         id: string;
         name: string;
+        slug: string;
         description: string;
         variants: Array<{
             id: string;
@@ -49,15 +53,22 @@ interface ProductInfoProps {
     };
     searchParams: { [key: string]: string | string[] | undefined };
     currencyCode: string;
+    productImage?: string;
 }
 
-export function ProductInfo({product, searchParams, currencyCode}: ProductInfoProps) {
+export function ProductInfo({product, searchParams, currencyCode, productImage}: ProductInfoProps) {
     const t = useTranslations('Product');
     const pathname = usePathname();
     const router = useRouter();
+    const {showConfirmation} = useCartConfirmation();
     const currentSearchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
     const [isAdded, setIsAdded] = useState(false);
+    const [quantity, setQuantity] = useState(1);
+
+    const rating = getProductRating(product.slug);
+    const sold = getSoldCount(product.slug);
+    const discount = getDiscountPercent(product.slug);
 
     // Initialize selected options from URL
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
@@ -115,19 +126,33 @@ export function ProductInfo({product, searchParams, currencyCode}: ProductInfoPr
         }
     };
 
-    const handleAddToCart = async () => {
+    const handleAddToCart = async (mode: 'cart' | 'buyNow' = 'cart') => {
         if (!selectedVariant) return;
 
         startTransition(async () => {
-            const result = await addToCart(selectedVariant.id, 1);
+            const result = await addToCart(selectedVariant.id, quantity);
 
-            if (result.success) {
+            if (result.success && result.order) {
                 setIsAdded(true);
-                toast.success(t('addedToCartMessage'), {
-                    description: t('addedToCartDescription', {name: product.name}),
-                });
+                router.refresh();
 
-                // Reset the added state after 2 seconds
+                if (mode === 'buyNow') {
+                    router.push('/cart');
+                    return;
+                }
+
+                showConfirmation(
+                    {
+                        name: product.name,
+                        slug: product.slug,
+                        image: productImage,
+                        quantity,
+                        unitPrice: selectedVariant.priceWithTax,
+                        currencyCode,
+                    },
+                    result.order.totalQuantity,
+                );
+
                 setTimeout(() => setIsAdded(false), 2000);
             } else {
                 toast.error(t('errorTitle'), {
@@ -143,12 +168,32 @@ export function ProductInfo({product, searchParams, currencyCode}: ProductInfoPr
     return (
         <div className="space-y-6">
             {/* Product Title & Price */}
-            <div className="space-y-2">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{product.name}</h1>
+            <div className="space-y-3">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-tight">{product.name}</h1>
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <ProductStarRating stars={rating.stars} count={rating.count} size="md" />
+                    <span className="text-muted-foreground">{t('sold', {count: sold})}</span>
+                </div>
                 {selectedVariant && (
-                    <p className="text-2xl md:text-3xl text-muted-foreground font-semibold mt-3">
-                        <Price value={selectedVariant.priceWithTax} currencyCode={currencyCode}/>
-                    </p>
+                    <div className="space-y-1">
+                        {discount != null && (
+                            <div className="flex items-center gap-2">
+                                <span className="rounded bg-electric text-electric-foreground text-xs font-bold px-2 py-0.5">
+                                    -{discount}%
+                                </span>
+                                <p className="text-sm text-muted-foreground line-through">
+                                    <Price
+                                        value={getWasPrice(selectedVariant.priceWithTax, discount)}
+                                        currencyCode={currencyCode}
+                                    />
+                                </p>
+                            </div>
+                        )}
+                        <p className="text-2xl md:text-3xl text-electric font-bold">
+                            <Price value={selectedVariant.priceWithTax} currencyCode={currencyCode}/>
+                        </p>
+                        <p className="text-sm text-electric font-medium">{t('freeShipping')}</p>
+                    </div>
                 )}
             </div>
 
@@ -211,13 +256,45 @@ export function ProductInfo({product, searchParams, currencyCode}: ProductInfoPr
                 </div>
             )}
 
-            {/* Add to Cart Button */}
+            {/* Quantity */}
+            {selectedVariant && isInStock && (
+                <div className="space-y-2">
+                    <Label className="text-base font-semibold">{t('quantity')}</Label>
+                    <div className="inline-flex items-center rounded-lg border border-border">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="rounded-r-none"
+                            disabled={quantity <= 1}
+                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                            aria-label={t('decreaseQuantity')}
+                        >
+                            <Minus className="size-4" />
+                        </Button>
+                        <span className="w-12 text-center text-sm font-semibold tabular-nums">{quantity}</span>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="rounded-l-none"
+                            disabled={quantity >= 99}
+                            onClick={() => setQuantity(q => Math.min(99, q + 1))}
+                            aria-label={t('increaseQuantity')}
+                        >
+                            <Plus className="size-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Add to Cart / Buy Now — Nyereka-style */}
             <div className="pt-2 space-y-3">
                 <Button
                     size="lg"
-                    className="w-full h-12 text-base font-semibold rounded-lg"
+                    className="w-full h-12 text-base font-semibold rounded-lg bg-electric hover:bg-electric/90 text-electric-foreground"
                     disabled={!canAddToCart || isPending}
-                    onClick={handleAddToCart}
+                    onClick={() => handleAddToCart('cart')}
                 >
                     {isAdded ? (
                         <>
@@ -236,6 +313,16 @@ export function ProductInfo({product, searchParams, currencyCode}: ProductInfoPr
                                         : t('addToCart')}
                         </>
                     )}
+                </Button>
+                <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full h-12 text-base font-semibold rounded-lg border-2"
+                    disabled={!canAddToCart || isPending}
+                    onClick={() => handleAddToCart('buyNow')}
+                >
+                    <Zap className="mr-2 h-5 w-5"/>
+                    {t('buyNow')}
                 </Button>
             </div>
 

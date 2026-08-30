@@ -1,11 +1,17 @@
 import {
     bootstrap,
     CustomerService,
+    DefaultJobQueuePlugin,
     isGraphQlErrorResult,
     Logger,
     RequestContextService,
 } from '@vendure/core';
+import { populate } from '@vendure/core/cli';
+import path from 'path';
+import { configureChannelAndUsdPrices } from './configure-store';
+import { configurePaymentMethods } from './configure-payment-methods';
 import { config } from './vendure-config';
+import { initialData } from './initial-data';
 
 const loggerCtx = 'Seed';
 
@@ -21,15 +27,30 @@ const TEST_CUSTOMERS = [
 async function seed() {
     // Avoid colliding with a running API server during seeding.
     process.env.PORT = process.env.SEED_PORT || '3101';
-    const app = await bootstrap({
-        ...config,
-        apiOptions: {
-            ...config.apiOptions,
-            port: +(process.env.PORT || 3101),
-        },
-    });
+
+    const productsCsv = path.join(__dirname, '../assets/products.csv');
+
+    Logger.info('Populating countries, tax, shipping, payment + fitness products...', loggerCtx);
+
+    const app = await populate(
+        () =>
+            bootstrap({
+                ...config,
+                apiOptions: {
+                    ...config.apiOptions,
+                    port: +(process.env.PORT || 3101),
+                },
+                plugins: (config.plugins || []).filter(plugin => plugin !== DefaultJobQueuePlugin),
+            }),
+        initialData,
+        productsCsv,
+    );
+
     const requestContextService = app.get(RequestContextService);
     const customerService = app.get(CustomerService);
+
+    await configureChannelAndUsdPrices(app);
+    await configurePaymentMethods(app);
 
     const ctx = await requestContextService.create({
         apiType: 'admin',

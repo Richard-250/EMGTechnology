@@ -3,6 +3,7 @@ import { graphql } from '@/graphql';
 export const ProductCardFragment = graphql(`
     fragment ProductCard on SearchResult {
         productId
+        productVariantId
         productName
         slug
         productAsset {
@@ -29,5 +30,6 @@ export const ActiveCustomerFragment = graphql(`
         firstName
         lastName
         emailAddress
+        phoneNumber
     }
 `);

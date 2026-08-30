@@ -11,6 +11,10 @@ import { DashboardPlugin } from '@vendure/dashboard/plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
 import path from 'path';
+import { EmgBrandingPlugin } from './plugins/emg-branding/emg-branding.plugin';
+import { EmailOtpPlugin } from './plugins/email-otp/email-otp.plugin';
+import { signupOtpHandler } from './plugins/email-otp/signup-otp.handler';
+import { GoogleAuthPlugin } from './plugins/google-auth/google-auth.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3001;
@@ -31,6 +35,7 @@ export const config: VendureConfig = {
     },
     authOptions: {
         tokenMethod: ['bearer', 'cookie'],
+        requireVerification: true,
         superadminCredentials: {
             identifier: process.env.SUPERADMIN_USERNAME,
             password: process.env.SUPERADMIN_PASSWORD,
@@ -54,6 +59,9 @@ export const config: VendureConfig = {
     paymentOptions: {
         paymentMethodHandlers: [dummyPaymentHandler],
     },
+    importExportOptions: {
+        importAssetsDir: path.join(__dirname, '../assets/import'),
+    },
     // When adding or altering custom field definitions, the database will
     // need to be updated. See the "Migrations" section in README.md.
     customFields: {},
@@ -71,18 +79,40 @@ export const config: VendureConfig = {
         DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
         DefaultSearchPlugin.init({ bufferUpdates: false, indexStockStatus: true }),
         EmailPlugin.init({
-            devMode: true,
-            outputPath: path.join(__dirname, '../static/email/test-emails'),
-            route: 'mailbox',
-            handlers: defaultEmailHandlers,
+            ...(process.env.SMTP_USER && process.env.SMTP_PASS
+                ? {
+                    transport: {
+                        type: 'smtp' as const,
+                        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+                        port: +(process.env.SMTP_PORT || 587),
+                        secure: false,
+                        auth: {
+                            user: process.env.SMTP_USER,
+                            pass: process.env.SMTP_PASS.replace(/\s+/g, ''),
+                        },
+                    },
+                }
+                : {
+                    devMode: true,
+                    outputPath: path.join(__dirname, '../static/email/test-emails'),
+                    route: 'mailbox',
+                }),
+            handlers: [
+                ...defaultEmailHandlers.filter(handler => handler.type !== 'email-verification'),
+                signupOtpHandler,
+            ],
             templateLoader: new FileBasedTemplateLoader(path.join(__dirname, '../static/email/templates')),
             globalTemplateVars: {
-                // The following variables will change depending on your storefront implementation.
-                // Here we are assuming a storefront running at http://localhost:3002.
-                fromAddress: '"example" <noreply@example.com>',
-                verifyEmailAddressUrl: 'http://localhost:3002/verify',
-                passwordResetUrl: 'http://localhost:3002/password-reset',
-                changeEmailAddressUrl: 'http://localhost:3002/verify-email-address-change'
+                fromAddress: `"EMG Technology Ltd" <${process.env.SMTP_USER || 'noreply@emgtechnology.rw'}>`,
+                verifyEmailAddressUrl: process.env.STOREFRONT_URL
+                    ? `${process.env.STOREFRONT_URL}/verify`
+                    : 'http://localhost:3002/verify',
+                passwordResetUrl: process.env.STOREFRONT_URL
+                    ? `${process.env.STOREFRONT_URL}/reset-password`
+                    : 'http://localhost:3002/reset-password',
+                changeEmailAddressUrl: process.env.STOREFRONT_URL
+                    ? `${process.env.STOREFRONT_URL}/verify-email-address-change`
+                    : 'http://localhost:3002/verify-email-address-change',
             },
         }),
         DashboardPlugin.init({
@@ -90,6 +120,14 @@ export const config: VendureConfig = {
             appDir: IS_DEV
                 ? path.join(__dirname, '../dist/dashboard')
                 : path.join(__dirname, 'dashboard'),
+            // Port 3001 must serve the built dashboard (fast). Vite dev runs on 5173 only.
+            // If this matched 5173, opening localhost:3001/dashboard would proxy to Vite (~3000 modules).
+            viteDevServerPort: +(process.env.DASHBOARD_VITE_PORT || 51799),
+        }),
+        EmgBrandingPlugin,
+        EmailOtpPlugin,
+        GoogleAuthPlugin.init({
+            googleClientId: process.env.GOOGLE_CLIENT_ID || '',
         }),
     ],
 };

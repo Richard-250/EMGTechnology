@@ -8,7 +8,7 @@ interface PriceProps {
     currencyCode?: string;
 }
 
-export function Price({value, currencyCode = 'USD'}: PriceProps) {
+export function Price({value, currencyCode = 'RWF'}: PriceProps) {
     const locale = useLocale();
     const intlLocale = toIntlLocale(locale);
     return (
@@ -16,6 +16,7 @@ export function Price({value, currencyCode = 'USD'}: PriceProps) {
             {new Intl.NumberFormat(intlLocale, {
                 style: 'currency',
                 currency: currencyCode,
+                maximumFractionDigits: currencyCode === 'RWF' ? 0 : 2,
             }).format(value / 100)}
         </>
     );

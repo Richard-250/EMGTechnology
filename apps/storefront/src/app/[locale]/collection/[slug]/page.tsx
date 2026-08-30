@@ -114,13 +114,14 @@ export default async function CollectionPage({params, searchParams}: PageProps<'
     const currencyCode = await getActiveCurrencyCode();
     const t = await getTranslations({locale, namespace: 'Product'});
     const page = getCurrentPage(searchParamsResolved);
+    const sortKey = (searchParamsResolved.sort as string) || 'newest';
 
     const productDataPromise = getCollectionProducts(slug, searchParamsResolved, currencyCode);
     const collectionResult = await getCollectionMetadata(slug);
     const collectionName = collectionResult.data.collection?.name ?? slug;
 
     return (
-        <div className="container mx-auto px-4 py-8 mt-16">
+        <div className="container mx-auto px-4 py-4 md:py-8">
             {/* Breadcrumbs */}
             <Breadcrumb className="mb-6">
                 <BreadcrumbList>
@@ -136,7 +137,7 @@ export default async function CollectionPage({params, searchParams}: PageProps<'
 
             {/* Collection Header */}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight">{collectionName}</h1>
+                <h1 className="font-display text-4xl md:text-5xl tracking-[0.03em]">{collectionName}</h1>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -150,7 +151,7 @@ export default async function CollectionPage({params, searchParams}: PageProps<'
                 {/* Product Grid */}
                 <div className="lg:col-span-3">
                     <Suspense fallback={<ProductGridSkeleton />}>
-                        <ProductGrid productDataPromise={productDataPromise} currentPage={page} take={12} />
+                        <ProductGrid productDataPromise={productDataPromise} currentPage={page} take={12} sortKey={sortKey} />
                     </Suspense>
                 </div>
             </div>

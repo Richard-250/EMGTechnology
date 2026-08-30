@@ -14,6 +14,7 @@ import CheckoutFlow from './checkout-flow';
 import {CheckoutProvider} from './checkout-provider';
 import {noIndexRobots} from '@/lib/metadata';
 import {getActiveCustomer} from '@/lib/vendure/actions';
+import {buildSignInHref} from '@/lib/auth-redirect';
 import {getAvailableCountriesCached} from '@/lib/vendure/cached';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,17 +28,27 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CheckoutPage() {
     const locale = await getRouteLocale();
+    const tAuth = await getTranslations({locale, namespace: 'Auth'});
+    const customer = await getActiveCustomer();
+
+    if (!customer) {
+        return redirect({
+            href: buildSignInHref({
+                redirectTo: '/checkout',
+                message: tAuth('checkoutSignInRequired'),
+            }),
+            locale,
+        });
+    }
+
     const currencyCode = await getActiveCurrencyCode();
     const t = await getTranslations({locale, namespace: 'Checkout'});
-    const customer = await getActiveCustomer();
-    const isGuest = !customer;
+    const isGuest = false;
 
     const [orderRes, addressesRes, countries, shippingMethodsRes, paymentMethodsRes] =
         await Promise.all([
             query(GetActiveOrderForCheckoutQuery, {}, {useAuthToken: true, currencyCode}),
-            isGuest
-                ? Promise.resolve({ data: { activeCustomer: null } })
-                : query(GetCustomerAddressesQuery, {}, {useAuthToken: true}),
+            query(GetCustomerAddressesQuery, {}, {useAuthToken: true}),
             getAvailableCountriesCached(locale),
             query(GetEligibleShippingMethodsQuery, {}, {useAuthToken: true, currencyCode}),
             query(GetEligiblePaymentMethodsQuery, {}, {useAuthToken: true, currencyCode}),
@@ -59,18 +70,20 @@ export default async function CheckoutPage() {
         paymentMethodsRes.data.eligiblePaymentMethods?.filter((m) => m.isEligible) || [];
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8">{t('pageTitle')}</h1>
-            <CheckoutProvider
-                order={activeOrder}
-                addresses={addresses}
-                countries={countries}
-                shippingMethods={shippingMethods}
-                paymentMethods={paymentMethods}
-                isGuest={isGuest}
-            >
-                <CheckoutFlow/>
-            </CheckoutProvider>
+        <div className="min-h-screen bg-muted/40">
+            <div className="container mx-auto px-4 py-8 md:py-10">
+                <h1 className="text-2xl md:text-3xl font-bold mb-6">{t('pageTitle')}</h1>
+                <CheckoutProvider
+                    order={activeOrder}
+                    addresses={addresses}
+                    countries={countries}
+                    shippingMethods={shippingMethods}
+                    paymentMethods={paymentMethods}
+                    isGuest={isGuest}
+                >
+                    <CheckoutFlow/>
+                </CheckoutProvider>
+            </div>
         </div>
     );
 }

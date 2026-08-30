@@ -17,7 +17,7 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
-import { Link } from '@/i18n/navigation';
+import {Link} from '@/i18n/navigation';
 import {useTranslations} from 'next-intl';
 
 const loginSchema = z.object({
@@ -29,9 +29,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
     redirectTo?: string;
+    embedded?: boolean;
 }
 
-export function LoginForm({redirectTo}: LoginFormProps) {
+export function LoginForm({redirectTo, embedded = false}: LoginFormProps) {
     const t = useTranslations('Auth');
     const [isPending, startTransition] = useTransition();
     const [serverError, setServerError] = useState<string | null>(null);
@@ -66,66 +67,76 @@ export function LoginForm({redirectTo}: LoginFormProps) {
         ? `/register?redirectTo=${encodeURIComponent(redirectTo)}`
         : '/register';
 
+    const fields = (
+        <>
+            <FormField
+                control={form.control}
+                name="username"
+                render={({field}) => (
+                    <FormItem>
+                        <FormLabel>{t('email')}</FormLabel>
+                        <FormControl>
+                            <Input
+                                type="email"
+                                placeholder="you@email.com"
+                                disabled={isPending}
+                                {...field}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+
+            <FormField
+                control={form.control}
+                name="password"
+                render={({field}) => (
+                    <FormItem>
+                        <div className="flex items-center justify-between">
+                            <FormLabel>{t('password')}</FormLabel>
+                            <Link
+                                href="/forgot-password"
+                                className="text-muted-foreground hover:text-primary text-sm"
+                            >
+                                {t('forgotPassword')}
+                            </Link>
+                        </div>
+                        <FormControl>
+                            <PasswordInput
+                                placeholder="Your password"
+                                disabled={isPending}
+                                {...field}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+
+            {serverError && <div className="text-sm text-destructive">{serverError}</div>}
+
+            <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? t('signingIn') : t('signIn')}
+            </Button>
+        </>
+    );
+
+    if (embedded) {
+        return (
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    {fields}
+                </form>
+            </Form>
+        );
+    }
+
     return (
         <Card>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <CardContent className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="username"
-                            render={({field}) => (
-                                <FormItem>
-                                    <FormLabel>{t('email')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="email"
-                                            placeholder="you@example.com"
-                                            disabled={isPending}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({field}) => (
-                                <FormItem>
-                                    <div className="flex items-center justify-between">
-                                        <FormLabel>{t('password')}</FormLabel>
-                                        <Link
-                                            href="/forgot-password"
-                                            className="text-muted-foreground hover:text-primary text-sm"
-                                        >
-                                            {t('forgotPassword')}
-                                        </Link>
-                                    </div>
-
-                                    <FormControl>
-                                        <PasswordInput
-                                            placeholder="••••••••"
-                                            disabled={isPending}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}
-                        />
-
-                        {serverError && (
-                            <div className="text-sm text-destructive">
-                                {serverError}
-                            </div>
-                        )}
-                        <Button type="submit" className="w-full" disabled={isPending}>
-                            {isPending ? t('signingIn') : t('signIn')}
-                        </Button>
-                    </CardContent>
+                    <CardContent className="space-y-4">{fields}</CardContent>
                     <CardFooter className="flex flex-col space-y-4 mt-2">
                         <div className="text-muted-foreground text-sm text-center">
                             {t('noAccount')}{' '}

@@ -20,7 +20,7 @@ interface AddressFormData {
   streetLine2?: string;
   city: string;
   province: string;
-  postalCode: string;
+  postalCode?: string;
   countryCode: string;
   phoneNumber: string;
   company?: string;
@@ -129,7 +129,7 @@ export function AddressForm({ countries, address, onSubmit, onCancel, isSubmitti
             <FieldLabel htmlFor="postalCode">{t('postalCode')}</FieldLabel>
             <Input
               id="postalCode"
-              {...register('postalCode', { required: t('postalCodeRequired') })}
+              {...register('postalCode')}
               disabled={isSubmitting}
             />
             <FieldError>{errors.postalCode?.message}</FieldError>

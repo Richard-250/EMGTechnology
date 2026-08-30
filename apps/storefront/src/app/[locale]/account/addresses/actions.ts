@@ -15,7 +15,7 @@ interface AddressInput {
     streetLine2?: string;
     city: string;
     province: string;
-    postalCode: string;
+    postalCode?: string;
     countryCode: string;
     phoneNumber: string;
     company?: string;

@@ -1,20 +1,19 @@
-{{> header title="Verify Your Email Address" }}
+{{> header title="Verify your email" }}
 
 <mj-section background-color="#fafafa">
     <mj-column>
-        <mj-text color="#525252">
-            Thank you for creating an account. Click the button below to verify this email address and
-            complete the registration process:
+        <mj-text color="#525252" font-size="15px" line-height="24px">
+            Thank you for creating an EMG Technology account. Click the button below to verify this
+            email address and complete registration:
         </mj-text>
 
         <mj-button font-family="Helvetica"
-                   background-color="#f45e43"
+                   background-color="#269A2D"
                    color="white"
                    href="{{ verifyEmailAddressUrl }}?token={{ verificationToken }}">
-            Verify Me!
+            Verify my email
         </mj-button>
     </mj-column>
 </mj-section>
-
 
 {{> footer }}

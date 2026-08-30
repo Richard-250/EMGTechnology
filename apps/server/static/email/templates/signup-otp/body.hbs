@@ -1,0 +1,17 @@
+{{> header title="Verify your email" }}
+
+<mj-section background-color="#fafafa">
+    <mj-column>
+        <mj-text color="#525252" font-size="15px" line-height="24px">
+            Hi {{ firstName }}, use this code to verify your email and continue creating your EMG Technology account:
+        </mj-text>
+        <mj-text align="center" font-size="32px" font-weight="700" color="#269A2D" letter-spacing="8px">
+            {{ otp }}
+        </mj-text>
+        <mj-text color="#737373" font-size="13px">
+            This code expires in 10 minutes. If you did not request it, you can ignore this email.
+        </mj-text>
+    </mj-column>
+</mj-section>
+
+{{> footer }}

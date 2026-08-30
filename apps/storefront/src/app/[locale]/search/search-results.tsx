@@ -10,7 +10,8 @@ import {SearchProductsQuery} from "@/lib/vendure/queries";
 
 interface SearchResultsProps {
     searchParams: Promise<{
-        page?: string
+        page?: string;
+        sort?: string;
     }>
 }
 
@@ -19,6 +20,7 @@ export async function SearchResults({searchParams}: SearchResultsProps) {
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
     const page = getCurrentPage(searchParamsResolved);
+    const sortKey = (searchParamsResolved.sort as string) || 'newest';
 
     const productDataPromise = query(SearchProductsQuery, {
         input: buildSearchInput({searchParams: searchParamsResolved})
@@ -37,7 +39,7 @@ export async function SearchResults({searchParams}: SearchResultsProps) {
             {/* Product Grid */}
             <div className="lg:col-span-3">
                 <Suspense fallback={<ProductGridSkeleton/>}>
-                    <ProductGrid productDataPromise={productDataPromise} currentPage={page} take={12}/>
+                    <ProductGrid productDataPromise={productDataPromise} currentPage={page} take={12} sortKey={sortKey}/>
                 </Suspense>
             </div>
         </div>

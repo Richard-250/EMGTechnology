@@ -2,6 +2,7 @@
 
 import { createContext, useContext, ReactNode, useState } from 'react';
 import { CheckoutOrder } from './types';
+import type { CardPaymentDetails, MobileMoneyDetails, PaymentDetailsMetadata } from './payment-details';
 
 interface CustomerAddress {
   id: string;
@@ -49,10 +50,29 @@ interface CheckoutContextType {
   paymentMethods: PaymentMethod[];
   selectedPaymentMethodCode: string | null;
   setSelectedPaymentMethodCode: (code: string | null) => void;
+  cardDetails: CardPaymentDetails;
+  setCardDetails: (details: CardPaymentDetails) => void;
+  mobileMoneyDetails: MobileMoneyDetails;
+  setMobileMoneyDetails: (details: MobileMoneyDetails) => void;
+  paymentDetailsMetadata: PaymentDetailsMetadata | null;
+  setPaymentDetailsMetadata: (metadata: PaymentDetailsMetadata | null) => void;
   isGuest: boolean;
 }
 
 const CheckoutContext = createContext<CheckoutContextType | null>(null);
+
+const EMPTY_CARD: CardPaymentDetails = {
+  cardholderName: '',
+  cardNumber: '',
+  expiryMonth: '',
+  expiryYear: '',
+  cvv: '',
+};
+
+const EMPTY_MOBILE: MobileMoneyDetails = {
+  phoneNumber: '',
+  status: 'idle',
+};
 
 interface CheckoutProviderProps {
   children: ReactNode;
@@ -76,6 +96,15 @@ export function CheckoutProvider({
   const [selectedPaymentMethodCode, setSelectedPaymentMethodCode] = useState<string | null>(
     paymentMethods.length === 1 ? paymentMethods[0].code : null
   );
+  const [cardDetails, setCardDetails] = useState<CardPaymentDetails>(EMPTY_CARD);
+  const [mobileMoneyDetails, setMobileMoneyDetails] = useState<MobileMoneyDetails>(EMPTY_MOBILE);
+  const [paymentDetailsMetadata, setPaymentDetailsMetadata] = useState<PaymentDetailsMetadata | null>(null);
+
+  const handleSetPaymentMethod = (code: string | null) => {
+    setSelectedPaymentMethodCode(code);
+    setPaymentDetailsMetadata(null);
+    setMobileMoneyDetails(EMPTY_MOBILE);
+  };
 
   return (
     <CheckoutContext.Provider
@@ -86,7 +115,13 @@ export function CheckoutProvider({
         shippingMethods,
         paymentMethods,
         selectedPaymentMethodCode,
-        setSelectedPaymentMethodCode,
+        setSelectedPaymentMethodCode: handleSetPaymentMethod,
+        cardDetails,
+        setCardDetails,
+        mobileMoneyDetails,
+        setMobileMoneyDetails,
+        paymentDetailsMetadata,
+        setPaymentDetailsMetadata,
         isGuest,
       }}
     >
