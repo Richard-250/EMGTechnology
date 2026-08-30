@@ -42,7 +42,27 @@ function cleanVendureFromDOM() {
         (node as HTMLElement).style.setProperty('overflow', 'hidden', 'important');
     });
 
-    // 3. Remove external platform upsell links (e.g., Explore Platform & Cloud / pricing)
+    // 3. Hide redundant "Insights" page title so welcome card is at the very top
+    const h1s = document.querySelectorAll('h1');
+    h1s.forEach(h1 => {
+        if (h1.textContent?.trim() === 'Insights') {
+            h1.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    // 4. Hide any react-grid-item containers that hold hidden widgets
+    const hiddenItems = document.querySelectorAll('.react-grid-item');
+    hiddenItems.forEach(item => {
+        if (item.querySelector('[data-emg-hidden-widget]') || item.querySelector('.hidden')) {
+            (item as HTMLElement).style.setProperty('display', 'none', 'important');
+            (item as HTMLElement).style.setProperty('height', '0px', 'important');
+            (item as HTMLElement).style.setProperty('width', '0px', 'important');
+            (item as HTMLElement).style.setProperty('position', 'absolute', 'important');
+            (item as HTMLElement).style.setProperty('top', '-9999px', 'important');
+        }
+    });
+
+    // 5. Remove external platform upsell links (e.g., Explore Platform & Cloud / pricing)
     const links = document.querySelectorAll('a[href*="vendure.io"]');
     links.forEach(link => {
         const item = link.closest('[data-slot="dropdown-menu-item"]') || link.parentElement;
@@ -53,7 +73,7 @@ function cleanVendureFromDOM() {
         }
     });
 
-    // 4. Sanitize meta tags
+    // 6. Sanitize meta tags
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
         metaDesc.setAttribute('content', 'EMG Technology Admin Dashboard');
@@ -63,7 +83,7 @@ function cleanVendureFromDOM() {
         metaAuthor.setAttribute('content', 'EMG Technology Ltd');
     }
 
-    // 5. Sanitize document title
+    // 7. Sanitize document title
     sanitizeTitle();
 }
 
@@ -89,16 +109,18 @@ export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) 
             icon.type = 'image/png';
         }
 
-        // Layout reset if needed
+        // Layout reset if needed — force Welcome widget at y: 0
         try {
             const raw = localStorage.getItem(LS_KEY);
             const settings = raw ? JSON.parse(raw) : {};
             const currentLayout = settings.widgetLayout ?? {};
-            const hasCharts =
+            const welcomeY = currentLayout['emg-welcome-widget']?.y;
+            const needsLayout =
+                welcomeY !== 0 ||
+                settings.emgLayoutVersion !== 25 ||
+                !currentLayout['emg-welcome-widget'] ||
                 currentLayout['metrics-widget']?.w > 0 ||
-                currentLayout['orders-summary-widget']?.w > 0 ||
-                settings.emgLayoutVersion !== 3;
-            const needsLayout = !currentLayout['emg-welcome-widget'] || hasCharts;
+                currentLayout['orders-summary-widget']?.w > 0;
 
             if (needsLayout || settings.theme !== 'dark') {
                 localStorage.setItem(
@@ -106,11 +128,11 @@ export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) 
                     JSON.stringify({
                         ...settings,
                         theme: 'dark',
-                        emgLayoutVersion: 3,
+                        emgLayoutVersion: 25,
                         widgetLayout: EMG_DEFAULT_WIDGET_LAYOUT,
                     }),
                 );
-                if (hasCharts && typeof window !== 'undefined') {
+                if (typeof window !== 'undefined') {
                     window.location.reload();
                 }
             }
@@ -139,7 +161,7 @@ export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) 
             titleObserver.observe(titleEl, { childList: true });
         }
 
-        const interval = setInterval(cleanVendureFromDOM, 1000);
+        const interval = setInterval(cleanVendureFromDOM, 500);
 
         return () => {
             observer.disconnect();

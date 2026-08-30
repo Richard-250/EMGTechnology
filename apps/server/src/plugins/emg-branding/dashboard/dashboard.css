@@ -90,16 +90,38 @@ html.dark .text-muted-foreground {
   color: var(--color-emg-muted) !important;
 }
 
-html.dark .react-grid-layout {
-  margin-top: 0 !important;
-  min-height: 0 !important;
+/* Collapse and remove any hidden or empty react-grid-item elements */
+.react-grid-item:has([data-emg-hidden-widget]),
+.react-grid-item:has(.hidden),
+.react-grid-item[style*="visibility: hidden"],
+.react-grid-item:empty {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  transform: none !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-html.dark .react-grid-item {
+html.dark .react-grid-layout,
+.react-grid-layout {
+  margin-top: 0 !important;
+  min-height: 0 !important;
+  padding-top: 0 !important;
+}
+
+html.dark .react-grid-item,
+.react-grid-item {
   transition: none;
 }
 
-html.dark .react-grid-item > .rounded-md.border.bg-card {
+html.dark .react-grid-item > .rounded-md.border.bg-card,
+.react-grid-item > .rounded-md.border.bg-card {
   margin: 4px;
 }
 
