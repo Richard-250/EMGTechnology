@@ -37,11 +37,11 @@ export const config: VendureConfig = {
         tokenMethod: ['bearer', 'cookie'],
         requireVerification: true,
         superadminCredentials: {
-            identifier: process.env.SUPERADMIN_USERNAME,
-            password: process.env.SUPERADMIN_PASSWORD,
+            identifier: process.env.SUPERADMIN_USERNAME || 'superadmin',
+            password: process.env.SUPERADMIN_PASSWORD || 'EmgAdmin2026!Secure',
         },
         cookieOptions: {
-          secret: process.env.COOKIE_SECRET,
+            secret: process.env.COOKIE_SECRET || 'emg_production_cookie_secret_998877665544332211',
         },
     },
     dbConnectionOptions: {
