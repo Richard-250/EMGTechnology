@@ -15,17 +15,28 @@ const nextConfig: NextConfig = {
         dangerouslyAllowLocalIP: true,
         remotePatterns: [
             {
+                protocol: 'https',
+                hostname: 'emgtechnologyltd.com',
+            },
+            {
+                protocol: 'https',
+                hostname: 'www.emgtechnologyltd.com',
+            },
+            {
+                hostname: '102.202.208.149',
+            },
+            {
+                hostname: '127.0.0.1',
+            },
+            {
+                hostname: 'localhost',
+            },
+            {
                 hostname: 'readonlydemo.vendure.io',
             },
             {
-                hostname: 'demo.vendure.io'
+                hostname: 'demo.vendure.io',
             },
-            {
-                hostname: 'localhost'
-            },
-            {
-                hostname: '102.202.208.149'
-            }
         ],
     },
     experimental: {

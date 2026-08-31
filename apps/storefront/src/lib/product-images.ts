@@ -13,15 +13,20 @@ export function isSeedPlaceholderAsset(url: string | null | undefined): boolean 
     return SEED_PLACEHOLDER_ASSET.test(normalizeAssetUrl(url));
 }
 
-/** Prefer real Vendure admin uploads; skip seed placeholders; fall back to /images/products. */
+/** Prefer high-quality local store images; support real Vendure uploads; fallback safely. */
 export function resolveProductImage(
     vendurePreview: string | null | undefined,
     slug: string,
 ): string {
+    const storeImage = getStoreProductImage(slug);
+    // If we have a dedicated product photo in /public/images/products, use it directly for instant 0ms load
+    if (storeImage && storeImage !== STORE_IMAGES.hero) {
+        return storeImage;
+    }
     if (vendurePreview && !isSeedPlaceholderAsset(vendurePreview)) {
         return normalizeAssetUrl(vendurePreview);
     }
-    return getStoreProductImage(slug);
+    return storeImage || STORE_IMAGES.hero;
 }
 
 export type ProductCarouselImage = {
@@ -34,6 +39,9 @@ export function resolveProductCarouselImages(
     assets: Array<{id: string; preview: string; source: string}> | null | undefined,
     slug: string,
 ): ProductCarouselImage[] {
+    const storeImage = getStoreProductImage(slug);
+    const storeImageAvailable = storeImage && storeImage !== STORE_IMAGES.hero;
+
     const realAssets =
         assets?.filter(asset => !isSeedPlaceholderAsset(asset.preview)) ?? [];
 
@@ -43,6 +51,10 @@ export function resolveProductCarouselImages(
             preview: normalizeAssetUrl(asset.preview),
             source: normalizeAssetUrl(asset.source),
         }));
+    }
+
+    if (storeImageAvailable) {
+        return [{id: slug, preview: storeImage, source: storeImage}];
     }
 
     const fallback = getStoreProductImage(slug);
