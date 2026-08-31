@@ -24,7 +24,11 @@
       "accessories": "Matten, Bänder, Seile und Trainingszubehör."
     },
     "switchLanguage": "Sprache wechseln",
-    "switchCurrency": "Währung wechseln"
+    "switchCurrency": "Währung wechseln",
+    "toggleTheme": "Design wechseln",
+    "themeLight": "Hell",
+    "themeDark": "Dunkel",
+    "themeSystem": "System"
   },
   "Hero": {
     "banner": "Premium-Fitnessgeräte — Lieferung in ganz Ruanda",

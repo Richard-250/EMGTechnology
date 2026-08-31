@@ -30,7 +30,11 @@
       "accessories": "Mats, bands, ropes and training accessories."
     },
     "switchLanguage": "Switch language",
-    "switchCurrency": "Switch currency"
+    "switchCurrency": "Switch currency",
+    "toggleTheme": "Toggle theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
   },
   "Hero": {
     "banner": "Premium fitness equipment — delivered across Rwanda",

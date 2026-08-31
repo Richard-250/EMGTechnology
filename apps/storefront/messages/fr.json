@@ -30,7 +30,11 @@
       "accessories": "Tapis, bandes, cordes et accessoires d'entraînement."
     },
     "switchLanguage": "Changer de langue",
-    "switchCurrency": "Changer de devise"
+    "switchCurrency": "Changer de devise",
+    "toggleTheme": "Changer de thème",
+    "themeLight": "Clair",
+    "themeDark": "Sombre",
+    "themeSystem": "Système"
   },
   "Hero": {
     "banner": "Équipement fitness premium — livraison au Rwanda",

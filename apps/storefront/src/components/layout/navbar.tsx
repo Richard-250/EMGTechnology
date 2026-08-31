@@ -1,8 +1,9 @@
-﻿import Image from 'next/image';
+import Image from 'next/image';
 import {NavigationLink} from '@/components/shared/navigation-link';
 import {NavbarCart} from '@/components/layout/navbar/navbar-cart';
 import {NavbarUserIcon} from '@/components/layout/navbar/navbar-user-icon';
 import {LanguagePicker} from '@/components/layout/navbar/language-picker';
+import {ThemeSwitcher} from '@/components/layout/navbar/theme-switcher';
 import {CurrencyPickerWrapper} from '@/components/layout/navbar/currency-picker-wrapper';
 import {MobileNavWrapper} from '@/components/layout/navbar/mobile-nav-wrapper';
 import {NavbarSearchBarLoader} from '@/components/layout/navbar/navbar-search-loader';
@@ -57,6 +58,9 @@ export function Navbar() {
                             </div>
 
                             <div className="flex items-center gap-1 md:gap-2 ml-auto shrink-0">
+                                <Suspense fallback={null}>
+                                    <ThemeSwitcher />
+                                </Suspense>
                                 <Suspense>
                                     <LanguagePicker />
                                 </Suspense>

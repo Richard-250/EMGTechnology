@@ -30,7 +30,11 @@
       "accessories": "Amameti, imigozi, imigozi y'umukandara n'ibindi bikoresho."
     },
     "switchLanguage": "Hindura ururimi",
-    "switchCurrency": "Hindura ifaranga"
+    "switchCurrency": "Hindura ifaranga",
+    "toggleTheme": "Hindura insanganyamatsiko",
+    "themeLight": "Urumuri",
+    "themeDark": "Umwijima",
+    "themeSystem": "Sisitemu"
   },
   "Hero": {
     "banner": "Ibikoresho by'imyitozo byiza — gutanga mu Rwanda",
