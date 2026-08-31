@@ -93,14 +93,14 @@ export async function configureShippingMethods(app: Awaited<ReturnType<typeof bo
         targetIds.push(String(method.id));
     }
 
-    // Delete or remove legacy / duplicate shipping methods (e.g. repeated seed runs of 'Standard Shipping')
+    // Soft-delete legacy / duplicate shipping methods (e.g. repeated seed runs of 'Standard Shipping')
     for (const method of existing) {
         if (!targetIds.includes(String(method.id))) {
             try {
-                await shippingMethodService.delete(ctx, method.id);
-                Logger.info(`Deleted legacy shipping method: ${method.name} (${method.code}, id=${method.id})`, loggerCtx);
+                await shippingMethodService.softDelete(ctx, method.id);
+                Logger.info(`Soft-deleted legacy shipping method: ${method.name} (${method.code}, id=${method.id})`, loggerCtx);
             } catch (err: any) {
-                Logger.warn(`Could not delete legacy shipping method ${method.name}: ${err?.message}`, loggerCtx);
+                Logger.warn(`Could not soft-delete legacy shipping method ${method.name}: ${err?.message}`, loggerCtx);
             }
         }
     }
