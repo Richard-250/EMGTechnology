@@ -117,11 +117,7 @@ export const config: VendureConfig = {
         }),
         DashboardPlugin.init({
             route: 'dashboard',
-            appDir: IS_DEV
-                ? path.join(__dirname, '../dist/dashboard')
-                : path.join(__dirname, 'dashboard'),
-            // Port 3001 must serve the built dashboard (fast). Vite dev runs on 5173 only.
-            // If this matched 5173, opening localhost:3001/dashboard would proxy to Vite (~3000 modules).
+            appDir: path.resolve(__dirname, __dirname.includes('dist') ? 'dashboard' : '../dist/dashboard'),
             viteDevServerPort: +(process.env.DASHBOARD_VITE_PORT || 51799),
         }),
         EmgBrandingPlugin,
