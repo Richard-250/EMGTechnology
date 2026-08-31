@@ -14,6 +14,7 @@ import path from 'path';
 import { EmgBrandingPlugin } from './plugins/emg-branding/emg-branding.plugin';
 import { EmailOtpPlugin } from './plugins/email-otp/email-otp.plugin';
 import { signupOtpHandler } from './plugins/email-otp/signup-otp.handler';
+import { adminOrderNotificationHandler } from './plugins/email-otp/admin-order.handler';
 import { GoogleAuthPlugin } from './plugins/google-auth/google-auth.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
@@ -87,9 +88,9 @@ export const config: VendureConfig = {
                 ? {
                     transport: {
                         type: 'smtp' as const,
-                        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-                        port: +(process.env.SMTP_PORT || 587),
-                        secure: false,
+                        host: process.env.SMTP_HOST || 'smtp.resend.com',
+                        port: +(process.env.SMTP_PORT || 465),
+                        secure: +(process.env.SMTP_PORT || 465) === 465,
                         auth: {
                             user: process.env.SMTP_USER,
                             pass: process.env.SMTP_PASS.replace(/\s+/g, ''),
@@ -104,10 +105,11 @@ export const config: VendureConfig = {
             handlers: [
                 ...defaultEmailHandlers.filter(handler => handler.type !== 'email-verification'),
                 signupOtpHandler,
+                adminOrderNotificationHandler,
             ],
             templateLoader: new FileBasedTemplateLoader(path.join(__dirname, '../static/email/templates')),
             globalTemplateVars: {
-                fromAddress: `"EMG Technology Ltd" <${process.env.SMTP_USER || 'noreply@emgtechnologyltd.com'}>`,
+                fromAddress: process.env.EMAIL_FROM || `"EMG Technology Ltd" <${process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_USER || 'info@emgtechnologyltd.com'}>`,
                 verifyEmailAddressUrl: process.env.STOREFRONT_URL
                     ? `${process.env.STOREFRONT_URL}/verify`
                     : 'https://emgtechnologyltd.com/verify',

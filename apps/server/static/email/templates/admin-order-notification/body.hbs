@@ -1,0 +1,116 @@
+{{> header title="New Order Received" }}
+
+<mj-raw>
+    <style type="text/css">
+    .callout {
+        background-color: #141A17;
+        padding: 15px 0;
+    }
+    .callout-large > div {
+        text-align: center !important;
+        color: #fff !important;
+        font-size: 16px !important;
+        font-weight: bold;
+        padding: 0;
+    }
+    .callout-small > div {
+        text-align: center !important;
+        color: #269A2D !important;
+        font-size: 14px !important;
+        font-weight: bold;
+        padding: 0;
+    }
+    ul.address {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    tr.order-row td {
+        border-bottom: 1px dashed #eee;
+        padding: 8px 4px;
+    }
+    tr.total-row {
+        font-weight: bold;
+        font-size: 15px;
+    }
+    .bg-off-white {
+        background-color: #f9f9f9;
+    }
+    </style>
+</mj-raw>
+
+<mj-section css-class="bg-off-white">
+    <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#0C1210">
+            🎉 You have a new order!
+        </mj-text>
+        <mj-text font-size="14px" color="#4A5550">
+            A customer just completed checkout on EMG Technology Ltd. Below are the order details:
+        </mj-text>
+    </mj-column>
+</mj-section>
+
+<mj-section css-class="callout">
+    <mj-column>
+        <mj-text css-class="callout-large">Order Code</mj-text>
+        <mj-text css-class="callout-small">#{{ order.code }}</mj-text>
+    </mj-column>
+    <mj-column>
+        <mj-text css-class="callout-large">Customer</mj-text>
+        <mj-text css-class="callout-small">{{ order.customer.firstName }} {{ order.customer.lastName }}</mj-text>
+    </mj-column>
+    <mj-column>
+        <mj-text css-class="callout-large">Total Amount</mj-text>
+        <mj-text css-class="callout-small">{{ formatMoney order.totalWithTax order.currencyCode 'en' }}</mj-text>
+    </mj-column>
+</mj-section>
+
+<mj-section css-class="bg-off-white">
+    <mj-column>
+        <mj-text font-size="15px" font-weight="bold" color="#0C1210">Customer Contact & Shipping</mj-text>
+        <mj-text font-size="13px" color="#4A5550">
+            <strong>Email:</strong> {{ order.customer.emailAddress }}<br/>
+            {{#if order.customer.phoneNumber}}<strong>Phone:</strong> {{ order.customer.phoneNumber }}<br/>{{/if}}
+            {{#with order.shippingAddress}}
+                <strong>Deliver To:</strong> {{ fullName }}<br/>
+                <ul class="address">
+                    {{#if streetLine1}}<li>{{ streetLine1 }}</li>{{/if}}
+                    {{#if city}}<li>{{ city }}, {{ province }}</li>{{/if}}
+                    {{#if country}}<li>{{ country }}</li>{{/if}}
+                    {{#if phoneNumber}}<li>Phone: {{ phoneNumber }}</li>{{/if}}
+                </ul>
+            {{/with}}
+        </mj-text>
+    </mj-column>
+</mj-section>
+
+<mj-section>
+    <mj-column>
+        <mj-text font-size="16px" font-weight="bold" color="#0C1210">
+            Ordered Items:
+        </mj-text>
+        <mj-table cellpadding="6px">
+            {{#each order.lines }}
+                <tr class="order-row">
+                    <td><strong>{{ quantity }}x</strong></td>
+                    <td>{{ productVariant.name }}</td>
+                    <td align="right">{{ formatMoney discountedLinePriceWithTax ../order.currencyCode 'en' }}</td>
+                </tr>
+            {{/each}}
+            <tr class="order-row total-row">
+                <td colspan="2">Total Paid:</td>
+                <td align="right">{{ formatMoney order.totalWithTax order.currencyCode 'en' }}</td>
+            </tr>
+        </mj-table>
+    </mj-column>
+</mj-section>
+
+<mj-section>
+    <mj-column>
+        <mj-button background-color="#269A2D" color="#ffffff" font-weight="bold" border-radius="4px" href="https://emgtechnologyltd.com/dashboard/orders">
+            View in Admin Dashboard
+        </mj-button>
+    </mj-column>
+</mj-section>
+
+{{> footer }}
