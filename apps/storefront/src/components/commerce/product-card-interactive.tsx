@@ -18,13 +18,8 @@ import {
 import {addToCart} from '@/app/[locale]/product/[slug]/actions';
 import {useCartConfirmation} from '@/components/commerce/cart-confirmation-provider';
 import {toast} from 'sonner';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import {Button} from '@/components/ui/button';
+import {ProductPreviewModal} from '@/components/commerce/product-preview-modal';
 
 export interface ProductCardData {
     productId: string;
@@ -96,14 +91,14 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                 className={cn(
                     'group relative block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     compact
-                        ? 'bg-white rounded-md overflow-hidden border border-border/80 hover:border-electric/40 hover:shadow-sm transition-all duration-200'
-                        : 'overflow-hidden rounded-sm border border-transparent hover:border-electric/30 hover:shadow-md transition-all duration-300 bg-card',
+                        ? 'bg-white dark:bg-card rounded-xl overflow-hidden border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-200'
+                        : 'overflow-hidden rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-300 bg-card',
                 )}
             >
                 <Link href={`/product/${data.slug}`} className="block">
                     <div className="relative bg-muted overflow-hidden aspect-square">
                         {discount != null && (
-                            <span className="absolute top-2 left-2 z-10 rounded-sm bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5">
+                            <span className="absolute top-2 left-2 z-10 rounded-md bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5 shadow-xs">
                                 -{discount}%
                             </span>
                         )}
@@ -111,7 +106,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                             src={data.imageSrc}
                             alt={data.productName}
                             fill
-                            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+                            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                             sizes={
                                 compact
                                     ? '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw'
@@ -135,10 +130,10 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                     <div className={cn(compact ? 'p-2.5 space-y-1' : 'pt-3 pb-1 px-1 space-y-1')}>
                         <h3
                             className={cn(
-                                'leading-snug line-clamp-2 group-hover:text-foreground transition-colors',
+                                'leading-snug line-clamp-2 group-hover:text-foreground transition-colors font-medium',
                                 compact
                                     ? 'text-xs md:text-sm text-foreground/90 min-h-[2.5rem]'
-                                    : 'font-medium text-sm md:text-base px-2',
+                                    : 'text-sm md:text-base px-2',
                             )}
                         >
                             {data.productName}
@@ -157,7 +152,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                             )}
                             <p
                                 className={cn(
-                                    'font-semibold tracking-tight text-electric',
+                                    'font-bold tracking-tight text-electric',
                                     compact ? 'text-sm md:text-base' : 'text-base',
                                 )}
                             >
@@ -180,7 +175,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                     <Button
                         type="button"
                         size="sm"
-                        className="w-full h-8 text-xs font-bold bg-foreground text-background hover:bg-foreground/90"
+                        className="w-full h-8 text-xs font-bold bg-foreground text-background hover:bg-foreground/90 rounded-lg cursor-pointer"
                         onClick={e => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -193,7 +188,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="w-full h-8 text-xs font-bold border-foreground/20"
+                        className="w-full h-8 text-xs font-bold border-foreground/20 rounded-lg"
                         render={<Link href={`/search?q=${similarQuery}`} />}
                         nativeButton={false}
                     >
@@ -202,45 +197,13 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                 </div>
             </div>
 
-            <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="line-clamp-2 pr-6">{data.productName}</DialogTitle>
-                    </DialogHeader>
-                    <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                        <Image
-                            src={data.imageSrc}
-                            alt={data.productName}
-                            fill
-                            className="object-cover"
-                            sizes="400px"
-                        />
-                    </div>
-                    {data.price != null && (
-                        <p className="text-xl font-bold text-electric">
-                            <Price value={data.price} currencyCode={data.currencyCode} />
-                        </p>
-                    )}
-                    <div className="flex gap-2">
-                        <Button
-                            className="flex-1 bg-electric hover:bg-electric/90 text-electric-foreground"
-                            onClick={handleAddToCart}
-                            disabled={isPending}
-                        >
-                            {t('addToCart')}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="flex-1"
-                            render={<Link href={`/product/${data.slug}`} />}
-                            nativeButton={false}
-                            onClick={() => setPreviewOpen(false)}
-                        >
-                            {t('viewDetails')}
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {/* Rich AliExpress-style Quick Preview Modal */}
+            <ProductPreviewModal
+                open={previewOpen}
+                onOpenChange={setPreviewOpen}
+                initialData={data}
+            />
         </>
     );
 }
+

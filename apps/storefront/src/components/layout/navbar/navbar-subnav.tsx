@@ -3,10 +3,11 @@ import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {getTopCollections} from '@/lib/vendure/cached';
 import {Link} from '@/i18n/navigation';
 import {getTranslations} from 'next-intl/server';
-import {ChevronDown, Home} from 'lucide-react';
+import {Home} from 'lucide-react';
 import {buildCategoryMenuItems} from '@/components/layout/category-nav-bar';
 import {AllCategoriesMenu} from '@/components/layout/all-categories-menu';
 import {getCategoryProductsMap} from '@/lib/category-products';
+import {MoreCategoriesMenu} from './more-categories-menu';
 
 export async function NavbarSubnav() {
     const locale = await getRouteLocale();
@@ -17,6 +18,13 @@ export async function NavbarSubnav() {
         getCategoryProductsMap(locale, currencyCode),
     ]);
     const t = await getTranslations({locale, namespace: 'Navigation'});
+
+    // Primary collections to show directly in the bar (first 3-4 items)
+    const primaryCollections = collections.slice(0, 4);
+    // Extra categories/collections to display inside the 'More' dropdown
+    const extraCategories = categories.filter(
+        c => !primaryCollections.some(p => p.slug === c.slug)
+    );
 
     return (
         <nav className="hidden md:flex items-center gap-5 h-10 border-t border-border/60 text-sm">
@@ -41,7 +49,7 @@ export async function NavbarSubnav() {
             </Link>
 
             <div className="flex items-center gap-5 overflow-x-auto scrollbar-none">
-                {collections.map(collection => {
+                {primaryCollections.map(collection => {
                     const isFeatured = collection.slug === 'featured';
                     return (
                         <Link
@@ -57,14 +65,13 @@ export async function NavbarSubnav() {
                         </Link>
                     );
                 })}
-                <Link
-                    href="/search"
-                    className="inline-flex items-center gap-0.5 text-foreground/80 hover:text-foreground whitespace-nowrap shrink-0 transition-colors"
-                >
-                    {t('more')}
-                    <ChevronDown className="size-3.5 opacity-60" />
-                </Link>
+
+                <MoreCategoriesMenu
+                    categories={extraCategories.length > 0 ? extraCategories : categories}
+                    label={t('more')}
+                />
             </div>
         </nav>
     );
 }
+

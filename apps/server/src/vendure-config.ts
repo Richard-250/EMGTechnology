@@ -3,6 +3,7 @@ import {
     DefaultJobQueuePlugin,
     DefaultSchedulerPlugin,
     DefaultSearchPlugin,
+    LanguageCode,
     VendureConfig,
 } from '@vendure/core';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
@@ -63,9 +64,32 @@ export const config: VendureConfig = {
     importExportOptions: {
         importAssetsDir: path.join(__dirname, '../assets/import'),
     },
-    // When adding or altering custom field definitions, the database will
-    // need to be updated. See the "Migrations" section in README.md.
-    customFields: {},
+    // Custom fields for admin discount and super deals management
+    customFields: {
+        Product: [
+            {
+                name: 'isDiscounted',
+                type: 'boolean',
+                defaultValue: false,
+                label: [{ languageCode: LanguageCode.en, value: 'Super Deal / Discounted' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Check to feature this product in Super Deals' }],
+            },
+            {
+                name: 'discountPercentage',
+                type: 'int',
+                min: 1,
+                max: 99,
+                label: [{ languageCode: LanguageCode.en, value: 'Discount Percentage (%)' }],
+                description: [{ languageCode: LanguageCode.en, value: 'e.g. 20 for 20% off badge' }],
+            },
+            {
+                name: 'originalPrice',
+                type: 'int',
+                label: [{ languageCode: LanguageCode.en, value: 'Original Price Before Discount' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Price in major units (e.g. 50000)' }],
+            },
+        ],
+    },
     plugins: [
         GraphiqlPlugin.init(),
         AssetServerPlugin.init({
