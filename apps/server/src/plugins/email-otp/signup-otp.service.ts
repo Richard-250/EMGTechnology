@@ -25,6 +25,16 @@ export class SignupOtpService {
         input: { email: string; firstName: string; lastName: string },
     ): Promise<boolean> {
         const email = input.email.trim().toLowerCase();
+
+        // Check if customer already exists in Vendure
+        const existingCustomer = await this.customerService.findAll(ctx, {
+            filter: { emailAddress: { eq: email } },
+            take: 1,
+        });
+        if (existingCustomer.items.length > 0 && existingCustomer.items[0].user) {
+            throw new Error('EMAIL_EXISTS');
+        }
+
         const code = String(Math.floor(100000 + Math.random() * 900000));
         const repo = this.connection.getRepository(ctx, SignupOtp);
 

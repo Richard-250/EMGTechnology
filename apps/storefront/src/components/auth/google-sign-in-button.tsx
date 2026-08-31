@@ -119,22 +119,23 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
         };
     }, [redirectTo, router, t]);
 
-    if (!GOOGLE_CLIENT_ID) {
-        return null;
-    }
-
     return (
         <div className="space-y-2">
             <div ref={buttonRef} className="w-full min-h-10 flex justify-center [&>div]:w-full!">
-                {!sdkReady && (
+                {(!GOOGLE_CLIENT_ID || !sdkReady) && (
                     <Button
                         type="button"
                         variant="outline"
-                        className="w-full h-11 font-medium"
+                        className="w-full h-11 font-medium flex items-center justify-center gap-2 border-border/80 hover:bg-muted/50"
                         disabled={pending}
+                        onClick={() => {
+                            if (!GOOGLE_CLIENT_ID) {
+                                setError('Google Sign-In requires NEXT_PUBLIC_GOOGLE_CLIENT_ID configured in environment.');
+                            }
+                        }}
                     >
                         <GoogleIcon />
-                        {pending ? t('googleSigningIn') : t('continueWithGoogle')}
+                        <span>{pending ? t('googleSigningIn') : (t('continueWithGoogle') || 'Continue with Google')}</span>
                     </Button>
                 )}
             </div>

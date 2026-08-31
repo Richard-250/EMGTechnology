@@ -3,8 +3,12 @@
 import {parse} from 'graphql';
 import type {TadaDocumentNode} from 'gql.tada';
 import {mutate} from '@/lib/vendure/api';
-import {loginAction} from '@/app/[locale]/sign-in/actions';
-import {getTranslations} from 'next-intl/server';
+import {LoginMutation} from '@/lib/vendure/mutations';
+import {setAuthToken} from '@/lib/auth';
+import {redirect} from '@/i18n/navigation';
+import {revalidatePath} from 'next/cache';
+import {getLocale, getTranslations} from 'next-intl/server';
+import {isRedirectError} from 'next/dist/client/components/redirect-error';
 
 function shopMutation<TResult, TVariables>(source: string) {
     return parse(source) as unknown as TadaDocumentNode<TResult, TVariables>;
@@ -49,7 +53,11 @@ export async function requestSignupOtpAction(input: {
             return {error: t('unexpectedError')};
         }
         return {success: true as const};
-    } catch {
+    } catch (err: any) {
+        const message = err?.message || '';
+        if (message.includes('EMAIL_EXISTS')) {
+            return {error: 'An account with this email address already exists. Please sign in instead.'};
+        }
         return {error: t('unexpectedError')};
     }
 }
@@ -74,6 +82,9 @@ export async function completeSignupAction(input: {
     redirectTo?: string | null;
 }) {
     const t = await getTranslations('Errors');
+    let targetRedirect: string | null = null;
+    let targetLocale = 'en';
+
     try {
         const result = await mutate(CompleteSignupDoc, {
             email: input.email,
@@ -85,18 +96,38 @@ export async function completeSignupAction(input: {
             return {error: payload?.message || t('unexpectedError')};
         }
 
-        const formData = new FormData();
-        formData.append('username', input.email);
-        formData.append('password', input.password);
-        if (input.redirectTo) {
-            formData.append('redirectTo', input.redirectTo);
+        // Automatically log in the freshly created user
+        const loginResult = await mutate(LoginMutation, {
+            username: input.email,
+            password: input.password,
+        }, { useAuthToken: true });
+
+        const authData = loginResult.data.login;
+        if (authData.__typename !== 'CurrentUser') {
+            return {error: t('invalidCredentials')};
         }
-        const loginResult = await loginAction(undefined, formData);
-        if (loginResult?.error) {
-            return {error: loginResult.error};
+
+        if (loginResult.token) {
+            await setAuthToken(loginResult.token);
         }
-        return {success: true as const};
-    } catch {
+
+        targetLocale = await getLocale();
+        revalidatePath(`/${targetLocale}`, 'layout');
+
+        // Safe redirect target: forward user directly to checkout or cart
+        const safeRedirect = input.redirectTo?.startsWith('/') && !input.redirectTo.startsWith('//')
+            ? input.redirectTo
+            : '/checkout';
+
+        targetRedirect = safeRedirect;
+    } catch (err) {
+        if (isRedirectError(err)) {
+            throw err;
+        }
         return {error: t('unexpectedError')};
+    }
+
+    if (targetRedirect) {
+        redirect({href: targetRedirect, locale: targetLocale});
     }
 }

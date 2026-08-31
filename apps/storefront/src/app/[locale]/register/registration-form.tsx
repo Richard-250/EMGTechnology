@@ -115,9 +115,9 @@ export function RegistrationForm({redirectTo, embedded = false}: RegistrationFor
                 email: otpSentTo,
                 password: data.password,
                 phoneNumber: data.phoneNumber,
-                redirectTo: redirectTo || '/account/profile',
+                redirectTo: redirectTo || '/checkout',
             });
-            if (result.error) {
+            if (result?.error) {
                 setServerError(result.error);
             }
         });
