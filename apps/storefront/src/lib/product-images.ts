@@ -1,4 +1,4 @@
-import {getStoreProductImage} from '@/lib/store-images';
+import {getStoreProductImage, STORE_IMAGES} from '@/lib/store-images';
 
 function normalizeAssetUrl(url: string): string {
     return url.replace(/\\/g, '/');
