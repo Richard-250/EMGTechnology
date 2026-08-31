@@ -50,6 +50,13 @@ export async function generateMetadata(): Promise<Metadata> {
             template: `%s | ${SITE_NAME}`,
         },
         description: t('siteDescription', {siteName: SITE_NAME}),
+        icons: {
+            icon: [
+                { url: '/logo.png', type: 'image/png', sizes: '32x32' },
+            ],
+            apple: '/logo.png',
+            shortcut: '/logo.png',
+        },
         openGraph: {
             type: "website",
             siteName: SITE_NAME,

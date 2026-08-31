@@ -137,6 +137,44 @@
     font-family: var(--font-bebas), ui-sans-serif, system-ui, sans-serif;
     letter-spacing: 0.02em;
   }
+
+  /* Full screen expansive layout — fills 100% width on all screens */
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem !important;
+      padding-right: 1.5rem !important;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2.5rem !important;
+      padding-right: 2.5rem !important;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .container {
+      padding-left: 3rem !important;
+      padding-right: 3rem !important;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .container {
+      padding-left: 4rem !important;
+      padding-right: 4rem !important;
+    }
+  }
 }
 
 @keyframes fade-up {

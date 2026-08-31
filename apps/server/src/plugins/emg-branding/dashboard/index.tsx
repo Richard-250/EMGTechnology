@@ -43,6 +43,25 @@ function EmgToolbarBrand() {
     );
 }
 
+function EmgFaviconSetter() {
+    // Set the favicon and page title to EMG branding
+    if (typeof document !== 'undefined') {
+        // Set favicon
+        let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+        }
+        link.type = 'image/png';
+        link.href = logoUrl;
+
+        // Set page title
+        document.title = 'EMG Technology Ltd — Admin';
+    }
+    return null;
+}
+
 defineDashboardExtension({
     login: {
         logo: { component: EmgLoginLogo },
@@ -55,6 +74,12 @@ defineDashboardExtension({
         },
     ],
     customProviders: [
+        {
+            id: 'emg-favicon-setter',
+            component: EmgFaviconSetter,
+            location: 'app',
+            order: 1,
+        },
         {
             id: 'emg-default-layout',
             component: EmgDefaultLayoutProvider,
