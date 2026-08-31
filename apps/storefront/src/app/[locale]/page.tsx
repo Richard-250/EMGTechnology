@@ -9,9 +9,6 @@ import {HomeHeroSection} from "@/components/commerce/home-hero-section";
 import {FlashDealsLoader} from "@/components/commerce/flash-deals-loader";
 
 import {FeaturedProducts} from "@/components/commerce/featured-products";
-
-import {CategorySection} from "@/components/layout/category-section";
-
 import {HomeFitnessCatalogSection} from "@/components/commerce/home-fitness-catalog-section";
 
 import {SITE_NAME, SITE_URL, buildCanonicalUrl} from "@/lib/metadata";
@@ -109,12 +106,8 @@ export default async function Home() {
             </Suspense>
 
             <Suspense>
-
                 <HomeFitnessCatalogSection />
-
             </Suspense>
-
-            <CategorySection />
 
 
 
