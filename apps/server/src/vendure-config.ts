@@ -70,10 +70,14 @@ export const config: VendureConfig = {
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),
-            // For local dev, the correct value for assetUrlPrefix should
-            // be guessed correctly, but for production it will usually need
-            // to be set manually to match your production url.
-            assetUrlPrefix: IS_DEV ? undefined : (process.env.ASSET_URL_PREFIX || '/assets/'),
+            // In production, assetUrlPrefix MUST be a full absolute URL (e.g. https://emgtechnologyltd.com/assets/)
+            // so that Vendure Dashboard image preview URL constructors (new URL(asset.preview)) succeed without errors.
+            assetUrlPrefix: IS_DEV
+                ? undefined
+                : (process.env.ASSET_URL_PREFIX ||
+                    (process.env.STOREFRONT_URL
+                        ? `${process.env.STOREFRONT_URL.replace(/\/$/, '')}/assets/`
+                        : 'https://emgtechnologyltd.com/assets/')),
         }),
         DefaultSchedulerPlugin.init(),
         DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
@@ -103,25 +107,35 @@ export const config: VendureConfig = {
             ],
             templateLoader: new FileBasedTemplateLoader(path.join(__dirname, '../static/email/templates')),
             globalTemplateVars: {
-                fromAddress: `"EMG Technology Ltd" <${process.env.SMTP_USER || 'noreply@emgtechnology.rw'}>`,
+                fromAddress: `"EMG Technology Ltd" <${process.env.SMTP_USER || 'noreply@emgtechnologyltd.com'}>`,
                 verifyEmailAddressUrl: process.env.STOREFRONT_URL
                     ? `${process.env.STOREFRONT_URL}/verify`
-                    : 'http://localhost:3002/verify',
+                    : 'https://emgtechnologyltd.com/verify',
                 passwordResetUrl: process.env.STOREFRONT_URL
                     ? `${process.env.STOREFRONT_URL}/reset-password`
-                    : 'http://localhost:3002/reset-password',
+                    : 'https://emgtechnologyltd.com/reset-password',
                 changeEmailAddressUrl: process.env.STOREFRONT_URL
                     ? `${process.env.STOREFRONT_URL}/verify-email-address-change`
-                    : 'http://localhost:3002/verify-email-address-change',
+                    : 'https://emgtechnologyltd.com/verify-email-address-change',
             },
         }),
         DashboardPlugin.init({
             route: 'dashboard',
-            // In dev, __dirname = src/ → resolve to ../dist/dashboard
-            // In prod, __dirname = dist/ → resolve to ./dashboard
-            appDir: IS_DEV
-                ? path.resolve(__dirname, '..', 'dist', 'dashboard')
-                : path.resolve(__dirname, 'dashboard'),
+            appDir: (() => {
+                const fs = require('fs');
+                const candidates = [
+                    path.resolve(__dirname, 'dashboard'),
+                    path.resolve(__dirname, '..', 'dist', 'dashboard'),
+                    path.resolve(process.cwd(), 'dist', 'dashboard'),
+                    path.resolve(process.cwd(), 'apps', 'server', 'dist', 'dashboard'),
+                ];
+                for (const candidate of candidates) {
+                    if (fs.existsSync(path.join(candidate, 'index.html'))) {
+                        return candidate;
+                    }
+                }
+                return path.resolve(__dirname, 'dashboard');
+            })(),
             viteDevServerPort: +(process.env.DASHBOARD_VITE_PORT || 51799),
         }),
         EmgBrandingPlugin,
