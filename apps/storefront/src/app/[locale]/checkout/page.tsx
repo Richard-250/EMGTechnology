@@ -17,8 +17,6 @@ import {getActiveCustomer} from '@/lib/vendure/actions';
 import {buildSignInHref} from '@/lib/auth-redirect';
 import {getAvailableCountriesCached} from '@/lib/vendure/cached';
 
-export const dynamic = 'force-dynamic';
-
 export async function generateMetadata(): Promise<Metadata> {
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'Checkout'});

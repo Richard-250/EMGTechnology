@@ -3,8 +3,6 @@ import {Suspense} from 'react';
 import {noIndexRobots} from '@/lib/metadata';
 import {AccountNavLinks} from '@/components/account/account-nav-links';
 
-export const dynamic = 'force-dynamic';
-
 export const metadata: Metadata = {
     robots: noIndexRobots(),
 };
