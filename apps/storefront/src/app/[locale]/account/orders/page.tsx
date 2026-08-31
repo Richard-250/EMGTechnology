@@ -1,5 +1,7 @@
 import type {Metadata} from 'next';
 import {query} from '@/lib/vendure/api';
+
+export const dynamic = 'force-dynamic';
 import {GetCustomerOrdersQuery} from '@/lib/vendure/queries';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/components/ui/table';
 import {

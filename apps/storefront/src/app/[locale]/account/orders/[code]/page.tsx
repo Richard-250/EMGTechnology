@@ -1,5 +1,7 @@
 import type {Metadata} from 'next';
 import {Suspense} from 'react';
+
+export const dynamic = 'force-dynamic';
 import {query} from '@/lib/vendure/api';
 import {GetOrderDetailQuery} from '@/lib/vendure/queries';
 import {getTranslations} from 'next-intl/server';
