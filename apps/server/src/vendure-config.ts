@@ -89,6 +89,15 @@ export const config: VendureConfig = {
                 description: [{ languageCode: LanguageCode.en, value: 'Price in major units (e.g. 50000)' }],
             },
         ],
+        Order: [
+            {
+                name: 'deliveryDate',
+                type: 'string',
+                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Delivery Date / Time' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Customer chosen delivery date for order fulfillment' }],
+            },
+        ],
     },
     plugins: [
         GraphiqlPlugin.init(),

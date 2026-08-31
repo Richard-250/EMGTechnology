@@ -67,10 +67,14 @@
 
 <mj-section css-class="bg-off-white">
     <mj-column>
-        <mj-text font-size="15px" font-weight="bold" color="#0C1210">Customer Contact & Shipping</mj-text>
+        <mj-text font-size="15px" font-weight="bold" color="#0C1210">Customer Contact & Delivery</mj-text>
         <mj-text font-size="13px" color="#4A5550">
             <strong>Email:</strong> {{ order.customer.emailAddress }}<br/>
             {{#if order.customer.phoneNumber}}<strong>Phone:</strong> {{ order.customer.phoneNumber }}<br/>{{/if}}
+            {{#if order.customFields.deliveryDate}}<strong>📅 Scheduled Delivery Date:</strong> <span style="color: #15803d; font-weight: bold;">{{ order.customFields.deliveryDate }}</span><br/>{{/if}}
+            {{#each order.shippingLines}}
+                <strong>🚚 Delivery Method:</strong> {{ shippingMethod.name }} ({{ formatMoney priceWithTax ../order.currencyCode 'en' }})<br/>
+            {{/each}}
             {{#with order.shippingAddress}}
                 <strong>Deliver To:</strong> {{ fullName }}<br/>
                 <ul class="address">
