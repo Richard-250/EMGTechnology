@@ -52,11 +52,16 @@ export default async function CheckoutPage() {
     const t = await getTranslations({locale, namespace: 'Checkout'});
     const isGuest = false;
 
-    let activeOrder: NonNullable<unknown> | null = null;
-    let addresses: NonNullable<unknown>[] = [];
-    let countries: NonNullable<unknown>[] = [];
-    let shippingMethods: NonNullable<unknown>[] = [];
-    let paymentMethods: NonNullable<unknown>[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let activeOrder: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let addresses: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let countries: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let shippingMethods: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let paymentMethods: any[] = [];
 
     try {
         const [orderRes, addressesRes, countriesRes, shippingMethodsRes, paymentMethodsRes] =

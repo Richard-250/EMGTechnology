@@ -8,12 +8,6 @@ import {OrderDetail} from './order-detail';
 
 type OrderDetailPageProps = PageProps<'/[locale]/account/orders/[code]'>;
 
-// Tell Next.js not to prerender any specific order codes at build time.
-// Orders are user-specific and require auth — always render on-demand.
-export async function generateStaticParams() {
-    return [];
-}
-
 export async function generateMetadata({params}: OrderDetailPageProps): Promise<Metadata> {
     const {code} = await params;
     const locale = await getRouteLocale();
@@ -28,9 +22,15 @@ export default async function OrderDetailPage(props: PageProps<'/[locale]/accoun
     const t = await getTranslations({locale, namespace: 'Common'});
 
     // Start the fetch in the page (dynamic parent) and pass promise into Suspense.
-    const orderPromise = props.params.then(({code}) =>
-        query(GetOrderDetailQuery, {code}, {useAuthToken: true, fetch: {}})
-    );
+    // Wrap in try-catch so build-time prerender doesn't fail if Vendure is offline.
+    const orderPromise = props.params.then(async ({code}) => {
+        try {
+            return await query(GetOrderDetailQuery, {code}, {useAuthToken: true, fetch: {}});
+        } catch {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return { data: { orderByCode: null } } as any;
+        }
+    });
 
     return (
         <Suspense fallback={<div className="p-8 text-center">{t('loading')}</div>}>

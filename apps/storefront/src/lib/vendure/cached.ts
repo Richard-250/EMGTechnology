@@ -10,6 +10,15 @@ type CollectionNavItem = {
 
 const COLLECTION_NAV_ORDER = ['Featured', 'Cardio', 'Strength', 'Home Gyms', 'Accessories'];
 
+const FALLBACK_CHANNEL = {
+    id: '__default_channel__',
+    code: '__default_channel__',
+    defaultLanguageCode: 'en' as const,
+    availableLanguageCodes: ['en'] as string[],
+    defaultCurrencyCode: 'USD' as const,
+    availableCurrencyCodes: ['USD', 'EUR', 'GBP', 'RWF'] as string[],
+};
+
 /** Remove duplicate collections created by repeated seed runs. */
 export function dedupeCollections(collections: CollectionNavItem[]): CollectionNavItem[] {
     const byName = new Map<string, CollectionNavItem>();
@@ -42,10 +51,10 @@ export async function getActiveChannelCached() {
 
     try {
         const result = await query(GetActiveChannelQuery);
-        return result.data.activeChannel;
+        return result.data.activeChannel ?? FALLBACK_CHANNEL;
     } catch {
-        // Return null gracefully if Vendure is unreachable (e.g. during build)
-        return null;
+        // Return default channel gracefully if Vendure is unreachable (e.g. during build)
+        return FALLBACK_CHANNEL;
     }
 }
 

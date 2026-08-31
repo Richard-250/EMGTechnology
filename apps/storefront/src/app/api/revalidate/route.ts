@@ -89,7 +89,8 @@ export async function POST(request: NextRequest) {
                     expanded.push(`${tag}-${locale}`);
                 }
             } else {
-                currencies ??= (await getActiveChannelCached()).availableCurrencyCodes as string[];
+                const activeChannel = await getActiveChannelCached();
+                currencies ??= (activeChannel?.availableCurrencyCodes as string[]) || ['USD'];
                 for (const locale of routing.locales) {
                     for (const currency of currencies) {
                         expanded.push(`${tag}-${locale}-${currency}`);

@@ -17,8 +17,10 @@ export default async function AddressesPage() {
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'Account'});
 
-    let addresses: NonNullable<unknown>[] = [];
-    let countries: NonNullable<unknown>[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let addresses: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let countries: any[] = [];
 
     try {
         const [addressesResult, countriesResult] = await Promise.all([

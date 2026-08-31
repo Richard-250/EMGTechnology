@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     turbopack: {
         root: path.join(__dirname, '../..'),
     },
+    cacheComponents: true,
     images: {
         // This is necessary to display images from your local Vendure instance
         dangerouslyAllowLocalIP: true,

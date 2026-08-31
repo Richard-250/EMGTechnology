@@ -1,4 +1,5 @@
 import type {Metadata} from 'next';
+import type {ResultOf} from 'gql.tada';
 import {query} from '@/lib/vendure/api';
 import {GetCustomerOrdersQuery} from '@/lib/vendure/queries';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/components/ui/table';
@@ -37,7 +38,7 @@ export default async function OrdersPage(props: PageProps<'/[locale]/account/ord
     const currentPage = parseInt(Array.isArray(pageParam) ? pageParam[0] : pageParam || '1', 10);
     const skip = (currentPage - 1) * ITEMS_PER_PAGE;
 
-    let data: Awaited<ReturnType<typeof query<typeof GetCustomerOrdersQuery>>>['data'];
+    let data: ResultOf<typeof GetCustomerOrdersQuery> | null = null;
     try {
         const result = await query(
             GetCustomerOrdersQuery,
@@ -59,7 +60,7 @@ export default async function OrdersPage(props: PageProps<'/[locale]/account/ord
         return redirect({href: '/sign-in', locale});
     }
 
-    if (!data.activeCustomer) {
+    if (!data?.activeCustomer) {
         return redirect({href: '/sign-in', locale});
     }
     const t = await getTranslations({locale, namespace: 'Account'});
