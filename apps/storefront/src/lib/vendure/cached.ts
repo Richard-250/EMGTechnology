@@ -40,8 +40,13 @@ export async function getActiveChannelCached() {
     'use cache';
     cacheLife('hours');
 
-    const result = await query(GetActiveChannelQuery);
-    return result.data.activeChannel;
+    try {
+        const result = await query(GetActiveChannelQuery);
+        return result.data.activeChannel;
+    } catch {
+        // Return null gracefully if Vendure is unreachable (e.g. during build)
+        return null;
+    }
 }
 
 /**
@@ -54,8 +59,13 @@ export async function getAvailableCountriesCached(locale: string) {
     cacheLife('max');
     cacheTag(`countries-${locale}`);
 
-    const result = await query(GetAvailableCountriesQuery, undefined, {languageCode: locale});
-    return result.data.availableCountries || [];
+    try {
+        const result = await query(GetAvailableCountriesQuery, undefined, {languageCode: locale});
+        return result.data.availableCountries || [];
+    } catch {
+        // Return empty array gracefully if Vendure is unreachable (e.g. during build)
+        return [];
+    }
 }
 
 /**
@@ -68,6 +78,11 @@ export async function getTopCollections(locale: string) {
     cacheLife('days');
     cacheTag(`collections-${locale}`);
 
-    const result = await query(GetTopCollectionsQuery, undefined, {languageCode: locale});
-    return dedupeCollections(result.data.collections.items);
+    try {
+        const result = await query(GetTopCollectionsQuery, undefined, {languageCode: locale});
+        return dedupeCollections(result.data.collections.items);
+    } catch {
+        // Return empty array gracefully if Vendure is unreachable (e.g. during build)
+        return [];
+    }
 }
