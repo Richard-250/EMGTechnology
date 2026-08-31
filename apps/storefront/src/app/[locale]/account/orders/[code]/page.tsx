@@ -1,7 +1,5 @@
 import type {Metadata} from 'next';
 import {Suspense} from 'react';
-
-export const dynamic = 'force-dynamic';
 import {query} from '@/lib/vendure/api';
 import {GetOrderDetailQuery} from '@/lib/vendure/queries';
 import {getTranslations} from 'next-intl/server';
@@ -9,6 +7,12 @@ import {getRouteLocale} from '@/i18n/server';
 import {OrderDetail} from './order-detail';
 
 type OrderDetailPageProps = PageProps<'/[locale]/account/orders/[code]'>;
+
+// Tell Next.js not to prerender any specific order codes at build time.
+// Orders are user-specific and require auth — always render on-demand.
+export async function generateStaticParams() {
+    return [];
+}
 
 export async function generateMetadata({params}: OrderDetailPageProps): Promise<Metadata> {
     const {code} = await params;

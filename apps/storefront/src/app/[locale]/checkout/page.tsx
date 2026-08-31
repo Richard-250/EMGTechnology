@@ -1,6 +1,4 @@
 import type {Metadata} from 'next';
-
-export const dynamic = 'force-dynamic';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {getRouteLocale} from '@/i18n/server';
 import {getTranslations} from 'next-intl/server';
@@ -31,7 +29,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function CheckoutPage() {
     const locale = await getRouteLocale();
     const tAuth = await getTranslations({locale, namespace: 'Auth'});
-    const customer = await getActiveCustomer();
+
+    let customer;
+    try {
+        customer = await getActiveCustomer();
+    } catch {
+        // Vendure unreachable — redirect to sign-in
+        return redirect({href: '/sign-in', locale});
+    }
 
     if (!customer) {
         return redirect({
@@ -47,29 +52,40 @@ export default async function CheckoutPage() {
     const t = await getTranslations({locale, namespace: 'Checkout'});
     const isGuest = false;
 
-    const [orderRes, addressesRes, countries, shippingMethodsRes, paymentMethodsRes] =
-        await Promise.all([
-            query(GetActiveOrderForCheckoutQuery, {}, {useAuthToken: true, currencyCode}),
-            query(GetCustomerAddressesQuery, {}, {useAuthToken: true}),
-            getAvailableCountriesCached(locale),
-            query(GetEligibleShippingMethodsQuery, {}, {useAuthToken: true, currencyCode}),
-            query(GetEligiblePaymentMethodsQuery, {}, {useAuthToken: true, currencyCode}),
-        ]);
+    let activeOrder: NonNullable<unknown> | null = null;
+    let addresses: NonNullable<unknown>[] = [];
+    let countries: NonNullable<unknown>[] = [];
+    let shippingMethods: NonNullable<unknown>[] = [];
+    let paymentMethods: NonNullable<unknown>[] = [];
 
-    const activeOrder = orderRes.data.activeOrder;
+    try {
+        const [orderRes, addressesRes, countriesRes, shippingMethodsRes, paymentMethodsRes] =
+            await Promise.all([
+                query(GetActiveOrderForCheckoutQuery, {}, {useAuthToken: true, currencyCode}),
+                query(GetCustomerAddressesQuery, {}, {useAuthToken: true}),
+                getAvailableCountriesCached(locale),
+                query(GetEligibleShippingMethodsQuery, {}, {useAuthToken: true, currencyCode}),
+                query(GetEligiblePaymentMethodsQuery, {}, {useAuthToken: true, currencyCode}),
+            ]);
 
-    if (!activeOrder || activeOrder.lines.length === 0) {
+        activeOrder = orderRes.data.activeOrder ?? null;
+        addresses = addressesRes.data.activeCustomer?.addresses || [];
+        countries = countriesRes;
+        shippingMethods = shippingMethodsRes.data.eligibleShippingMethods || [];
+        paymentMethods =
+            paymentMethodsRes.data.eligiblePaymentMethods?.filter((m) => m.isEligible) || [];
+    } catch {
         return redirect({href: '/cart', locale});
     }
 
-    if (activeOrder.state !== 'AddingItems' && activeOrder.state !== 'ArrangingPayment') {
-        return redirect({href: `/order-confirmation/${activeOrder.code}`, locale});
+    if (!activeOrder || (activeOrder as {lines: unknown[]}).lines.length === 0) {
+        return redirect({href: '/cart', locale});
     }
 
-    const addresses = addressesRes.data.activeCustomer?.addresses || [];
-    const shippingMethods = shippingMethodsRes.data.eligibleShippingMethods || [];
-    const paymentMethods =
-        paymentMethodsRes.data.eligiblePaymentMethods?.filter((m) => m.isEligible) || [];
+    const order = activeOrder as {state: string; code: string; lines: unknown[]};
+    if (order.state !== 'AddingItems' && order.state !== 'ArrangingPayment') {
+        return redirect({href: `/order-confirmation/${order.code}`, locale});
+    }
 
     return (
         <div className="min-h-screen bg-muted/40">

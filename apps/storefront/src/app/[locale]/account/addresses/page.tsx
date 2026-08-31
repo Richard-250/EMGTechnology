@@ -1,8 +1,6 @@
 import type {Metadata} from 'next';
 import {getRouteLocale} from '@/i18n/server';
 import { query } from '@/lib/vendure/api';
-
-export const dynamic = 'force-dynamic';
 import { GetCustomerAddressesQuery, GetAvailableCountriesQuery } from '@/lib/vendure/queries';
 import { AddressesClient } from './addresses-client';
 import {getTranslations} from 'next-intl/server';
@@ -18,13 +16,21 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AddressesPage() {
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'Account'});
-    const [addressesResult, countriesResult] = await Promise.all([
-        query(GetCustomerAddressesQuery, {}, { useAuthToken: true }),
-        query(GetAvailableCountriesQuery, {}, { languageCode: locale }),
-    ]);
 
-    const addresses = addressesResult.data.activeCustomer?.addresses || [];
-    const countries = countriesResult.data.availableCountries || [];
+    let addresses: NonNullable<unknown>[] = [];
+    let countries: NonNullable<unknown>[] = [];
+
+    try {
+        const [addressesResult, countriesResult] = await Promise.all([
+            query(GetCustomerAddressesQuery, {}, { useAuthToken: true }),
+            query(GetAvailableCountriesQuery, {}, { languageCode: locale }),
+        ]);
+        addresses = addressesResult.data.activeCustomer?.addresses || [];
+        countries = countriesResult.data.availableCountries || [];
+    } catch {
+        // If Vendure is unreachable at build time, render with empty data.
+        // At runtime the data will load correctly.
+    }
 
     return (
         <div className="space-y-6">
