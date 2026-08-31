@@ -7,9 +7,9 @@ import { OrderStateTransitionEvent } from '@vendure/core';
 export const adminOrderNotificationHandler = new EmailEventListener('admin-order-notification')
     .on(OrderStateTransitionEvent)
     .filter(event =>
-        event.toState === 'PaymentSettled' ||
-        event.toState === 'PaymentAuthorized' ||
-        (event.fromState === 'ArrangingPayment' && event.toState === 'PaymentSettled')
+        ((event.toState as string) === 'PaymentSettled' || (event.toState as string) === 'PaymentAuthorized') &&
+        (event.fromState as string) !== 'Modifying' &&
+        (event.fromState as string) !== 'ArrangingAdditionalPayment'
     )
     .setRecipient(event => process.env.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_EMAIL || 'info@emgtechnologyltd.com')
     .setFrom('{{ fromAddress }}')
