@@ -5,6 +5,8 @@ node_modules
 .DS_Store
 .next
 dist
+!apps/server/dist/dashboard/
+!apps/server/dist/dashboard/**
 apps/server/vendure.sqlite
 apps/server/static/assets
 apps/server/static/email/test-emails
