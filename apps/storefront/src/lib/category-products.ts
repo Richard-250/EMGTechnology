@@ -17,23 +17,26 @@ export async function getCategoryProductsMap(
     const collections = await getTopCollections(locale);
     const entries = await Promise.all(
         collections.map(async collection => {
-            const result = await query(
-                GetCollectionProductsQuery,
-                {
-                    slug: collection.slug,
-                    input: {
-                        collectionSlug: collection.slug,
-                        take: 10,
-                        skip: 0,
-                        groupByProduct: true,
+            try {
+                const result = await query(
+                    GetCollectionProductsQuery,
+                    {
+                        slug: collection.slug,
+                        input: {
+                            collectionSlug: collection.slug,
+                            take: 10,
+                            skip: 0,
+                            groupByProduct: true,
+                        },
                     },
-                },
-                {languageCode: locale, currencyCode},
-            );
+                    {languageCode: locale, currencyCode},
+                );
 
-            const products = result.data.search.items.map(item => serializeProductCard(item));
-
-            return [collection.slug, products] as const;
+                const products = (result.data?.search?.items || []).map(item => serializeProductCard(item));
+                return [collection.slug, products] as const;
+            } catch {
+                return [collection.slug, []] as const;
+            }
         }),
     );
 

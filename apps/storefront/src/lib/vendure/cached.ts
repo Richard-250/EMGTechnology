@@ -19,6 +19,18 @@ const FALLBACK_CHANNEL = {
     availableCurrencyCodes: ['USD', 'EUR', 'GBP', 'RWF'] as string[],
 };
 
+/**
+ * Hardcoded fallback collections so the navigation always renders,
+ * even when the API is unreachable during build.
+ */
+const FALLBACK_COLLECTIONS: CollectionNavItem[] = [
+    {id: 'fb-featured', name: 'Featured', slug: 'featured'},
+    {id: 'fb-cardio', name: 'Cardio', slug: 'cardio'},
+    {id: 'fb-strength', name: 'Strength', slug: 'strength'},
+    {id: 'fb-home-gyms', name: 'Home Gyms', slug: 'home-gyms'},
+    {id: 'fb-accessories', name: 'Accessories', slug: 'accessories'},
+];
+
 /** Remove duplicate collections created by repeated seed runs. */
 export function dedupeCollections(collections: CollectionNavItem[]): CollectionNavItem[] {
     const byName = new Map<string, CollectionNavItem>();
@@ -53,7 +65,7 @@ export async function getActiveChannelCached() {
         const result = await query(GetActiveChannelQuery);
         return result.data.activeChannel ?? FALLBACK_CHANNEL;
     } catch {
-        // Return default channel gracefully if Vendure is unreachable (e.g. during build)
+        // Return default channel gracefully if API is unreachable (e.g. during build)
         return FALLBACK_CHANNEL;
     }
 }
@@ -72,7 +84,7 @@ export async function getAvailableCountriesCached(locale: string) {
         const result = await query(GetAvailableCountriesQuery, undefined, {languageCode: locale});
         return result.data.availableCountries || [];
     } catch {
-        // Return empty array gracefully if Vendure is unreachable (e.g. during build)
+        // Return empty array gracefully if API is unreachable (e.g. during build)
         return [];
     }
 }
@@ -81,6 +93,7 @@ export async function getAvailableCountriesCached(locale: string) {
  * Get top-level collections with caching enabled.
  * Collections rarely change, so we cache them for 1 day.
  * Collection names are translatable, so locale is required.
+ * Falls back to hardcoded collections if the API is unreachable.
  */
 export async function getTopCollections(locale: string) {
     'use cache';
@@ -89,9 +102,11 @@ export async function getTopCollections(locale: string) {
 
     try {
         const result = await query(GetTopCollectionsQuery, undefined, {languageCode: locale});
-        return dedupeCollections(result.data.collections.items);
+        const collections = dedupeCollections(result.data.collections.items);
+        // If the API returned an empty list, use the fallback so the nav always shows
+        return collections.length > 0 ? collections : FALLBACK_COLLECTIONS;
     } catch {
-        // Return empty array gracefully if Vendure is unreachable (e.g. during build)
-        return [];
+        // Return fallback collections so the navigation always renders
+        return FALLBACK_COLLECTIONS;
     }
 }

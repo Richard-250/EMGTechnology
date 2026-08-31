@@ -87,7 +87,7 @@ sed -i 's/DB_SYNCHRONIZE=true/DB_SYNCHRONIZE=false/g' apps/server/.env
 echo ">>> [8/8] Building Server & Admin Dashboard..."
 npm run build -w server
 
-echo ">>> Starting Vendure Backend for Storefront build..."
+echo ">>> Starting EMG Backend for Storefront build..."
 pm2 start ecosystem.config.cjs --only emg-server
 sleep 6
 
@@ -120,7 +120,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Vendure API, Admin Dashboard & Assets
+    # EMG API, Admin Dashboard & Assets
     location ~ ^/(shop-api|admin-api|dashboard|assets) {
         proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
