@@ -10,6 +10,7 @@ import {
 } from '@vendure/core';
 import { config } from './vendure-config';
 import { configurePaymentMethods } from './configure-payment-methods';
+import { configureShippingMethods } from './configure-shipping-methods';
 
 const loggerCtx = 'ConfigureStore';
 
@@ -83,6 +84,7 @@ async function run() {
 
     await configureChannelAndUsdPrices(app);
     await configurePaymentMethods(app);
+    await configureShippingMethods(app);
     await app.close();
     process.exit(0);
 }

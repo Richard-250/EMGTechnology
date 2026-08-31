@@ -10,6 +10,7 @@ import { populate } from '@vendure/core/cli';
 import path from 'path';
 import { configureChannelAndUsdPrices } from './configure-store';
 import { configurePaymentMethods } from './configure-payment-methods';
+import { configureShippingMethods } from './configure-shipping-methods';
 import { config } from './vendure-config';
 import { initialData } from './initial-data';
 
@@ -51,6 +52,7 @@ async function seed() {
 
     await configureChannelAndUsdPrices(app);
     await configurePaymentMethods(app);
+    await configureShippingMethods(app);
 
     const ctx = await requestContextService.create({
         apiType: 'admin',

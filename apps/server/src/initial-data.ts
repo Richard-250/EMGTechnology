@@ -19,8 +19,9 @@ export const initialData: InitialData = {
         { name: 'Zero Tax', percentage: 0 },
     ],
     shippingMethods: [
-        { name: 'Standard Shipping', price: 1500 },
-        { name: 'Express Shipping', price: 3500 },
+        { name: 'Kigali - Moto-taxi', price: 0 },
+        { name: 'Pickup at Store', price: 0 },
+        { name: 'Express 2-Hour - Kigali', price: 350000 },
     ],
     paymentMethods: [
         {
