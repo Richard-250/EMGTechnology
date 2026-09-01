@@ -231,14 +231,14 @@ export function ProductPreviewModal({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
-                className="!w-[96vw] !max-w-[1240px] !top-6 sm:!top-8 md:!top-10 !translate-y-0 max-h-[94vh] rounded-2xl md:rounded-3xl p-0 overflow-hidden bg-white dark:bg-card border border-border/80 shadow-2xl relative flex flex-col"
+                className="w-[96vw] max-w-[1240px] top-3 sm:top-4 md:top-6 left-1/2 -translate-x-1/2 translate-y-0 max-h-[94vh] rounded-2xl md:rounded-3xl p-0 overflow-hidden bg-white dark:bg-card border border-border/80 shadow-2xl relative flex flex-col"
                 showCloseButton={false}
             >
                 {/* Floating Black Circle Close Button (AliExpress Style) */}
                 <button
                     type="button"
                     onClick={() => onOpenChange(false)}
-                    className="absolute top-3.5 right-3.5 z-50 flex size-8 items-center justify-center rounded-full bg-black/80 hover:bg-black text-white transition-all cursor-pointer shadow-md"
+                    className="absolute top-3 right-3 z-50 flex size-8 items-center justify-center rounded-full bg-black/80 hover:bg-black text-white transition-all cursor-pointer shadow-md"
                     aria-label="Close preview"
                 >
                     <X className="size-4" />
@@ -249,8 +249,8 @@ export function ProductPreviewModal({
                     <DialogDescription>AliExpress style product preview modal</DialogDescription>
                 </DialogHeader>
 
-                <div className="overflow-y-auto p-4 sm:p-5 lg:p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-5 lg:gap-7">
+                <div className="overflow-y-auto p-3.5 sm:p-4 lg:p-5 max-h-[calc(94vh-0.5rem)]">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6">
                         
                         {/* ======================================================== */}
                         {/* COLUMN 1: AliExpress-style Image Gallery + Zoom (5 cols) */}
@@ -541,7 +541,7 @@ export function ProductPreviewModal({
                                     type="button"
                                     onClick={handleAddToCart}
                                     disabled={isPending || isBuyNowPending}
-                                    className="w-full bg-[#e02b2b] hover:bg-[#c82020] text-white font-bold py-5 rounded-xl shadow-xs text-sm transition-all cursor-pointer"
+                                    className="w-full bg-[#e02b2b] hover:bg-[#c82020] text-white font-bold h-11 rounded-xl shadow-xs text-sm transition-all cursor-pointer"
                                 >
                                     {isPending ? (
                                         <Loader2 className="size-4 animate-spin mr-1.5" />
@@ -556,7 +556,7 @@ export function ProductPreviewModal({
                                     type="button"
                                     onClick={handleBuyNow}
                                     disabled={isPending || isBuyNowPending}
-                                    className="w-full bg-[#ff9900] hover:bg-[#e68a00] text-black font-bold py-5 rounded-xl shadow-xs text-sm transition-all cursor-pointer"
+                                    className="w-full bg-[#ff9900] hover:bg-[#e68a00] text-black font-bold h-11 rounded-xl shadow-xs text-sm transition-all cursor-pointer"
                                 >
                                     {isBuyNowPending ? (
                                         <Loader2 className="size-4 animate-spin mr-1.5" />
