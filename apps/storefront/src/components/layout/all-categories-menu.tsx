@@ -23,6 +23,8 @@ import {resolveProductImage} from '@/lib/product-images';
 import {CATEGORY_SUB_LINKS} from '@/lib/search-catalog';
 import type {SerializedProductCard} from '@/lib/product-price';
 
+import {ProductPreviewModal} from '@/components/commerce/product-preview-modal';
+
 export interface CategoryMenuItem {
     id: string;
     name: string;
@@ -55,6 +57,66 @@ const CATEGORY_ICONS: Record<string, typeof Star> = {
 function CategoryIcon({slug}: {slug: string}) {
     const Icon = CATEGORY_ICONS[slug] ?? LayoutGrid;
     return <Icon className="size-4 shrink-0 opacity-70" aria-hidden />;
+}
+
+function MegaMenuProductCard({
+    product,
+    onNavigate,
+}: {
+    product: SerializedProductCard;
+    onNavigate?: () => void;
+}) {
+    const [previewOpen, setPreviewOpen] = useState(false);
+
+    const modalData = {
+        productId: product.productId,
+        productVariantId: product.productVariantId,
+        productName: product.productName,
+        slug: product.slug,
+        imageSrc: resolveProductImage(product.image, product.slug),
+        currencyCode: product.currencyCode,
+        price: product.price,
+        priceMin: product.priceMin,
+        priceMax: product.priceMax,
+        isPriceRange: false,
+    };
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => {
+                    setPreviewOpen(true);
+                    onNavigate?.();
+                }}
+                className="group shrink-0 w-[5.5rem] text-left cursor-pointer focus-visible:outline-none"
+            >
+                <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-1 border border-border/50 group-hover:border-electric/50 transition-colors">
+                    <Image
+                        src={modalData.imageSrc}
+                        alt=""
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                        sizes="88px"
+                    />
+                </div>
+                <p className="text-[10px] leading-tight line-clamp-2 text-muted-foreground group-hover:text-foreground transition-colors">
+                    {product.productName}
+                </p>
+                {product.price != null && (
+                    <p className="text-[10px] font-semibold text-electric mt-0.5">
+                        <Price value={product.price} currencyCode={product.currencyCode} />
+                    </p>
+                )}
+            </button>
+
+            <ProductPreviewModal
+                open={previewOpen}
+                onOpenChange={setPreviewOpen}
+                initialData={modalData}
+            />
+        </>
+    );
 }
 
 function CategoryMegaPanel({
@@ -90,30 +152,11 @@ function CategoryMegaPanel({
                     <p className="text-xs font-bold mb-2">{recommendedLabel}</p>
                     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
                         {products.slice(0, 8).map(product => (
-                            <Link
+                            <MegaMenuProductCard
                                 key={product.productId}
-                                href={`/product/${product.slug}`}
-                                onClick={onNavigate}
-                                className="group shrink-0 w-[5.5rem]"
-                            >
-                                <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-1">
-                                    <Image
-                                        src={resolveProductImage(product.image, product.slug)}
-                                        alt=""
-                                        fill
-                                        className="object-cover group-hover:scale-105 transition-transform"
-                                        sizes="88px"
-                                    />
-                                </div>
-                                <p className="text-[10px] leading-tight line-clamp-2 text-muted-foreground group-hover:text-foreground">
-                                    {product.productName}
-                                </p>
-                                {product.price != null && (
-                                    <p className="text-[10px] font-semibold text-electric mt-0.5">
-                                        <Price value={product.price} currencyCode={product.currencyCode} />
-                                    </p>
-                                )}
-                            </Link>
+                                product={product}
+                                onNavigate={onNavigate}
+                            />
                         ))}
                     </div>
                 </div>
