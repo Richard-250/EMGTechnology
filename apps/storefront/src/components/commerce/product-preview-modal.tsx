@@ -35,9 +35,15 @@ import {
     ExternalLink,
     Loader2,
     ZoomIn,
+    Heart,
+    MessageSquare,
+    Store,
+    X,
+    Tag,
 } from 'lucide-react';
 import {cn} from '@/lib/utils';
 import type {ProductCardData} from '@/components/commerce/product-card-interactive';
+import {COMPANY} from '@/lib/company';
 
 interface ProductPreviewModalProps {
     open: boolean;
@@ -54,6 +60,8 @@ export function ProductPreviewModal({
     const {showConfirmation} = useCartConfirmation();
     const [isPending, startTransition] = useTransition();
     const [isBuyNowPending, startBuyNowTransition] = useTransition();
+    const [wishlistCount, setWishlistCount] = useState(797);
+    const [isWishlisted, setIsWishlisted] = useState(false);
 
     // Full product detail state
     const [detail, setDetail] = useState<{
@@ -75,6 +83,11 @@ export function ProductPreviewModal({
             name: string;
             options: Array<{ id: string; name: string; code: string }>;
         }>;
+        customFields?: {
+            isDiscounted?: boolean;
+            discountPercentage?: number;
+            originalPrice?: number;
+        };
         currencyCode: string;
     } | null>(null);
 
@@ -210,47 +223,51 @@ export function ProductPreviewModal({
         });
     };
 
+    const toggleWishlist = () => {
+        setIsWishlisted(!isWishlisted);
+        setWishlistCount(c => (isWishlisted ? c - 1 : c + 1));
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="!fixed !inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !max-w-none !w-screen !h-screen !rounded-none p-0 overflow-hidden border-0 bg-background flex flex-col" showCloseButton={true}>
+            <DialogContent 
+                className="max-w-6xl w-[96vw] max-h-[92vh] rounded-2xl md:rounded-3xl p-0 overflow-hidden bg-white dark:bg-card border border-border/80 shadow-2xl relative flex flex-col"
+                showCloseButton={false}
+            >
+                {/* Floating Black Circle Close Button (AliExpress Style) */}
+                <button
+                    type="button"
+                    onClick={() => onOpenChange(false)}
+                    className="absolute top-3.5 right-3.5 z-50 flex size-8 items-center justify-center rounded-full bg-black/80 hover:bg-black text-white transition-all cursor-pointer shadow-md"
+                    aria-label="Close preview"
+                >
+                    <X className="size-4" />
+                </button>
+
                 <DialogHeader className="sr-only">
                     <DialogTitle>{initialData.productName}</DialogTitle>
-                    <DialogDescription>Quick preview and instant purchase</DialogDescription>
+                    <DialogDescription>AliExpress style product preview modal</DialogDescription>
                 </DialogHeader>
 
-                {/* Visible top header bar */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-border/60 bg-background/95 backdrop-blur-sm shrink-0">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                            Quick Preview
-                        </span>
-                        <h2 className="font-bold text-sm sm:text-base text-foreground truncate">{initialData.productName}</h2>
-                    </div>
-                    <Link
-                        href={`/product/${initialData.slug}`}
-                        onClick={() => onOpenChange(false)}
-                        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium hover:underline transition-colors shrink-0"
-                    >
-                        <ExternalLink className="size-3.5" />
-                        <span className="hidden sm:inline">Full Details</span>
-                    </Link>
-                </div>
-
-                <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2" style={{height: 'calc(100vh - 53px)'}}>
-                        {/* LEFT COLUMN: Full-height Image Gallery + Interactive Zoom */}
-                        <div className="flex flex-row gap-3 p-4 lg:p-6 bg-muted/20 border-r border-border/50">
+                <div className="overflow-y-auto p-4 sm:p-6 lg:p-7">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
+                        
+                        {/* ======================================================== */}
+                        {/* COLUMN 1: AliExpress-style Image Gallery + Zoom (5 cols) */}
+                        {/* ======================================================== */}
+                        <div className="md:col-span-5 flex flex-row gap-3">
                             {/* Vertical Thumbnail Strip */}
                             {images.length > 1 && (
-                                <div className="flex flex-col gap-2 overflow-y-auto max-h-full scrollbar-thin shrink-0">
+                                <div className="flex flex-col gap-2 overflow-y-auto max-h-[380px] lg:max-h-[420px] scrollbar-thin shrink-0 pr-0.5">
                                     {images.map((img, i) => (
                                         <button
                                             key={img.id || i}
                                             type="button"
                                             onClick={() => setSelectedImageIndex(i)}
                                             className={cn(
-                                                'relative size-16 lg:size-20 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer bg-muted',
+                                                'relative size-14 sm:size-16 rounded-lg overflow-hidden border-2 shrink-0 transition-all cursor-pointer bg-muted',
                                                 selectedImageIndex === i
-                                                    ? 'border-red-500 dark:border-red-400 ring-2 ring-red-500/20'
+                                                    ? 'border-[#e02b2b] ring-2 ring-[#e02b2b]/20 shadow-xs'
                                                     : 'border-border/70 hover:border-foreground/40 opacity-75 hover:opacity-100',
                                             )}
                                         >
@@ -266,13 +283,13 @@ export function ProductPreviewModal({
                                 </div>
                             )}
 
-                            {/* Main Zoomable Image Box */}
+                            {/* Main Zoomable Image Container */}
                             <div
                                 ref={imageContainerRef}
                                 onMouseEnter={() => setIsZooming(true)}
                                 onMouseLeave={() => setIsZooming(false)}
                                 onMouseMove={handleMouseMove}
-                                className="relative flex-1 aspect-square rounded-2xl overflow-hidden border border-border/80 bg-muted/30 cursor-crosshair group select-none"
+                                className="relative flex-1 aspect-square rounded-xl overflow-hidden border border-border/80 bg-muted/20 cursor-crosshair group select-none"
                             >
                                 <Image
                                     src={activeImage.preview}
@@ -289,198 +306,298 @@ export function ProductPreviewModal({
                                               }
                                             : undefined
                                     }
-                                    sizes="(max-width: 1024px) 100vw, 50vw"
+                                    sizes="(max-width: 768px) 100vw, 480px"
                                     priority
                                 />
 
-                                {discount != null && (
-                                    <span className="absolute top-3 left-3 z-10 rounded-md bg-red-600 text-white text-xs font-extrabold px-2.5 py-1 shadow-md">
-                                        -{discount}% OFF
+                                {activeDiscount != null && (
+                                    <span className="absolute top-2.5 left-2.5 z-10 rounded-sm bg-[#e02b2b] text-white text-xs font-black px-2 py-0.5 shadow-sm">
+                                        -{activeDiscount}% OFF
                                     </span>
                                 )}
 
-                                <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-xs text-white text-[11px] px-2.5 py-1 pointer-events-none opacity-80 group-hover:opacity-0 transition-opacity">
+                                <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full bg-black/65 backdrop-blur-xs text-white text-[11px] px-2.5 py-1 pointer-events-none opacity-80 group-hover:opacity-0 transition-opacity">
                                     <ZoomIn className="size-3.5" />
                                     Hover to Zoom
                                 </div>
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN: Product Details, Color Swatches & Action Buttons */}
-                        <div className="flex flex-col h-full overflow-y-auto">
-                            <div className="flex-1 space-y-4 p-5 lg:p-7">
-                                {/* Title */}
-                                <h3 className="font-bold text-xl sm:text-2xl lg:text-3xl text-foreground leading-snug">
-                                    {initialData.productName}
-                                </h3>
+                        {/* ======================================================== */}
+                        {/* COLUMN 2: Product Info, Price & Color Swatches (4 cols) */}
+                        {/* ======================================================== */}
+                        <div className="md:col-span-4 space-y-3.5 md:border-r md:border-border/60 md:pr-4">
+                            {/* Product Title */}
+                            <h3 className="font-bold text-sm sm:text-base lg:text-lg text-foreground leading-snug">
+                                {initialData.productName}
+                            </h3>
 
-                                {/* Rating & Sold Stats */}
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                    <div className="flex items-center gap-1 text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md">
-                                        <Star className="size-3.5 fill-amber-500" />
-                                        <span>{rating.stars}</span>
-                                    </div>
-                                    <span>·</span>
-                                    <span className="font-medium">{rating.count} Reviews</span>
-                                    <span>·</span>
-                                    <span className="font-medium text-foreground">{sold} sold</span>
+                            {/* Sold and Rating stats */}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span className="font-semibold text-foreground">{sold} sold</span>
+                                <span>·</span>
+                                <div className="flex items-center gap-1 text-amber-500 font-bold">
+                                    <Star className="size-3.5 fill-amber-500" />
+                                    <span>{rating.stars}</span>
+                                </div>
+                                <span>({rating.count} reviews)</span>
+                            </div>
+
+                            {/* Big Red AliExpress Price Section */}
+                            <div className="space-y-1.5 pt-1">
+                                <div className="flex flex-wrap items-baseline gap-2">
+                                    <span className="text-2xl sm:text-3xl font-black text-[#e02b2b] tracking-tight">
+                                        <Price value={currentPrice} currencyCode={currencyCode} />
+                                    </span>
+                                    {activeDiscount != null && (
+                                        <span className="text-xs font-bold text-[#e02b2b]">
+                                            {activeDiscount}% off
+                                        </span>
+                                    )}
+                                    {wasPrice != null && (
+                                        <span className="text-xs sm:text-sm text-muted-foreground line-through">
+                                            <Price value={wasPrice} currencyCode={currencyCode} />
+                                        </span>
+                                    )}
                                 </div>
 
-                                {/* Large Price Banner */}
-                                <div className="rounded-xl bg-muted/40 p-3.5 border border-border/60 space-y-1.5">
-                                    <div className="flex items-baseline gap-2.5">
-                                        <span className="text-3xl sm:text-4xl font-extrabold text-red-600 dark:text-red-500 tracking-tight">
-                                            <Price value={currentPrice} currencyCode={currencyCode} />
-                                        </span>
-                                        {wasPrice != null && (
-                                            <span className="text-sm sm:text-base text-muted-foreground line-through font-medium">
-                                                <Price value={wasPrice} currencyCode={currencyCode} />
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {discountSavings != null && (
-                                        <div className="inline-flex items-center gap-1.5 text-xs font-bold text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 px-2.5 py-1 rounded-md">
-                                            <span>%</span>
-                                            <span>
-                                                Save <Price value={discountSavings} currencyCode={currencyCode} /> with Super Deal
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    <p className="text-[11px] text-muted-foreground">
+                                {/* Wholesale / Super Deal Tag Strip */}
+                                <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                                    <span className="inline-flex items-center gap-1 bg-red-100 dark:bg-red-950/60 text-[#e02b2b] font-bold px-1.5 py-0.5 rounded-xs">
+                                        <Tag className="size-3" />
+                                        Super Deal
+                                    </span>
+                                    <span className="text-muted-foreground">
                                         Tax included · Free delivery across Rwanda
+                                    </span>
+                                </div>
+
+                                {discountSavings != null && (
+                                    <div className="flex items-center justify-between rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-2.5 py-1.5 text-xs text-[#e02b2b] font-bold">
+                                        <span>% Save <Price value={discountSavings} currencyCode={currencyCode} /> with instant discount</span>
+                                        <span className="text-[11px]">›</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Color / Variant Swatch Selector */}
+                            <div className="space-y-2 pt-2 border-t border-border/60">
+                                <div className="text-xs">
+                                    <span className="text-muted-foreground">Color / Option: </span>
+                                    <span className="font-bold text-foreground">
+                                        {selectedVariant?.name || 'Standard'}
+                                    </span>
+                                </div>
+
+                                {detail?.variants && detail.variants.length > 1 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {detail.variants.map((v, idx) => {
+                                            const active = selectedVariantId === v.id;
+                                            const swatchImg = images[idx % images.length]?.preview || initialData.imageSrc;
+                                            return (
+                                                <button
+                                                    key={v.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedVariantId(v.id);
+                                                        setSelectedImageIndex(idx % images.length);
+                                                    }}
+                                                    className={cn(
+                                                        'relative p-1 rounded-lg border-2 transition-all cursor-pointer bg-card',
+                                                        active
+                                                            ? 'border-[#e02b2b] ring-2 ring-[#e02b2b]/20 shadow-xs'
+                                                            : 'border-border/80 hover:border-foreground/50 opacity-80 hover:opacity-100',
+                                                    )}
+                                                    title={v.name}
+                                                >
+                                                    <div className="relative size-10 rounded-md overflow-hidden bg-muted">
+                                                        <Image
+                                                            src={swatchImg}
+                                                            alt={v.name}
+                                                            fill
+                                                            className="object-cover"
+                                                            sizes="40px"
+                                                        />
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative size-10 rounded-lg overflow-hidden border-2 border-[#e02b2b] bg-muted">
+                                            <Image
+                                                src={initialData.imageSrc}
+                                                alt=""
+                                                fill
+                                                className="object-cover"
+                                                sizes="40px"
+                                            />
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">Standard Edition</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Product Short Description */}
+                            {detail?.description && (
+                                <div className="pt-2 border-t border-border/60">
+                                    <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+                                        {detail.description.replace(/<[^>]*>?/gm, '')}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ======================================================== */}
+                        {/* COLUMN 3: Store Info, Shipping & Action Buttons (3 cols) */}
+                        {/* ======================================================== */}
+                        <div className="md:col-span-3 flex flex-col justify-between space-y-4">
+                            <div className="space-y-3.5">
+                                {/* Sold By Store Card */}
+                                <div className="space-y-1 pb-3 border-b border-border/60">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground">Sold By</span>
+                                        <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                                            <MessageSquare className="size-3" />
+                                            Message
+                                        </span>
+                                    </div>
+                                    <p className="font-bold text-xs sm:text-sm text-foreground truncate">
+                                        {COMPANY.legalName}
                                     </p>
                                 </div>
 
-                                {/* Color / Variant Swatch Selector */}
-                                {detail?.variants && detail.variants.length > 1 && (
-                                    <div className="space-y-2 pt-1">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="font-semibold text-foreground">
-                                                Color / Option:{' '}
-                                                <span className="text-muted-foreground font-normal">
-                                                    {selectedVariant?.name || 'Selected'}
-                                                </span>
-                                            </span>
+                                {/* Service Commitment Section (Green Header AliExpress Style) */}
+                                <div className="space-y-2 text-xs">
+                                    <p className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                                        Service commitment
+                                    </p>
+                                    
+                                    <div className="space-y-2 text-muted-foreground">
+                                        <div className="flex items-start gap-2">
+                                            <Truck className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-bold text-foreground text-xs">Shipping: Free Delivery</p>
+                                                <p className="text-[11px]">Delivery: Fast 2-Hour in Kigali</p>
+                                            </div>
                                         </div>
 
-                                        <div className="flex flex-wrap gap-2">
-                                            {detail.variants.map((v, idx) => {
-                                                const active = selectedVariantId === v.id;
-                                                const swatchImg = images[idx % images.length]?.preview || initialData.imageSrc;
-                                                return (
-                                                    <button
-                                                        key={v.id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setSelectedVariantId(v.id);
-                                                            setSelectedImageIndex(idx % images.length);
-                                                        }}
-                                                        className={cn(
-                                                            'flex items-center gap-2 p-1.5 pr-3 rounded-xl border-2 transition-all cursor-pointer bg-card text-xs font-medium',
-                                                            active
-                                                                ? 'border-red-600 dark:border-red-500 bg-red-50/50 dark:bg-red-950/20 shadow-xs'
-                                                                : 'border-border/80 hover:border-foreground/40 hover:bg-muted/40',
-                                                        )}
-                                                    >
-                                                        <div className="relative size-8 rounded-lg overflow-hidden shrink-0 border border-border/60 bg-muted">
-                                                            <Image
-                                                                src={swatchImg}
-                                                                alt=""
-                                                                fill
-                                                                className="object-cover"
-                                                                sizes="32px"
-                                                            />
-                                                        </div>
-                                                        <span className="truncate max-w-[110px]">{v.name}</span>
-                                                        {active && <Check className="size-3.5 text-red-600 ml-auto shrink-0" />}
-                                                    </button>
-                                                );
-                                            })}
+                                        <div className="flex items-start gap-2">
+                                            <RotateCcw className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-bold text-foreground text-xs">Return & refund policy</p>
+                                                <p className="text-[11px]">7-day easy returns & exchanges</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-start gap-2">
+                                            <ShieldCheck className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-bold text-foreground text-xs">Security & Privacy</p>
+                                                <p className="text-[11px] leading-tight">Safe payments · Protect your privacy</p>
+                                            </div>
                                         </div>
                                     </div>
-                                )}
+                                </div>
 
-                                {/* Quantity Control */}
-                                <div className="flex items-center justify-between pt-1">
+                                {/* Quantity Selector */}
+                                <div className="space-y-1.5 pt-2 border-t border-border/60">
                                     <span className="text-xs font-semibold text-foreground">Quantity</span>
                                     <div className="flex items-center gap-3">
-                                        <div className="flex items-center border border-border rounded-xl bg-card overflow-hidden">
+                                        <div className="flex items-center border border-border rounded-lg bg-card overflow-hidden">
                                             <button
                                                 type="button"
                                                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
                                                 disabled={quantity <= 1}
-                                                className="p-2 hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+                                                className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
                                                 aria-label="Decrease quantity"
                                             >
                                                 <Minus className="size-3.5" />
                                             </button>
-                                            <span className="w-9 text-center text-sm font-bold text-foreground tabular-nums">
+                                            <span className="w-8 text-center text-xs font-bold text-foreground tabular-nums">
                                                 {quantity}
                                             </span>
                                             <button
                                                 type="button"
                                                 onClick={() => setQuantity(q => q + 1)}
-                                                className="p-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                                className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                                 aria-label="Increase quantity"
                                             >
                                                 <Plus className="size-3.5" />
                                             </button>
                                         </div>
-                                        <span className="text-xs text-muted-foreground font-medium">
-                                            500+ available in stock
+                                        <span className="text-[11px] text-muted-foreground">
+                                            500+ available
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* CTAs: Add to Cart & Buy Now — sticky at bottom */}
-                            <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border/60 space-y-2.5 p-5 lg:p-7">
-                                <div className="grid grid-cols-2 gap-2.5">
-                                    {/* Add to Cart Button */}
+                            {/* Action Buttons: Add to cart & Buy now */}
+                            <div className="space-y-2 pt-2 border-t border-border/60">
+                                {/* Solid Red Add to Cart Button */}
+                                <Button
+                                    type="button"
+                                    onClick={handleAddToCart}
+                                    disabled={isPending || isBuyNowPending}
+                                    className="w-full bg-[#e02b2b] hover:bg-[#c82020] text-white font-bold py-5 rounded-xl shadow-xs text-sm transition-all cursor-pointer"
+                                >
+                                    {isPending ? (
+                                        <Loader2 className="size-4 animate-spin mr-1.5" />
+                                    ) : (
+                                        <ShoppingCart className="size-4 mr-1.5" />
+                                    )}
+                                    Add to cart
+                                </Button>
+
+                                {/* Amber/Orange Buy Now Button */}
+                                <Button
+                                    type="button"
+                                    onClick={handleBuyNow}
+                                    disabled={isPending || isBuyNowPending}
+                                    className="w-full bg-[#ff9900] hover:bg-[#e68a00] text-black font-bold py-5 rounded-xl shadow-xs text-sm transition-all cursor-pointer"
+                                >
+                                    {isBuyNowPending ? (
+                                        <Loader2 className="size-4 animate-spin mr-1.5" />
+                                    ) : (
+                                        <Zap className="size-4 mr-1.5 fill-current" />
+                                    )}
+                                    Buy now
+                                </Button>
+
+                                {/* Bottom auxiliary actions: View details pill + Wishlist pill */}
+                                <div className="grid grid-cols-12 gap-2 pt-1">
                                     <Button
                                         type="button"
-                                        onClick={handleAddToCart}
-                                        disabled={isPending || isBuyNowPending}
-                                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-5 rounded-xl shadow-xs text-sm transition-all"
+                                        variant="outline"
+                                        size="sm"
+                                        className="col-span-8 text-xs font-semibold h-9 rounded-lg border-border"
+                                        render={<Link href={`/product/${initialData.slug}`} onClick={() => onOpenChange(false)} />}
+                                        nativeButton={false}
                                     >
-                                        {isPending ? (
-                                            <Loader2 className="size-4 animate-spin mr-1.5" />
-                                        ) : (
-                                            <ShoppingCart className="size-4 mr-1.5" />
-                                        )}
-                                        Add to cart
+                                        <span>View details</span>
+                                        <ExternalLink className="size-3 ml-1" />
                                     </Button>
 
-                                    {/* Buy Now Button (Direct Checkout) */}
                                     <Button
                                         type="button"
-                                        onClick={handleBuyNow}
-                                        disabled={isPending || isBuyNowPending}
-                                        className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-5 rounded-xl shadow-xs text-sm transition-all"
-                                    >
-                                        {isBuyNowPending ? (
-                                            <Loader2 className="size-4 animate-spin mr-1.5" />
-                                        ) : (
-                                            <Zap className="size-4 mr-1.5 fill-current" />
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={toggleWishlist}
+                                        className={cn(
+                                            'col-span-4 text-xs font-semibold h-9 rounded-lg border-border transition-colors gap-1',
+                                            isWishlisted ? 'text-red-500 border-red-200 bg-red-50/50' : 'text-muted-foreground',
                                         )}
-                                        Buy now
+                                    >
+                                        <Heart className={cn('size-3.5', isWishlisted && 'fill-red-500 text-red-500')} />
+                                        <span>{wishlistCount}</span>
                                     </Button>
-                                </div>
-
-                                <div className="flex items-center justify-center gap-4 pt-1">
-                                    <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                        <Truck className="size-3.5 text-emerald-600" />
-                                        Fast 2-Hour Delivery in Kigali
-                                    </span>
-                                    <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                        <ShieldCheck className="size-3.5 text-emerald-600" />
-                                        100% Secure Checkout
-                                    </span>
                                 </div>
                             </div>
                         </div>
+
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
