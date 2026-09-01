@@ -231,7 +231,7 @@ export function ProductPreviewModal({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
-                className="!w-[96vw] !max-w-[1240px] max-h-[92vh] rounded-2xl md:rounded-3xl p-0 overflow-hidden bg-white dark:bg-card border border-border/80 shadow-2xl relative flex flex-col"
+                className="!w-[96vw] !max-w-[1240px] !top-6 sm:!top-8 md:!top-10 !translate-y-0 max-h-[94vh] rounded-2xl md:rounded-3xl p-0 overflow-hidden bg-white dark:bg-card border border-border/80 shadow-2xl relative flex flex-col"
                 showCloseButton={false}
             >
                 {/* Floating Black Circle Close Button (AliExpress Style) */}
@@ -249,8 +249,8 @@ export function ProductPreviewModal({
                     <DialogDescription>AliExpress style product preview modal</DialogDescription>
                 </DialogHeader>
 
-                <div className="overflow-y-auto p-4 sm:p-6 lg:p-7">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
+                <div className="overflow-y-auto p-4 sm:p-5 lg:p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-5 lg:gap-7">
                         
                         {/* ======================================================== */}
                         {/* COLUMN 1: AliExpress-style Image Gallery + Zoom (5 cols) */}
