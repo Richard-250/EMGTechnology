@@ -91,6 +91,38 @@ export const GetProductDetailQuery = graphql(`
                     id
                 }
             }
+            customFields {
+                isDiscounted
+                discountPercentage
+                originalPrice
+            }
+        }
+    }
+`);
+
+export const GetDiscountedProductsQuery = graphql(`
+    query GetDiscountedProducts($options: ProductListOptions) {
+        products(options: $options) {
+            totalItems
+            items {
+                id
+                name
+                slug
+                featuredAsset {
+                    id
+                    preview
+                }
+                variants {
+                    id
+                    priceWithTax
+                    currencyCode
+                }
+                customFields {
+                    isDiscounted
+                    discountPercentage
+                    originalPrice
+                }
+            }
         }
     }
 `);

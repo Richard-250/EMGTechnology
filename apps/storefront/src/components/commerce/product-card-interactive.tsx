@@ -88,14 +88,15 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
     return (
         <>
             <div
+                onClick={() => setPreviewOpen(true)}
                 className={cn(
-                    'group relative block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'group relative block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer select-none',
                     compact
                         ? 'bg-white dark:bg-card rounded-xl overflow-hidden border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-200'
                         : 'overflow-hidden rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-300 bg-card',
                 )}
             >
-                <Link href={`/product/${data.slug}`} className="block">
+                <div className="block">
                     <div className="relative bg-muted overflow-hidden aspect-square">
                         {discount != null && (
                             <span className="absolute top-2 left-2 z-10 rounded-md bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5 shadow-xs">
@@ -120,7 +121,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                             className={cn(
                                 'absolute bottom-2 right-2 z-10 flex size-8 sm:size-9 items-center justify-center rounded-full bg-white/95 dark:bg-card shadow-md border border-border/60 text-foreground',
                                 'opacity-100 sm:opacity-0 sm:translate-y-1 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 transition-all duration-200',
-                                'hover:bg-electric hover:text-electric-foreground hover:border-electric active:scale-95',
+                                'hover:bg-electric hover:text-electric-foreground hover:border-electric active:scale-95 cursor-pointer',
                             )}
                             aria-label={t('addToCart')}
                         >
@@ -165,7 +166,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                             <span className="text-electric">{t('freeShipping')}</span>
                         </p>
                     </div>
-                </Link>
+                </div>
 
                 <div
                     className={cn(

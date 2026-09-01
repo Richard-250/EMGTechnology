@@ -53,6 +53,7 @@ export async function fetchProductDetail(slug: string) {
       images: carouselImages,
       variants: product.variants,
       optionGroups: product.optionGroups,
+      customFields: (product as any).customFields,
       currencyCode,
     };
   } catch (error) {

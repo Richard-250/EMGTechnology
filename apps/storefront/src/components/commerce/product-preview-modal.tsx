@@ -130,7 +130,24 @@ export function ProductPreviewModal({
 
     const currentPrice = selectedVariant?.priceWithTax ?? initialData.price ?? 0;
     const currencyCode = detail?.currencyCode || initialData.currencyCode;
-    const wasPrice = discount != null && currentPrice > 0 ? getWasPrice(currentPrice, discount) : null;
+    
+    // Dynamic discount from admin customFields or fallback
+    const activeDiscount = useMemo(() => {
+        const cf = (detail as any)?.customFields;
+        if (typeof cf?.discountPercentage === 'number' && cf.discountPercentage > 0) {
+            return cf.discountPercentage;
+        }
+        return discount;
+    }, [detail, discount]);
+
+    const wasPrice = useMemo(() => {
+        const cf = (detail as any)?.customFields;
+        if (typeof cf?.originalPrice === 'number' && cf.originalPrice > 0) {
+            return cf.originalPrice * 100;
+        }
+        return activeDiscount != null && currentPrice > 0 ? getWasPrice(currentPrice, activeDiscount) : null;
+    }, [detail, activeDiscount, currentPrice]);
+
     const discountSavings = wasPrice != null ? wasPrice - currentPrice : null;
 
     // Handle mouse move for interactive zoom lens
