@@ -36,80 +36,44 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
     const router = useRouter();
     const {shippingMethods, order} = useCheckout();
 
-    // Map shipping methods dynamically from the Vendure database so admin changes to name, description, and price reflect immediately
+    // Strictly present only the 3 designated delivery methods: Moto-taxi, Pickup at Store, and Express 2-Hour
     const deliveryOptions = useMemo<DisplayShippingOption[]>(() => {
-        if (shippingMethods && shippingMethods.length > 0) {
-            return shippingMethods.map((m, index) => {
-                const name = m.name;
-                const desc = m.description || '';
-                const isMoto = /moto|taxi|bike/i.test(name) || /moto|taxi/i.test(m.code || '');
-                const isPickup = /pickup|store|collect/i.test(name) || /pickup|store/i.test(m.code || '');
-                const isExpress = /express|2-hour|hour|speed/i.test(name) || /express/i.test(m.code || '');
+        const motoMethod = shippingMethods?.find(m => /moto|taxi|bike/i.test(m.name) || /moto|taxi/i.test(m.code || ''));
+        const pickupMethod = shippingMethods?.find(m => /pickup|store|collect/i.test(m.name) || /pickup|store/i.test(m.code || ''));
+        const expressMethod = shippingMethods?.find(m => /express|2-hour|hour|speed/i.test(m.name) || /express/i.test(m.code || ''));
 
-                let icon = Truck;
-                let key = `method-${m.id}`;
+        const unused = shippingMethods?.filter(m => m.id !== motoMethod?.id && m.id !== pickupMethod?.id && m.id !== expressMethod?.id) || [];
 
-                if (isPickup) {
-                    icon = Store;
-                    key = 'pickup';
-                } else if (isMoto) {
-                    icon = Bike;
-                    key = 'moto';
-                } else if (isExpress) {
-                    icon = Truck;
-                    key = 'express';
-                } else {
-                    icon = Truck;
-                    key = `custom-${index}`;
-                }
+        const motoId = motoMethod?.id || unused[0]?.id || 'kigali-moto-taxi';
+        const pickupId = pickupMethod?.id || unused[1]?.id || 'pickup-at-store';
+        const expressId = expressMethod?.id || unused[2]?.id || 'express-2-hour-kigali';
 
-                // If moto method has price = 0, show "From RWF 0" (negotiable)
-                const priceDisplayPrefix = (isMoto && m.priceWithTax === 0) ? 'From ' : undefined;
-
-                return {
-                    key,
-                    backendId: m.id,
-                    name: m.name,
-                    description: desc || (isPickup
-                        ? `${COMPANY.legalName} — ${formatCompanyAddress()}`
-                        : isMoto
-                            ? 'Negotiable fare with moto-taxi riders'
-                            : 'Fast delivery across Kigali'),
-                    priceWithTax: m.priceWithTax,
-                    priceDisplayPrefix,
-                    icon,
-                    isPickup,
-                };
-            });
-        }
-
-        // Fallback default list if methods are loading
         return [
             {
                 key: 'moto',
-                backendId: 'kigali-moto-taxi',
+                backendId: motoId,
                 name: 'Kigali - Moto-taxi',
-                description: 'Negotiable fare with moto-taxi riders',
-                priceWithTax: 0,
-                priceDisplayPrefix: 'From ',
+                description: motoMethod?.description || 'Negotiable fare with moto-taxi riders',
+                priceWithTax: motoMethod?.priceWithTax ?? 0,
+                priceDisplayPrefix: (motoMethod?.priceWithTax ?? 0) === 0 ? 'From ' : undefined,
                 icon: Bike,
                 isPickup: false,
             },
             {
                 key: 'pickup',
-                backendId: 'pickup-at-store',
+                backendId: pickupId,
                 name: 'Pickup at Store',
                 description: `${COMPANY.legalName} — ${formatCompanyAddress()}`,
-                priceWithTax: 0,
+                priceWithTax: pickupMethod?.priceWithTax ?? 0,
                 icon: Store,
                 isPickup: true,
             },
             {
                 key: 'express',
-                backendId: 'express-2-hour-kigali',
+                backendId: expressId,
                 name: 'Express 2-Hour - Kigali',
                 description: 'Kigali',
-                priceWithTax: 350000,
+                priceWithTax: expressMethod?.priceWithTax && expressMethod.priceWithTax > 0 ? expressMethod.priceWithTax : 350000,
                 icon: Truck,
                 isPickup: false,
             },
