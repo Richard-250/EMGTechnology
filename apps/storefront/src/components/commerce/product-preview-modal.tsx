@@ -195,26 +195,43 @@ export function ProductPreviewModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl p-0 overflow-hidden border-border bg-background sm:rounded-2xl max-h-[92vh] flex flex-col">
+            <DialogContent className="!fixed !inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !max-w-none !w-screen !h-screen !rounded-none p-0 overflow-hidden border-0 bg-background flex flex-col" showCloseButton={true}>
                 <DialogHeader className="sr-only">
                     <DialogTitle>{initialData.productName}</DialogTitle>
                     <DialogDescription>Quick preview and instant purchase</DialogDescription>
                 </DialogHeader>
 
-                <div className="overflow-y-auto p-4 sm:p-6 lg:p-7">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
-                        {/* LEFT COLUMN: AliExpress-style Image Gallery + Interactive Zoom */}
-                        <div className="md:col-span-6 flex flex-col-reverse sm:flex-row gap-3">
+                {/* Visible top header bar */}
+                <div className="flex items-center justify-between px-5 py-3 border-b border-border/60 bg-background/95 backdrop-blur-sm shrink-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                            Quick Preview
+                        </span>
+                        <h2 className="font-bold text-sm sm:text-base text-foreground truncate">{initialData.productName}</h2>
+                    </div>
+                    <Link
+                        href={`/product/${initialData.slug}`}
+                        onClick={() => onOpenChange(false)}
+                        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium hover:underline transition-colors shrink-0"
+                    >
+                        <ExternalLink className="size-3.5" />
+                        <span className="hidden sm:inline">Full Details</span>
+                    </Link>
+                </div>
+
+                <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2" style={{height: 'calc(100vh - 53px)'}}>
+                        {/* LEFT COLUMN: Full-height Image Gallery + Interactive Zoom */}
+                        <div className="flex flex-row gap-3 p-4 lg:p-6 bg-muted/20 border-r border-border/50">
                             {/* Vertical Thumbnail Strip */}
                             {images.length > 1 && (
-                                <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto max-h-[380px] scrollbar-thin shrink-0">
+                                <div className="flex flex-col gap-2 overflow-y-auto max-h-full scrollbar-thin shrink-0">
                                     {images.map((img, i) => (
                                         <button
                                             key={img.id || i}
                                             type="button"
                                             onClick={() => setSelectedImageIndex(i)}
                                             className={cn(
-                                                'relative size-14 sm:size-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer bg-muted',
+                                                'relative size-16 lg:size-20 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer bg-muted',
                                                 selectedImageIndex === i
                                                     ? 'border-red-500 dark:border-red-400 ring-2 ring-red-500/20'
                                                     : 'border-border/70 hover:border-foreground/40 opacity-75 hover:opacity-100',
@@ -255,7 +272,7 @@ export function ProductPreviewModal({
                                               }
                                             : undefined
                                     }
-                                    sizes="(max-width: 768px) 100vw, 450px"
+                                    sizes="(max-width: 1024px) 100vw, 50vw"
                                     priority
                                 />
 
@@ -273,10 +290,10 @@ export function ProductPreviewModal({
                         </div>
 
                         {/* RIGHT COLUMN: Product Details, Color Swatches & Action Buttons */}
-                        <div className="md:col-span-6 flex flex-col justify-between space-y-4">
-                            <div className="space-y-3.5">
+                        <div className="flex flex-col h-full overflow-y-auto">
+                            <div className="flex-1 space-y-4 p-5 lg:p-7">
                                 {/* Title */}
-                                <h3 className="font-bold text-lg sm:text-xl text-foreground leading-snug">
+                                <h3 className="font-bold text-xl sm:text-2xl lg:text-3xl text-foreground leading-snug">
                                     {initialData.productName}
                                 </h3>
 
@@ -295,7 +312,7 @@ export function ProductPreviewModal({
                                 {/* Large Price Banner */}
                                 <div className="rounded-xl bg-muted/40 p-3.5 border border-border/60 space-y-1.5">
                                     <div className="flex items-baseline gap-2.5">
-                                        <span className="text-2xl sm:text-3xl font-extrabold text-red-600 dark:text-red-500 tracking-tight">
+                                        <span className="text-3xl sm:text-4xl font-extrabold text-red-600 dark:text-red-500 tracking-tight">
                                             <Price value={currentPrice} currencyCode={currencyCode} />
                                         </span>
                                         {wasPrice != null && (
@@ -401,8 +418,8 @@ export function ProductPreviewModal({
                                 </div>
                             </div>
 
-                            {/* CTAs: Add to Cart & Buy Now */}
-                            <div className="space-y-2.5 pt-3 border-t border-border/60">
+                            {/* CTAs: Add to Cart & Buy Now — sticky at bottom */}
+                            <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border/60 space-y-2.5 p-5 lg:p-7">
                                 <div className="grid grid-cols-2 gap-2.5">
                                     {/* Add to Cart Button */}
                                     <Button
@@ -435,23 +452,18 @@ export function ProductPreviewModal({
                                     </Button>
                                 </div>
 
-                                {/* Full Details Link */}
-                                <div className="flex items-center justify-between pt-1">
-                                    <Link
-                                        href={`/product/${initialData.slug}`}
-                                        onClick={() => onOpenChange(false)}
-                                        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium hover:underline transition-colors"
-                                    >
-                                        <span>View full product specifications</span>
-                                        <ExternalLink className="size-3" />
-                                    </Link>
-                                    <span className="text-[11px] text-muted-foreground">
-                                        ⚡ Fast 2-Hour Delivery in Kigali
+                                <div className="flex items-center justify-center gap-4 pt-1">
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                        <Truck className="size-3.5 text-emerald-600" />
+                                        Fast 2-Hour Delivery in Kigali
+                                    </span>
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                        <ShieldCheck className="size-3.5 text-emerald-600" />
+                                        100% Secure Checkout
                                     </span>
                                 </div>
                             </div>
                         </div>
-                    </div>
                 </div>
             </DialogContent>
         </Dialog>
