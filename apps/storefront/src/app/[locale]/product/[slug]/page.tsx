@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
-import { query } from '@/lib/vendure/api';
+import { connection } from 'next/server';
+import { withLiveFallback } from '@/lib/vendure/live-fallback';
 import { GetProductDetailQuery } from '@/lib/vendure/queries';
 import { ProductDetailView } from '@/components/commerce/product-detail-view';
 import { RelatedProducts } from '@/components/commerce/related-products';
@@ -27,8 +28,13 @@ import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {getRouteLocale} from '@/i18n/server';
 import {resolveProductCarouselImages} from '@/lib/product-images';
 import {getDisplayOptionGroups} from '@/lib/vendure/product-options';
+import {query} from '@/lib/vendure/api';
 
-async function getProductData(slug: string, currencyCode: string) {
+async function fetchProductData(slug: string, locale: string, currencyCode: string) {
+    return query(GetProductDetailQuery, {slug}, {languageCode: locale, currencyCode});
+}
+
+async function getProductDataCached(slug: string, currencyCode: string) {
     'use cache';
     cacheLife('hours');
 
@@ -36,7 +42,15 @@ async function getProductData(slug: string, currencyCode: string) {
     cacheTag(`product-${slug}-${locale}-${currencyCode}`);
     cacheTag(`products-${locale}-${currencyCode}`);
 
-    return await query(GetProductDetailQuery, {slug}, {languageCode: locale, currencyCode});
+    return fetchProductData(slug, locale, currencyCode);
+}
+
+async function loadProductData(slug: string, locale: string, currencyCode: string) {
+    return withLiveFallback(
+        () => getProductDataCached(slug, currencyCode),
+        () => fetchProductData(slug, locale, currencyCode),
+        (result) => !result.data.product,
+    );
 }
 
 export async function generateMetadata({
@@ -45,7 +59,7 @@ export async function generateMetadata({
     const { slug } = await params;
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
-    const result = await getProductData(slug, currencyCode);
+    const result = await loadProductData(slug, locale, currencyCode);
     const product = result.data.product;
 
     const t = await getTranslations({locale, namespace: 'Product'});
@@ -89,13 +103,15 @@ export async function generateMetadata({
 }
 
 export default async function ProductDetailPage({params, searchParams}: PageProps<'/[locale]/product/[slug]'>) {
+    await connection();
+
     const { slug } = await params;
     const searchParamsResolved = await searchParams;
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
     const t = await getTranslations({locale, namespace: 'Product'});
 
-    const result = await getProductData(slug, currencyCode);
+    const result = await loadProductData(slug, locale, currencyCode);
 
     const product = result.data.product;
 

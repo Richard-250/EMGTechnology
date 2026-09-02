@@ -15,8 +15,8 @@ npm install
 echo ">>> Building backend..."
 npm run build -w server
 
-echo ">>> Restarting backend + worker..."
-pm2 restart emg-server emg-worker --update-env
+echo ">>> Syncing database schema (custom fields, etc.)..."
+bash scripts/sync-database-schema.sh
 
 echo ">>> Waiting for Vendure API..."
 for i in $(seq 1 30); do
@@ -32,6 +32,19 @@ for i in $(seq 1 30); do
   fi
   sleep 1
 done
+
+echo ">>> Verifying admin dashboard assets..."
+DASHBOARD_JS=$(grep -o 'assets/index-[^"]*\.js' apps/server/dist/dashboard/index.html | head -1 || true)
+if [ -n "$DASHBOARD_JS" ]; then
+  if [ ! -f "apps/server/dist/dashboard/${DASHBOARD_JS}" ]; then
+    echo "ERROR: Dashboard build incomplete — missing apps/server/dist/dashboard/${DASHBOARD_JS}"
+    echo "Re-run: npm run build -w server"
+    exit 1
+  fi
+  echo "Dashboard asset OK: ${DASHBOARD_JS}"
+else
+  echo "WARNING: Could not verify dashboard assets in index.html"
+fi
 
 echo ">>> Building storefront..."
 rm -f apps/storefront/.next/lock
