@@ -1,23 +1,27 @@
 import { vendureDashboardPlugin } from '@vendure/dashboard/vite';
 import 'dotenv/config';
-import { join, resolve } from 'path';
-import { pathToFileURL } from 'url';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { defineConfig } from 'vite';
 
-const dashboardCss = resolve(__dirname, 'src/plugins/emg-branding/dashboard/dashboard.css');
+const rootDir = dirname(fileURLToPath(import.meta.url));
+const dashboardCss = resolve(rootDir, 'src/plugins/emg-branding/dashboard/dashboard.css');
+const dashboardOutDir = resolve(rootDir, 'dist/dashboard');
 
 export default defineConfig({
+    root: rootDir,
     base: '/dashboard',
     build: {
-        outDir: join(__dirname, 'dist/dashboard'),
+        outDir: dashboardOutDir,
+        emptyOutDir: true,
     },
     plugins: [
         vendureDashboardPlugin({
-            vendureConfigPath: pathToFileURL('./src/vendure-config.ts'),
+            vendureConfigPath: pathToFileURL(resolve(rootDir, 'src/vendure-config.ts')),
             api: process.env.NODE_ENV === 'production'
                 ? { host: 'auto', port: 'auto' }
                 : { host: 'http://localhost', port: +(process.env.PORT || 3001) },
-            gqlOutputPath: './src/gql',
+            gqlOutputPath: resolve(rootDir, 'src/gql'),
             theme: {
                 additionalStylesheets: [dashboardCss],
                 light: {
@@ -68,7 +72,7 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            '@/gql': resolve(__dirname, './src/gql/graphql.ts'),
+            '@/gql': resolve(rootDir, 'src/gql/graphql.ts'),
         },
     },
 });
