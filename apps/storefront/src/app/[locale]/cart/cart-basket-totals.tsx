@@ -3,12 +3,13 @@
 import {useState, useTransition} from 'react';
 import {Link} from '@/i18n/navigation';
 import {Lock, Send, ShoppingBag, Zap, RotateCcw, CreditCard} from 'lucide-react';
-import {Button} from '@/components/ui/button';
+import {Button, buttonVariants} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Price} from '@/components/commerce/price';
 import {applyPromotionCode} from '@/app/[locale]/cart/actions';
 import {useTranslations} from 'next-intl';
 import {useRouter} from '@/i18n/navigation';
+import {cn} from '@/lib/utils';
 
 type ActiveOrder = {
     id: string;
@@ -104,15 +105,16 @@ export function CartBasketTotals({
                     </Button>
                 </div>
 
-                <Button
-                    render={<Link href={checkoutHref} />}
-                    nativeButton={false}
-                    size="lg"
-                    className="w-full bg-electric hover:bg-electric/90 text-electric-foreground font-semibold mb-2.5 hidden sm:flex"
+                <Link
+                    href={checkoutHref}
+                    className={cn(
+                        buttonVariants({size: 'lg'}),
+                        'w-full bg-electric hover:bg-electric/90 text-electric-foreground font-semibold mb-2.5 hidden sm:inline-flex',
+                    )}
                 >
                     <Send className="size-4 mr-2" />
                     {t('proceedToCheckout')}
-                </Button>
+                </Link>
 
                 <Button
                     render={<Link href="/search" />}
@@ -147,13 +149,15 @@ export function CartBasketTotals({
                             <Price value={estimatedTotal} currencyCode={activeOrder.currencyCode} />
                         </p>
                     </div>
-                    <Button
-                        render={<Link href={checkoutHref} />}
-                        nativeButton={false}
-                        className="bg-electric hover:bg-electric/90 text-electric-foreground font-semibold shrink-0"
+                    <Link
+                        href={checkoutHref}
+                        className={cn(
+                            buttonVariants(),
+                            'bg-electric hover:bg-electric/90 text-electric-foreground font-semibold shrink-0',
+                        )}
                     >
                         {t('checkout')}
-                    </Button>
+                    </Link>
                 </div>
             </div>
         </aside>

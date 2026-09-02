@@ -1,21 +1,14 @@
 import type {Metadata} from 'next';
-import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {getRouteLocale} from '@/i18n/server';
 import {getTranslations} from 'next-intl/server';
-import {query} from '@/lib/vendure/api';
-import {
-    GetActiveOrderForCheckoutQuery,
-    GetCustomerAddressesQuery,
-    GetEligiblePaymentMethodsQuery,
-    GetEligibleShippingMethodsQuery,
-} from '@/lib/vendure/queries';
 import {redirect} from '@/i18n/navigation';
+import {connection} from 'next/server';
 import CheckoutFlow from './checkout-flow';
 import {CheckoutProvider} from './checkout-provider';
 import {noIndexRobots} from '@/lib/metadata';
 import {getActiveCustomer} from '@/lib/vendure/actions';
 import {buildSignInHref} from '@/lib/auth-redirect';
-import {getAvailableCountriesCached} from '@/lib/vendure/cached';
+import {loadCheckoutPageData} from './load-checkout-data';
 
 export async function generateMetadata(): Promise<Metadata> {
     const locale = await getRouteLocale();
@@ -27,14 +20,16 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CheckoutPage() {
+    await connection();
+
     const locale = await getRouteLocale();
     const tAuth = await getTranslations({locale, namespace: 'Auth'});
+    const t = await getTranslations({locale, namespace: 'Checkout'});
 
     let customer;
     try {
         customer = await getActiveCustomer();
     } catch {
-        // Vendure unreachable — redirect to sign-in
         return redirect({href: '/sign-in', locale});
     }
 
@@ -48,61 +43,33 @@ export default async function CheckoutPage() {
         });
     }
 
-    const currencyCode = await getActiveCurrencyCode();
-    const t = await getTranslations({locale, namespace: 'Checkout'});
-    const isGuest = false;
+    const {activeOrder, addresses, countries, shippingMethods, paymentMethods} =
+        await loadCheckoutPageData();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let activeOrder: any = null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let addresses: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let countries: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let shippingMethods: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let paymentMethods: any[] = [];
-
-    try {
-        const [orderRes, addressesRes, countriesRes, shippingMethodsRes, paymentMethodsRes] =
-            await Promise.all([
-                query(GetActiveOrderForCheckoutQuery, {}, {useAuthToken: true, currencyCode}),
-                query(GetCustomerAddressesQuery, {}, {useAuthToken: true}),
-                getAvailableCountriesCached(locale),
-                query(GetEligibleShippingMethodsQuery, {}, {useAuthToken: true, currencyCode}),
-                query(GetEligiblePaymentMethodsQuery, {}, {useAuthToken: true, currencyCode}),
-            ]);
-
-        activeOrder = orderRes.data.activeOrder ?? null;
-        addresses = addressesRes.data.activeCustomer?.addresses || [];
-        countries = countriesRes;
-        shippingMethods = shippingMethodsRes.data.eligibleShippingMethods || [];
-        paymentMethods =
-            paymentMethodsRes.data.eligiblePaymentMethods?.filter((m) => m.isEligible) || [];
-    } catch {
+    if (!activeOrder || activeOrder.lines.length === 0) {
         return redirect({href: '/cart', locale});
     }
 
-    if (!activeOrder || (activeOrder as {lines: unknown[]}).lines.length === 0) {
-        return redirect({href: '/cart', locale});
-    }
-
-    const order = activeOrder as {state: string; code: string; lines: unknown[]};
-    if (order.state !== 'AddingItems' && order.state !== 'ArrangingPayment') {
-        return redirect({href: `/order-confirmation/${order.code}`, locale});
+    if (activeOrder.state !== 'AddingItems' && activeOrder.state !== 'ArrangingPayment') {
+        return redirect({href: `/order-confirmation/${activeOrder.code}`, locale});
     }
 
     return (
         <div className="min-h-screen bg-muted/40">
             <div className="container mx-auto px-4 py-8 md:py-10">
                 <h1 className="text-2xl md:text-3xl font-bold mb-6">{t('pageTitle')}</h1>
+                {paymentMethods.length === 0 && (
+                    <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+                        {t('noPaymentMethods')}
+                    </p>
+                )}
                 <CheckoutProvider
                     order={activeOrder}
                     addresses={addresses}
                     countries={countries}
                     shippingMethods={shippingMethods}
                     paymentMethods={paymentMethods}
-                    isGuest={isGuest}
+                    isGuest={false}
                 >
                     <CheckoutFlow/>
                 </CheckoutProvider>

@@ -20,6 +20,36 @@ export interface PaymentMethodCustomFields {
     paymentSteps?: string | null;
 }
 
+export const DEFAULT_MOMO_MERCHANT: Record<
+    'mtn-rwanda' | 'airtel-rwanda',
+    Required<Pick<PaymentMethodCustomFields, 'merchantDisplayName' | 'merchantPhone' | 'merchantMomoCode' | 'paymentSteps'>>
+> = {
+    'mtn-rwanda': {
+        merchantDisplayName: 'EMG Technology Ltd',
+        merchantPhone: '+250796345773',
+        merchantMomoCode: '*182*8*1*0796345773#',
+        paymentSteps:
+            'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nFill in your account name and transaction ID below, then place your order',
+    },
+    'airtel-rwanda': {
+        merchantDisplayName: 'EMG Technology Ltd',
+        merchantPhone: '+250796345773',
+        merchantMomoCode: '*185*1*0796345773#',
+        paymentSteps:
+            'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nFill in your account name and transaction ID below, then place your order',
+    },
+};
+
+export function resolvePaymentMethodFields(
+    providerCode: 'mtn-rwanda' | 'airtel-rwanda',
+    customFields?: PaymentMethodCustomFields | null,
+): PaymentMethodCustomFields {
+    return {
+        ...DEFAULT_MOMO_MERCHANT[providerCode],
+        ...customFields,
+    };
+}
+
 export interface PaymentDetailsMetadata {
     cardLast4?: string;
     cardBrand?: string;

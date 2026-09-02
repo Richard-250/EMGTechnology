@@ -22,6 +22,7 @@ import {
   isCardFormValid,
   isMobileMoneyCheckoutValid,
   parsePaymentSteps,
+  resolvePaymentMethodFields,
 } from '../payment-details';
 
 function PaymentMethodIcon({ code }: { code: string }) {
@@ -146,7 +147,7 @@ function MobileMoneyCheckoutPanel({
   const t = useTranslations('Checkout');
   const { order, paymentMethods, mobileMoneyDetails, setMobileMoneyDetails } = useCheckout();
   const method = paymentMethods.find((m) => m.code === providerCode);
-  const fields = method?.customFields;
+  const fields = resolvePaymentMethodFields(providerCode, method?.customFields);
   const steps = parsePaymentSteps(fields?.paymentSteps);
   const paymentReference = buildPaymentReference(providerCode, order.code);
   const providerName = providerCode === 'mtn-rwanda' ? t('mtnMobileMoney') : t('airtelMoney');

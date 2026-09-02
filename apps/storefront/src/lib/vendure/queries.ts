@@ -320,6 +320,19 @@ export const GetEligiblePaymentMethodsQuery = graphql(`
     }
 `);
 
+export const GetEligiblePaymentMethodsBasicQuery = graphql(`
+    query GetEligiblePaymentMethodsBasic {
+        eligiblePaymentMethods {
+            id
+            name
+            code
+            description
+            isEligible
+            eligibilityMessage
+        }
+    }
+`);
+
 export const GetAvailableCountriesQuery = graphql(`
     query GetAvailableCountries {
         availableCountries {
