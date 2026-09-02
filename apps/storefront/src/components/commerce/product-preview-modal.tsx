@@ -1,15 +1,9 @@
 'use client';
 
 import {useState, useEffect, useMemo, useTransition, useRef} from 'react';
+import {createPortal} from 'react-dom';
 import Image from 'next/image';
 import {useRouter, Link} from '@/i18n/navigation';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from '@/components/ui/dialog';
 import {Button} from '@/components/ui/button';
 import {Price} from '@/components/commerce/price';
 import {ProductStarRating} from '@/components/commerce/product-star-rating';
@@ -58,10 +52,29 @@ export function ProductPreviewModal({
 }: ProductPreviewModalProps) {
     const router = useRouter();
     const {showConfirmation} = useCartConfirmation();
+    const [mounted, setMounted] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [isBuyNowPending, startBuyNowTransition] = useTransition();
     const [wishlistCount, setWishlistCount] = useState(797);
     const [isWishlisted, setIsWishlisted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!open) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onOpenChange(false);
+        };
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.body.style.overflow = prevOverflow;
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [open, onOpenChange]);
 
     // Full product detail state
     const [detail, setDetail] = useState<{
@@ -228,11 +241,21 @@ export function ProductPreviewModal({
         setWishlistCount(c => (isWishlisted ? c - 1 : c + 1));
     };
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent 
-                className="w-[96vw] max-w-[1240px] top-1 sm:top-2 md:top-3 left-1/2 -translate-x-1/2 translate-y-0 max-h-[96vh] rounded-2xl md:rounded-3xl p-0 overflow-hidden bg-white dark:bg-card border border-border/80 shadow-2xl relative flex flex-col"
-                showCloseButton={false}
+    if (!open || !mounted) return null;
+
+    return createPortal(
+        <div 
+            className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/75 backdrop-blur-xs p-2 sm:p-4 pt-2 sm:pt-4 md:pt-4"
+            onClick={(e) => {
+                if (e.target === e.currentTarget) onOpenChange(false);
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={initialData.productName}
+        >
+            <div 
+                className="relative w-full max-w-[1240px] rounded-2xl md:rounded-3xl p-0 bg-white dark:bg-card border border-border/80 shadow-2xl overflow-hidden flex flex-col my-1 sm:my-2 animate-in fade-in-0 zoom-in-95 duration-200"
+                onClick={(e) => e.stopPropagation()}
             >
                 {/* Floating Black Circle Close Button (AliExpress Style) */}
                 <button
@@ -244,12 +267,7 @@ export function ProductPreviewModal({
                     <X className="size-4" />
                 </button>
 
-                <DialogHeader className="sr-only">
-                    <DialogTitle>{initialData.productName}</DialogTitle>
-                    <DialogDescription>AliExpress style product preview modal</DialogDescription>
-                </DialogHeader>
-
-                <div className="overflow-y-auto p-3.5 sm:p-4 lg:p-5 max-h-[calc(94vh-0.5rem)]">
+                <div className="overflow-y-auto p-3.5 sm:p-4 lg:p-5 max-h-[calc(96vh-1rem)]">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6">
                         
                         {/* ======================================================== */}
@@ -265,25 +283,25 @@ export function ProductPreviewModal({
                                             type="button"
                                             onClick={() => setSelectedImageIndex(i)}
                                             className={cn(
-                                                'relative size-14 sm:size-16 rounded-lg overflow-hidden border-2 shrink-0 transition-all cursor-pointer bg-muted',
+                                                'relative size-12 sm:size-14 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-muted',
                                                 selectedImageIndex === i
-                                                    ? 'border-[#e02b2b] ring-2 ring-[#e02b2b]/20 shadow-xs'
-                                                    : 'border-border/70 hover:border-foreground/40 opacity-75 hover:opacity-100',
+                                                    ? 'border-foreground shadow-sm ring-1 ring-foreground'
+                                                    : 'border-transparent opacity-70 hover:opacity-100',
                                             )}
                                         >
                                             <Image
                                                 src={img.preview}
-                                                alt=""
+                                                alt={`Thumbnail ${i + 1}`}
                                                 fill
                                                 className="object-cover"
-                                                sizes="64px"
+                                                sizes="56px"
                                             />
                                         </button>
                                     ))}
                                 </div>
                             )}
 
-                            {/* Main Zoomable Image Container */}
+                            {/* Main Active Image with Zoom Lens */}
                             <div
                                 ref={imageContainerRef}
                                 onMouseEnter={() => setIsZooming(true)}
@@ -318,64 +336,72 @@ export function ProductPreviewModal({
 
                                 <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full bg-black/65 backdrop-blur-xs text-white text-[11px] px-2.5 py-1 pointer-events-none opacity-80 group-hover:opacity-0 transition-opacity">
                                     <ZoomIn className="size-3.5" />
-                                    Hover to Zoom
+                                    <span>Hover to Zoom</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* ======================================================== */}
-                        {/* COLUMN 2: Product Info, Price & Color Swatches (4 cols) */}
+                        {/* COLUMN 2: Center Pricing, Details & Swatches (4 cols)    */}
                         {/* ======================================================== */}
-                        <div className="md:col-span-4 space-y-3.5 md:border-r md:border-border/60 md:pr-4">
-                            {/* Product Title */}
-                            <h3 className="font-bold text-sm sm:text-base lg:text-lg text-foreground leading-snug">
-                                {initialData.productName}
-                            </h3>
+                        <div className="md:col-span-4 flex flex-col space-y-3.5">
+                            <div>
+                                <h2 className="text-base sm:text-lg font-bold text-foreground leading-snug">
+                                    {initialData.productName}
+                                </h2>
 
-                            {/* Sold and Rating stats */}
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span className="font-semibold text-foreground">{sold} sold</span>
-                                <span>·</span>
-                                <div className="flex items-center gap-1 text-amber-500 font-bold">
-                                    <Star className="size-3.5 fill-amber-500" />
-                                    <span>{rating.stars}</span>
+                                <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs">
+                                    <span className="text-foreground/80 font-semibold">
+                                        {sold.toLocaleString()} sold
+                                    </span>
+                                    <span className="text-muted-foreground">·</span>
+                                    <div className="flex items-center gap-1 text-amber-500 font-bold">
+                                        <Star className="size-3.5 fill-amber-500 text-amber-500" />
+                                        <span>{rating.stars}</span>
+                                    </div>
+                                    <span className="text-muted-foreground">
+                                        ({rating.count} reviews)
+                                    </span>
                                 </div>
-                                <span>({rating.count} reviews)</span>
                             </div>
 
-                            {/* Big Red AliExpress Price Section */}
-                            <div className="space-y-1.5 pt-1">
-                                <div className="flex flex-wrap items-baseline gap-2">
-                                    <span className="text-2xl sm:text-3xl font-black text-[#e02b2b] tracking-tight">
-                                        <Price value={currentPrice} currencyCode={currencyCode} />
+                            {/* Price Block (AliExpress Style Big Red/Orange Price) */}
+                            <div className="rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/40 p-3 space-y-1">
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                    <span className="text-2xl sm:text-3xl font-black tracking-tight text-red-600 dark:text-red-400">
+                                        <Price
+                                            value={currentPrice}
+                                            currencyCode={currencyCode}
+                                        />
                                     </span>
-                                    {activeDiscount != null && (
-                                        <span className="text-xs font-bold text-[#e02b2b]">
-                                            {activeDiscount}% off
-                                        </span>
-                                    )}
-                                    {wasPrice != null && (
-                                        <span className="text-xs sm:text-sm text-muted-foreground line-through">
-                                            <Price value={wasPrice} currencyCode={currencyCode} />
-                                        </span>
+                                    {activeDiscount != null && wasPrice != null && (
+                                        <>
+                                            <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/60 px-1.5 py-0.5 rounded">
+                                                {activeDiscount}% off
+                                            </span>
+                                            <span className="text-xs text-muted-foreground line-through">
+                                                <Price
+                                                    value={wasPrice}
+                                                    currencyCode={currencyCode}
+                                                />
+                                            </span>
+                                        </>
                                     )}
                                 </div>
 
-                                {/* Wholesale / Super Deal Tag Strip */}
-                                <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                                    <span className="inline-flex items-center gap-1 bg-red-100 dark:bg-red-950/60 text-[#e02b2b] font-bold px-1.5 py-0.5 rounded-xs">
-                                        <Tag className="size-3" />
+                                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-0.5">
+                                    <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-bold text-[10px] bg-red-100 dark:bg-red-900/60 px-1.5 py-0.5 rounded-sm">
+                                        <Tag className="size-2.5" />
                                         Super Deal
                                     </span>
-                                    <span className="text-muted-foreground">
-                                        Tax included · Free delivery across Rwanda
-                                    </span>
+                                    <span>Tax included · Free delivery across Rwanda</span>
                                 </div>
 
+                                {/* Instant coupon banner */}
                                 {discountSavings != null && (
-                                    <div className="flex items-center justify-between rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 px-2.5 py-1.5 text-xs text-[#e02b2b] font-bold">
-                                        <span>% Save <Price value={discountSavings} currencyCode={currencyCode} /> with instant discount</span>
-                                        <span className="text-[11px]">›</span>
+                                    <div className="mt-1 flex items-center justify-between text-[11px] font-semibold text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-900/40 px-2 py-1 rounded-md">
+                                        <span>% Save <Price value={discountSavings} currencyCode={currencyCode} /> with Instant discount</span>
+                                        <span className="text-[10px] underline cursor-pointer">&gt;</span>
                                     </div>
                                 )}
                             </div>
@@ -385,11 +411,16 @@ export function ProductPreviewModal({
                                 <div className="text-xs">
                                     <span className="text-muted-foreground">Color / Option: </span>
                                     <span className="font-bold text-foreground">
-                                        {selectedVariant?.name || 'Standard'}
+                                        {selectedVariant?.name || 'Standard Edition'}
                                     </span>
                                 </div>
 
-                                {detail?.variants && detail.variants.length > 1 ? (
+                                {loadingDetail ? (
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <span>Loading options...</span>
+                                    </div>
+                                ) : detail?.variants && detail.variants.length > 1 ? (
                                     <div className="flex flex-wrap gap-2">
                                         {detail.variants.map((v, idx) => {
                                             const active = selectedVariantId === v.id;
@@ -405,7 +436,7 @@ export function ProductPreviewModal({
                                                     className={cn(
                                                         'relative p-1 rounded-lg border-2 transition-all cursor-pointer bg-card',
                                                         active
-                                                            ? 'border-[#e02b2b] ring-2 ring-[#e02b2b]/20 shadow-xs'
+                                                            ? 'border-foreground ring-2 ring-foreground/20 shadow-xs'
                                                             : 'border-border/80 hover:border-foreground/50 opacity-80 hover:opacity-100',
                                                     )}
                                                     title={v.name}
@@ -425,103 +456,117 @@ export function ProductPreviewModal({
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2">
-                                        <div className="relative size-10 rounded-lg overflow-hidden border-2 border-[#e02b2b] bg-muted">
+                                        <div className="size-9 rounded-lg border-2 border-foreground overflow-hidden relative bg-muted shadow-xs">
                                             <Image
                                                 src={initialData.imageSrc}
-                                                alt=""
+                                                alt={initialData.productName}
                                                 fill
                                                 className="object-cover"
-                                                sizes="40px"
+                                                sizes="36px"
                                             />
                                         </div>
-                                        <span className="text-xs text-muted-foreground">Standard Edition</span>
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                            Standard Edition
+                                        </span>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Product Short Description */}
-                            {detail?.description && (
-                                <div className="pt-2 border-t border-border/60">
-                                    <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
-                                        {detail.description.replace(/<[^>]*>?/gm, '')}
-                                    </p>
-                                </div>
-                            )}
+                            {/* Short Specifications / Description */}
+                            <div className="text-xs text-muted-foreground line-clamp-3 leading-relaxed pt-1 border-t border-border/60">
+                                {detail?.description?.replace(/<[^>]*>?/gm, '') ||
+                                    'Heavy-duty commercial and home fitness training equipment by EMG Technology.'}
+                            </div>
                         </div>
 
                         {/* ======================================================== */}
-                        {/* COLUMN 3: Store Info, Shipping & Action Buttons (3 cols) */}
+                        {/* COLUMN 3: Right Sidebar - Commitments & Buy Box (3 cols)  */}
                         {/* ======================================================== */}
-                        <div className="md:col-span-3 flex flex-col justify-between space-y-4">
+                        <div className="md:col-span-3 flex flex-col justify-between space-y-4 md:border-l md:border-border/60 md:pl-4">
                             <div className="space-y-3.5">
-                                {/* Sold By Store Card */}
-                                <div className="space-y-1 pb-3 border-b border-border/60">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <span className="text-muted-foreground">Sold By</span>
-                                        <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                                            <MessageSquare className="size-3" />
-                                            Message
-                                        </span>
+                                {/* Seller info */}
+                                <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                                    <div>
+                                        <p className="text-[11px] text-muted-foreground">Sold By</p>
+                                        <p className="text-xs font-bold text-foreground flex items-center gap-1">
+                                            <span>EMG Technology Ltd</span>
+                                        </p>
                                     </div>
-                                    <p className="font-bold text-xs sm:text-sm text-foreground truncate">
-                                        {COMPANY.legalName}
-                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            onOpenChange(false);
+                                            router.push('/search');
+                                        }}
+                                        className="text-[11px] font-semibold text-electric hover:underline flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <MessageSquare className="size-3" />
+                                        <span>Message</span>
+                                    </button>
                                 </div>
 
-                                {/* Service Commitment Section (Green Header AliExpress Style) */}
-                                <div className="space-y-2 text-xs">
-                                    <p className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
-                                        Service commitment
-                                    </p>
+                                {/* Service Commitments */}
+                                <div className="space-y-2.5 text-xs">
+                                    <p className="text-xs font-bold text-foreground">Service commitment</p>
                                     
-                                    <div className="space-y-2 text-muted-foreground">
-                                        <div className="flex items-start gap-2">
-                                            <Truck className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="font-bold text-foreground text-xs">Shipping: Free Delivery</p>
-                                                <p className="text-[11px]">Delivery: Fast 2-Hour in Kigali</p>
-                                            </div>
+                                    <div className="flex items-start gap-2 text-muted-foreground">
+                                        <Truck className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-foreground text-xs leading-tight">
+                                                Shipping: Free Delivery
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                Delivery: Fast 2-Hour in Kigali
+                                            </p>
                                         </div>
+                                    </div>
 
-                                        <div className="flex items-start gap-2">
-                                            <RotateCcw className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="font-bold text-foreground text-xs">Return & refund policy</p>
-                                                <p className="text-[11px]">7-day easy returns & exchanges</p>
-                                            </div>
+                                    <div className="flex items-start gap-2 text-muted-foreground">
+                                        <RotateCcw className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-foreground text-xs leading-tight">
+                                                Return & refund policy
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                7-day easy returns & exchanges
+                                            </p>
                                         </div>
+                                    </div>
 
-                                        <div className="flex items-start gap-2">
-                                            <ShieldCheck className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="font-bold text-foreground text-xs">Security & Privacy</p>
-                                                <p className="text-[11px] leading-tight">Safe payments · Protect your privacy</p>
-                                            </div>
+                                    <div className="flex items-start gap-2 text-muted-foreground">
+                                        <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-foreground text-xs leading-tight">
+                                                Security & Privacy
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                Safe payments · Protect your privacy
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Quantity Selector */}
-                                <div className="space-y-1.5 pt-2 border-t border-border/60">
-                                    <span className="text-xs font-semibold text-foreground">Quantity</span>
+                                <div className="pt-2 border-t border-border/60 space-y-1.5">
+                                    <label className="text-xs font-bold text-foreground">Quantity</label>
                                     <div className="flex items-center gap-3">
-                                        <div className="flex items-center border border-border rounded-lg bg-card overflow-hidden">
+                                        <div className="flex items-center border border-border rounded-lg bg-muted/30 overflow-hidden">
                                             <button
                                                 type="button"
                                                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
                                                 disabled={quantity <= 1}
-                                                className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+                                                className="p-1.5 hover:bg-muted text-foreground disabled:opacity-30 cursor-pointer transition-colors"
                                                 aria-label="Decrease quantity"
                                             >
                                                 <Minus className="size-3.5" />
                                             </button>
-                                            <span className="w-8 text-center text-xs font-bold text-foreground tabular-nums">
+                                            <span className="w-9 text-center text-xs font-bold text-foreground select-none">
                                                 {quantity}
                                             </span>
                                             <button
                                                 type="button"
-                                                onClick={() => setQuantity(q => q + 1)}
-                                                className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                                onClick={() => setQuantity(q => Math.min(99, q + 1))}
+                                                className="p-1.5 hover:bg-muted text-foreground cursor-pointer transition-colors"
                                                 aria-label="Increase quantity"
                                             >
                                                 <Plus className="size-3.5" />
@@ -534,45 +579,53 @@ export function ProductPreviewModal({
                                 </div>
                             </div>
 
-                            {/* Action Buttons: Add to cart & Buy now */}
+                            {/* Action Buttons (Buy Now & Add to Cart) */}
                             <div className="space-y-2 pt-2 border-t border-border/60">
-                                {/* Solid Red Add to Cart Button */}
-                                <Button
-                                    type="button"
-                                    onClick={handleAddToCart}
-                                    disabled={isPending || isBuyNowPending}
-                                    className="w-full bg-[#e02b2b] hover:bg-[#c82020] text-white font-bold h-11 rounded-xl shadow-xs text-sm transition-all cursor-pointer"
-                                >
-                                    {isPending ? (
-                                        <Loader2 className="size-4 animate-spin mr-1.5" />
-                                    ) : (
-                                        <ShoppingCart className="size-4 mr-1.5" />
-                                    )}
-                                    Add to cart
-                                </Button>
-
-                                {/* Amber/Orange Buy Now Button */}
                                 <Button
                                     type="button"
                                     onClick={handleBuyNow}
-                                    disabled={isPending || isBuyNowPending}
-                                    className="w-full bg-[#ff9900] hover:bg-[#e68a00] text-black font-bold h-11 rounded-xl shadow-xs text-sm transition-all cursor-pointer"
+                                    disabled={isBuyNowPending || isPending}
+                                    className="w-full h-10 font-bold text-sm bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-md cursor-pointer transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                                 >
                                     {isBuyNowPending ? (
-                                        <Loader2 className="size-4 animate-spin mr-1.5" />
+                                        <>
+                                            <Loader2 className="size-4 animate-spin" />
+                                            <span>Processing...</span>
+                                        </>
                                     ) : (
-                                        <Zap className="size-4 mr-1.5 fill-current" />
+                                        <>
+                                            <Zap className="size-4 fill-white" />
+                                            <span>Buy Now</span>
+                                        </>
                                     )}
-                                    Buy now
                                 </Button>
 
-                                {/* Bottom auxiliary actions: View details pill + Wishlist pill */}
-                                <div className="grid grid-cols-12 gap-2 pt-1">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleAddToCart}
+                                    disabled={isPending || isBuyNowPending}
+                                    className="w-full h-10 font-bold text-sm bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-950/70 border-red-300 dark:border-red-900 rounded-xl cursor-pointer transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                >
+                                    {isPending ? (
+                                        <>
+                                            <Loader2 className="size-4 animate-spin" />
+                                            <span>Adding...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ShoppingCart className="size-4" />
+                                            <span>Add to Cart</span>
+                                        </>
+                                    )}
+                                </Button>
+
+                                <div className="grid grid-cols-12 gap-1.5 pt-1">
                                     <Button
                                         type="button"
-                                        variant="outline"
+                                        variant="ghost"
                                         size="sm"
-                                        className="col-span-8 text-xs font-semibold h-9 rounded-lg border-border"
+                                        className="col-span-8 text-xs font-semibold h-9 rounded-lg hover:bg-muted text-foreground"
                                         render={<Link href={`/product/${initialData.slug}`} onClick={() => onOpenChange(false)} />}
                                         nativeButton={false}
                                     >
@@ -582,15 +635,15 @@ export function ProductPreviewModal({
 
                                     <Button
                                         type="button"
-                                        variant="outline"
+                                        variant="ghost"
                                         size="sm"
                                         onClick={toggleWishlist}
                                         className={cn(
-                                            'col-span-4 text-xs font-semibold h-9 rounded-lg border-border transition-colors gap-1',
-                                            isWishlisted ? 'text-red-500 border-red-200 bg-red-50/50' : 'text-muted-foreground',
+                                            'col-span-4 text-xs font-semibold h-9 rounded-lg hover:bg-muted transition-colors gap-1',
+                                            isWishlisted ? 'text-red-500' : 'text-muted-foreground',
                                         )}
                                     >
-                                        <Heart className={cn('size-3.5', isWishlisted && 'fill-red-500 text-red-500')} />
+                                        <Heart className={cn('size-3.5', isWishlisted && 'fill-red-500')} />
                                         <span>{wishlistCount}</span>
                                     </Button>
                                 </div>
@@ -599,7 +652,8 @@ export function ProductPreviewModal({
 
                     </div>
                 </div>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </div>,
+        document.body
     );
 }
