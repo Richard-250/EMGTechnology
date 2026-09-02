@@ -12,7 +12,8 @@ git pull origin main
 echo ">>> Installing dependencies..."
 npm install
 
-echo ">>> Building backend..."
+echo ">>> Building backend (clean dashboard dist)..."
+rm -rf apps/server/dist/dashboard
 npm run build -w server
 
 echo ">>> Syncing database schema (custom fields, etc.)..."

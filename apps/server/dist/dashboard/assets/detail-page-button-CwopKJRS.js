@@ -1,1 +1,0 @@
-import{ai as t,aJ as i,b7 as u,cH as x}from"./index-BzqLKldm.js";function h({id:r,href:s,label:a,disabled:e,search:n,className:o}){return!r&&!s?t.jsx("span",{children:a}):t.jsxs(i,{render:t.jsx(x,{to:s??`./${r}`,search:n??{},preload:!1}),variant:"ghost",disabled:e,className:o,children:[a,!e&&t.jsx(u,{className:"h-3 w-3 text-muted-foreground"})]})}export{h as D};
