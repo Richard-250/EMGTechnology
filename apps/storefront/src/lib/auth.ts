@@ -20,8 +20,13 @@ export async function setAuthToken(token: string) {
 }
 
 export async function getAuthToken(): Promise<string | undefined> {
-    const cookieStore = await cookies();
-    return cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
+    try {
+        const cookieStore = await cookies();
+        return cookieStore.get(AUTH_TOKEN_COOKIE)?.value;
+    } catch {
+        // During static prerender/build, cookies() rejects after the shell is generated.
+        return undefined;
+    }
 }
 
 export async function removeAuthToken() {

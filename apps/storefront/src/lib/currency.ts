@@ -14,6 +14,11 @@ export async function setCurrencyCookie(currencyCode: string) {
 }
 
 export async function getCurrencyCookie(): Promise<string | undefined> {
-    const cookieStore = await cookies();
-    return cookieStore.get(CURRENCY_COOKIE)?.value;
+    try {
+        const cookieStore = await cookies();
+        return cookieStore.get(CURRENCY_COOKIE)?.value;
+    } catch {
+        // During static prerender/build, cookies() rejects after the shell is generated.
+        return undefined;
+    }
 }

@@ -1,5 +1,7 @@
+import {connection} from 'next/server';
 import {getRouteLocale} from '@/i18n/server';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
+import {isPrerenderAbortError} from '@/lib/prerender';
 import {getTopCollections} from '@/lib/vendure/cached';
 import {Link} from '@/i18n/navigation';
 import {getTranslations} from 'next-intl/server';
@@ -10,6 +12,8 @@ import {getCategoryProductsMap} from '@/lib/category-products';
 import {MoreCategoriesMenu} from './more-categories-menu';
 
 export async function NavbarSubnav() {
+    await connection();
+
     const locale = await getRouteLocale();
     try {
         const currencyCode = await getActiveCurrencyCode();
@@ -75,7 +79,9 @@ export async function NavbarSubnav() {
             </nav>
         );
     } catch (error) {
-        console.error('Error loading navbar subnav:', error);
+        if (!isPrerenderAbortError(error)) {
+            console.error('Error loading navbar subnav:', error);
+        }
         return null;
     }
 }

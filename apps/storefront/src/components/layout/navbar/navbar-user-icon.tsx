@@ -1,34 +1,27 @@
-import {getRouteLocale} from '@/i18n/server';
-
+import {connection} from 'next/server';
 import {getActiveCustomer} from '@/lib/vendure/actions';
-
+import {isPrerenderAbortError} from '@/lib/prerender';
 import {NavbarAccountHover} from '@/components/layout/navbar/navbar-account-hover';
 
-
-
 export async function NavbarUserIcon() {
+    await connection();
 
-    const customer = await getActiveCustomer();
+    try {
+        const customer = await getActiveCustomer();
 
-
-
-    return (
-
-        <NavbarAccountHover
-
-            customer={
-
-                customer
-
-                    ? {firstName: customer.firstName}
-
-                    : null
-
-            }
-
-        />
-
-    );
-
+        return (
+            <NavbarAccountHover
+                customer={
+                    customer
+                        ? {firstName: customer.firstName}
+                        : null
+                }
+            />
+        );
+    } catch (error) {
+        if (!isPrerenderAbortError(error)) {
+            console.error('Error fetching active customer for navbar:', error);
+        }
+        return <NavbarAccountHover customer={null} />;
+    }
 }
-

@@ -1,8 +1,12 @@
+import {connection} from 'next/server';
 import {CartIcon} from './cart-icon';
+import {isPrerenderAbortError} from '@/lib/prerender';
 import {query} from '@/lib/vendure/api';
 import {GetActiveOrderQuery} from '@/lib/vendure/queries';
 
 export async function NavbarCart() {
+    await connection();
+
     try {
         const orderResult = await query(GetActiveOrderQuery, undefined, {
             useAuthToken: true,
@@ -12,7 +16,9 @@ export async function NavbarCart() {
         const cartItemCount = orderResult.data.activeOrder?.totalQuantity || 0;
         return <CartIcon cartItemCount={cartItemCount} />;
     } catch (error) {
-        console.error('Error fetching active order for cart icon:', error);
+        if (!isPrerenderAbortError(error)) {
+            console.error('Error fetching active order for cart icon:', error);
+        }
         return <CartIcon cartItemCount={0} />;
     }
 }

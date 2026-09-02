@@ -5,6 +5,7 @@ import {cache} from "react";
 import {readFragment} from "@/graphql";
 import {ActiveCustomerFragment} from "@/lib/vendure/fragments";
 import {getAuthToken} from "@/lib/auth";
+import {isPrerenderAbortError} from '@/lib/prerender';
 
 
 export const getActiveCustomer = cache(async () => {
@@ -18,7 +19,9 @@ export const getActiveCustomer = cache(async () => {
         }
         return readFragment(ActiveCustomerFragment, result.data.activeCustomer);
     } catch (error) {
-        console.error('Error fetching active customer:', error);
+        if (!isPrerenderAbortError(error)) {
+            console.error('Error fetching active customer:', error);
+        }
         return null;
     }
 });
