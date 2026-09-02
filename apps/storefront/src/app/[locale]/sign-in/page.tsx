@@ -29,6 +29,21 @@ function AuthPanelSkeleton() {
     );
 }
 
+function SignInPageSkeleton() {
+    return (
+        <div className="flex min-h-[calc(100vh-4rem)] mt-16">
+            <div className="hidden lg:flex lg:w-1/2 bg-[#0C1210] items-center justify-center p-12 rounded-br-3xl">
+                <Skeleton className="h-16 w-48 bg-white/10" />
+            </div>
+            <div className="flex w-full lg:w-1/2 items-center justify-center px-4 py-12">
+                <div className="w-full max-w-md">
+                    <AuthPanelSkeleton />
+                </div>
+            </div>
+        </div>
+    );
+}
+
 async function SignInContent({
     searchParams,
 }: {
@@ -46,7 +61,7 @@ async function SignInContent({
     );
 }
 
-export default async function SignInPage({searchParams}: PageProps<'/[locale]/sign-in'>) {
+async function SignInPageContent({searchParams}: PageProps<'/[locale]/sign-in'>) {
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'Auth'});
     const customer = await getActiveCustomer();
@@ -106,5 +121,13 @@ export default async function SignInPage({searchParams}: PageProps<'/[locale]/si
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SignInPage(props: PageProps<'/[locale]/sign-in'>) {
+    return (
+        <Suspense fallback={<SignInPageSkeleton />}>
+            <SignInPageContent {...props} />
+        </Suspense>
     );
 }

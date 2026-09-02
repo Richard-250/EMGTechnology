@@ -579,11 +579,15 @@
     }
   },
   "NotFound": {
-    "title": "Page Not Found",
-    "message": "The page you are looking for does not exist, has been moved, or is temporarily unavailable.",
-    "goHome": "Go to Home",
-    "browseProducts": "Browse Products",
-    "popularCollections": "Popular Collections"
+    "title": "Page introuvable",
+    "message": "La page que vous recherchez n'existe pas, a été déplacée ou est temporairement indisponible.",
+    "helpHint": "Essayez de parcourir le catalogue ou retournez à l'accueil pour continuer vos achats.",
+    "tryThese": "Liens rapides",
+    "searchCatalog": "Parcourir le catalogue",
+    "backHome": "Retour à l'accueil",
+    "goHome": "Aller à l'accueil",
+    "browseProducts": "Parcourir les produits",
+    "popularCollections": "Collections populaires"
   },
   "Footer": {
     "description": "EMG Technology Ltd — premium fitness and gym equipment for home athletes and serious trainers in Rwanda.",

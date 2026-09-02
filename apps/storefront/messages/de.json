@@ -459,6 +459,10 @@
   "NotFound": {
     "title": "Seite nicht gefunden",
     "message": "Die gesuchte Seite existiert nicht, wurde verschoben oder ist vorübergehend nicht verfügbar.",
+    "helpHint": "Durchsuchen Sie den Katalog oder kehren Sie zur Startseite zurück.",
+    "tryThese": "Schnelllinks",
+    "searchCatalog": "Katalog durchsuchen",
+    "backHome": "Zurück zur Startseite",
     "goHome": "Zur Startseite",
     "browseProducts": "Produkte durchsuchen",
     "popularCollections": "Beliebte Kategorien"
