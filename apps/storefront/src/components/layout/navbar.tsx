@@ -97,7 +97,9 @@ export function Navbar() {
                         </div>
 
                         {/* Promo — below logo & search, above subnav */}
-                        <GlobalPromoBar />
+                        <Suspense fallback={null}>
+                            <GlobalPromoBar />
+                        </Suspense>
 
                         <Suspense fallback={null}>
                             <NavbarSubnav />

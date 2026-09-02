@@ -69,9 +69,9 @@ EOT
 
 cat <<EOT > apps/storefront/.env.local
 NODE_ENV=production
+NEXT_PUBLIC_SITE_URL=https://emgtechnologyltd.com
 VENDURE_SHOP_API_URL=http://127.0.0.1:3001/shop-api
-NEXT_PUBLIC_VENDURE_SHOP_API_URL=http://127.0.0.1:3001/shop-api
-NEXT_PUBLIC_VENDURE_API_URL=http://127.0.0.1:3001
+NEXT_PUBLIC_VENDURE_SHOP_API_URL=https://emgtechnologyltd.com/shop-api
 EOT
 
 # 6. Install dependencies, initialize database & build

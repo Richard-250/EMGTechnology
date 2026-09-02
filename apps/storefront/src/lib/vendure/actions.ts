@@ -8,11 +8,19 @@ import {getAuthToken} from "@/lib/auth";
 
 
 export const getActiveCustomer = cache(async () => {
-    const token = await getAuthToken();
-    const result = await query(GetActiveCustomerQuery, undefined, {
-        token
-    });
-    return readFragment(ActiveCustomerFragment, result.data.activeCustomer);
-})
+    try {
+        const token = await getAuthToken();
+        const result = await query(GetActiveCustomerQuery, undefined, {
+            token,
+        });
+        if (!result.data.activeCustomer) {
+            return null;
+        }
+        return readFragment(ActiveCustomerFragment, result.data.activeCustomer);
+    } catch (error) {
+        console.error('Error fetching active customer:', error);
+        return null;
+    }
+});
 
 export const getActiveChannel = getActiveChannelCached;

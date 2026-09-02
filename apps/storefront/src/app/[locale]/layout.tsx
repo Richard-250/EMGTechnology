@@ -115,7 +115,9 @@ export default async function LocaleLayout({children}: {children: React.ReactNod
                         <CartConfirmationProvider>
                         <Navbar />
                         <main className="flex-1 pb-14 md:pb-0">{children}</main>
-                        <Footer/>
+                        <Suspense fallback={null}>
+                            <Footer/>
+                        </Suspense>
                         <Suspense fallback={null}>
                             <MobileBottomNav />
                         </Suspense>

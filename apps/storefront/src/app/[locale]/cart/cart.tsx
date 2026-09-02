@@ -2,7 +2,6 @@ import {CartProductsPanel, CartEmptyState} from '@/app/[locale]/cart/cart-produc
 import {CartBasketTotals} from '@/app/[locale]/cart/cart-basket-totals';
 import {getRouteLocale} from '@/i18n/server';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
-import {cacheLife, cacheTag} from 'next/cache';
 import {query} from '@/lib/vendure/api';
 import {GetActiveOrderQuery} from '@/lib/vendure/queries';
 import {Link} from '@/i18n/navigation';
@@ -12,10 +11,6 @@ import {getActiveCustomer} from '@/lib/vendure/actions';
 import {buildSignInHref} from '@/lib/auth-redirect';
 
 export async function Cart() {
-    'use cache: private';
-    cacheLife('minutes');
-    cacheTag('cart');
-
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
     const t = await getTranslations({locale, namespace: 'Cart'});
@@ -27,13 +22,18 @@ export async function Cart() {
               redirectTo: '/checkout',
               message: tAuth('checkoutSignInRequired'),
           });
-    const {data} = await query(GetActiveOrderQuery, {}, {
-        useAuthToken: true,
-        languageCode: locale,
-        currencyCode,
-    });
 
-    const activeOrder = data.activeOrder;
+    let activeOrder = null;
+    try {
+        const {data} = await query(GetActiveOrderQuery, {}, {
+            useAuthToken: true,
+            languageCode: locale,
+            currencyCode,
+        });
+        activeOrder = data.activeOrder;
+    } catch (error) {
+        console.error('Error fetching active order for cart page:', error);
+    }
 
     return (
         <>
