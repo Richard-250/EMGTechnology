@@ -2,6 +2,8 @@
 
 import {useState} from 'react';
 import Image from 'next/image';
+import {Link} from '@/i18n/navigation';
+import {Eye} from 'lucide-react';
 import {Price} from '@/components/commerce/price';
 import {resolveProductImage} from '@/lib/product-images';
 import {getDiscountPercent, getWasPrice} from '@/lib/product-badges';
@@ -32,36 +34,56 @@ export function DealProductCard({product, className}: DealProductCardProps) {
         isPriceRange: false,
     };
 
+    const handleOpenPreview = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setPreviewOpen(true);
+    };
+
     return (
         <>
             <div
-                onClick={() => setPreviewOpen(true)}
                 className={cn(
-                    'group flex flex-col shrink-0 w-[9.5rem] sm:w-[11rem] bg-white dark:bg-card rounded-lg p-2.5 hover:shadow-md transition-shadow cursor-pointer select-none border border-border/60',
+                    'group relative flex flex-col shrink-0 w-[9.5rem] sm:w-[11rem] bg-white dark:bg-card rounded-lg p-2.5 hover:shadow-md transition-shadow select-none border border-border/60',
                     className,
                 )}
             >
-                <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-2">
-                    <Image
-                        src={modalData.imageSrc}
-                        alt={product.productName}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        sizes="(max-width: 640px) 120px, 160px"
-                    />
-                </div>
-                <p className="text-[11px] leading-snug line-clamp-2 text-foreground/90 min-h-[2.25rem] mb-1.5">
-                    {product.productName}
-                </p>
-                <p className="text-base font-bold text-foreground leading-tight">
-                    <Price value={product.price} currencyCode={product.currencyCode} />
-                </p>
-                <p className="text-[11px] text-muted-foreground line-through">
-                    <Price value={getWasPrice(product.price, discount)} currencyCode={product.currencyCode} />
-                </p>
-                <span className="mt-1 inline-flex w-fit rounded-sm bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5">
-                    -{discount}%
-                </span>
+                <Link href={`/product/${product.slug}`} className="block">
+                    <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-2">
+                        {/* Quick View / Preview button */}
+                        <button
+                            type="button"
+                            onClick={handleOpenPreview}
+                            className={cn(
+                                'absolute top-1.5 right-1.5 z-20 flex items-center justify-center size-6.5 rounded-full bg-black/75 hover:bg-black text-white text-[10px] shadow-md transition-all duration-200 cursor-pointer active:scale-95',
+                                'opacity-90 sm:opacity-0 sm:group-hover:opacity-100',
+                            )}
+                            aria-label="Preview"
+                        >
+                            <Eye className="size-3.5" />
+                        </button>
+
+                        <Image
+                            src={modalData.imageSrc}
+                            alt={product.productName}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            sizes="(max-width: 640px) 120px, 160px"
+                        />
+                    </div>
+                    <p className="text-[11px] leading-snug line-clamp-2 text-foreground/90 group-hover:text-electric transition-colors min-h-[2.25rem] mb-1.5">
+                        {product.productName}
+                    </p>
+                    <p className="text-base font-bold text-foreground leading-tight">
+                        <Price value={product.price} currencyCode={product.currencyCode} />
+                    </p>
+                    <p className="text-[11px] text-muted-foreground line-through">
+                        <Price value={getWasPrice(product.price, discount)} currencyCode={product.currencyCode} />
+                    </p>
+                    <span className="mt-1 inline-flex w-fit rounded-sm bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5">
+                        -{discount}%
+                    </span>
+                </Link>
             </div>
 
             {/* Quick Preview Modal on Click */}

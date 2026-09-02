@@ -3,7 +3,7 @@
 import {useState, useTransition} from 'react';
 import Image from 'next/image';
 import {Link} from '@/i18n/navigation';
-import {ShoppingCart} from 'lucide-react';
+import {ShoppingCart, Eye} from 'lucide-react';
 import {useTranslations} from 'next-intl';
 import {cn} from '@/lib/utils';
 import {Price} from '@/components/commerce/price';
@@ -78,6 +78,12 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
         });
     };
 
+    const handleOpenPreview = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setPreviewOpen(true);
+    };
+
     const priceDisplay =
         data.price != null ? (
             <Price value={data.price} currencyCode={data.currencyCode} />
@@ -88,21 +94,36 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
     return (
         <>
             <div
-                onClick={() => setPreviewOpen(true)}
                 className={cn(
-                    'group relative block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer select-none',
+                    'group relative block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none',
                     compact
                         ? 'bg-white dark:bg-card rounded-xl overflow-hidden border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-200'
                         : 'overflow-hidden rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-300 bg-card',
                 )}
             >
-                <div className="block">
+                {/* Clicking on the product card takes user directly to full dedicated product page */}
+                <Link href={`/product/${data.slug}`} className="block">
                     <div className="relative bg-muted overflow-hidden aspect-square">
                         {discount != null && (
-                            <span className="absolute top-2 left-2 z-10 rounded-md bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5 shadow-xs">
+                            <span className="absolute top-2 left-2 z-10 rounded-md bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5 shadow-xs pointer-events-none">
                                 -{discount}%
                             </span>
                         )}
+
+                        {/* Quick View / Preview button for mobile & desktop */}
+                        <button
+                            type="button"
+                            onClick={handleOpenPreview}
+                            className={cn(
+                                'absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-full bg-black/75 hover:bg-black text-white text-[10px] sm:text-[11px] font-bold shadow-md transition-all duration-200 cursor-pointer active:scale-95',
+                                'opacity-90 sm:opacity-0 sm:group-hover:opacity-100',
+                            )}
+                            aria-label={t('seePreview')}
+                        >
+                            <Eye className="size-3.5" />
+                            <span>Preview</span>
+                        </button>
+
                         <Image
                             src={data.imageSrc}
                             alt={data.productName}
@@ -114,6 +135,8 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                                     : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
                             }
                         />
+
+                        {/* Add to cart icon button */}
                         <button
                             type="button"
                             onClick={handleAddToCart}
@@ -128,10 +151,11 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                             <ShoppingCart className="size-3.5 sm:size-4" />
                         </button>
                     </div>
+
                     <div className={cn(compact ? 'p-2.5 space-y-1' : 'pt-3 pb-1 px-1 space-y-1')}>
                         <h3
                             className={cn(
-                                'leading-snug line-clamp-2 group-hover:text-foreground transition-colors font-medium',
+                                'leading-snug line-clamp-2 group-hover:text-electric transition-colors font-medium',
                                 compact
                                     ? 'text-xs md:text-sm text-foreground/90 min-h-[2.5rem]'
                                     : 'text-sm md:text-base px-2',
@@ -166,8 +190,9 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                             <span className="text-electric">{t('freeShipping')}</span>
                         </p>
                     </div>
-                </div>
+                </Link>
 
+                {/* Desktop hover actions: See preview + Similar items */}
                 <div
                     className={cn(
                         'hidden group-hover:flex flex-col gap-1.5 px-2 pb-2 pt-1 border-t border-border/50 bg-card',
@@ -177,11 +202,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                         type="button"
                         size="sm"
                         className="w-full h-8 text-xs font-bold bg-foreground text-background hover:bg-foreground/90 rounded-lg cursor-pointer"
-                        onClick={e => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setPreviewOpen(true);
-                        }}
+                        onClick={handleOpenPreview}
                     >
                         {t('seePreview')}
                     </Button>
@@ -190,7 +211,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                         size="sm"
                         variant="outline"
                         className="w-full h-8 text-xs font-bold border-foreground/20 rounded-lg"
-                        render={<Link href={`/search?q=${similarQuery}`} />}
+                        render={<Link href={`/search?q=${similarQuery}`} onClick={e => e.stopPropagation()} />}
                         nativeButton={false}
                     >
                         {t('similarItems')}

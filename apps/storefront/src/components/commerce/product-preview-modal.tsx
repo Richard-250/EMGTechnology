@@ -231,7 +231,7 @@ export function ProductPreviewModal({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
-                className="w-[96vw] max-w-[1240px] top-3 sm:top-4 md:top-6 left-1/2 -translate-x-1/2 translate-y-0 max-h-[94vh] rounded-2xl md:rounded-3xl p-0 overflow-hidden bg-white dark:bg-card border border-border/80 shadow-2xl relative flex flex-col"
+                className="w-[96vw] max-w-[1240px] top-1 sm:top-2 md:top-3 left-1/2 -translate-x-1/2 translate-y-0 max-h-[96vh] rounded-2xl md:rounded-3xl p-0 overflow-hidden bg-white dark:bg-card border border-border/80 shadow-2xl relative flex flex-col"
                 showCloseButton={false}
             >
                 {/* Floating Black Circle Close Button (AliExpress Style) */}
