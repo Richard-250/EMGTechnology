@@ -12,9 +12,8 @@ git pull origin main
 echo ">>> Installing dependencies..."
 npm install
 
-echo ">>> Building backend (clean dashboard dist)..."
-rm -rf apps/server/dist/dashboard
-npm run build -w server
+echo ">>> Building backend (server + worker + dashboard)..."
+bash scripts/build-server-production.sh
 
 echo ">>> Restarting Vendure with new build..."
 pm2 restart emg-server emg-worker --update-env

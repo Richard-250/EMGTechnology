@@ -11,16 +11,7 @@ git pull origin main
 echo ">>> Installing dependencies..."
 npm install
 
-echo ">>> Building server + dashboard..."
-rm -rf apps/server/dist/dashboard
-npm run build -w server
-
-DASHBOARD_JS=$(grep -o 'assets/index-[^"]*\.js' apps/server/dist/dashboard/index.html | head -1)
-if [ -z "$DASHBOARD_JS" ] || [ ! -f "apps/server/dist/dashboard/${DASHBOARD_JS}" ]; then
-  echo "ERROR: Dashboard build failed — index.html and JS bundle do not match."
-  exit 1
-fi
-echo "Dashboard built: ${DASHBOARD_JS}"
+bash scripts/build-server-production.sh
 
 echo ">>> Restarting Vendure..."
 pm2 restart emg-server emg-worker --update-env
@@ -34,7 +25,10 @@ for i in $(seq 1 30); do
     exit 0
   fi
   if [ "$i" -eq 30 ]; then
-    echo "ERROR: Dashboard still on placeholder page. Check: pm2 logs emg-server --lines 30"
+    echo "ERROR: Dashboard still on placeholder page."
+    echo "Status: ${STATUS:-"(no response)"}"
+    echo "Check: pm2 logs emg-server --lines 30"
+    echo "On disk: ls -la apps/server/dist/dashboard/"
     exit 1
   fi
   sleep 1

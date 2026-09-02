@@ -22,6 +22,7 @@
     "verify:production": "bash scripts/verify-production.sh",
     "deploy:stretch": "bash scripts/stretch-cloud-first-deploy.sh",
     "fix:dashboard": "bash scripts/fix-production-dashboard.sh",
+    "build:production-server": "bash scripts/build-server-production.sh",
     "start": "concurrently -n server,storefront -c blue,magenta \"npm run start -w server\" \"npm run start -w storefront\"",
     "start:server": "npm run start -w server",
     "start:storefront": "npm run start -w storefront"

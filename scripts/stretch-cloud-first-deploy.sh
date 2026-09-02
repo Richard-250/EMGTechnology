@@ -49,9 +49,8 @@ echo "Step 2: Installing dependencies..."
 npm install
 echo ""
 
-echo "Step 3: Building server + admin dashboard..."
-rm -rf apps/server/dist/dashboard
-npm run build -w server
+echo "Step 3: Building server + worker + dashboard..."
+bash scripts/build-server-production.sh
 echo ""
 
 echo "Step 4: Building storefront..."
