@@ -11,13 +11,13 @@ import ReviewStep from './steps/review-step';
 import OrderSummary from './order-summary';
 import {useTranslations} from 'next-intl';
 
-type CheckoutStep = 'contact' | 'fulfillment' | 'payment' | 'review';
+type CheckoutStep = 'contact' | 'fulfillment' | 'review' | 'payment';
 type FulfillmentPhase = 'address' | 'delivery';
 
 export default function CheckoutFlow() {
     const t = useTranslations('Checkout');
 
-    const stepOrder: CheckoutStep[] = ['contact', 'fulfillment', 'payment', 'review'];
+    const stepOrder: CheckoutStep[] = ['contact', 'fulfillment', 'review', 'payment'];
 
     const getInitialState = () => {
         const completed = new Set<CheckoutStep>();
@@ -34,8 +34,8 @@ export default function CheckoutFlow() {
     const stepMeta: Record<CheckoutStep, {label: string; icon: typeof User}> = {
         contact: {label: t('steps.contact'), icon: User},
         fulfillment: {label: t('steps.fulfillment'), icon: Truck},
-        payment: {label: t('steps.payment'), icon: CreditCard},
         review: {label: t('steps.review'), icon: ClipboardCheck},
+        payment: {label: t('steps.payment'), icon: CreditCard},
     };
 
     const currentIndex = stepOrder.indexOf(currentStep);
@@ -46,8 +46,9 @@ export default function CheckoutFlow() {
             return;
         }
         if (currentIndex > 0) {
-            setCurrentStep(stepOrder[currentIndex - 1]);
-            if (stepOrder[currentIndex - 1] === 'fulfillment') {
+            const previous = stepOrder[currentIndex - 1];
+            setCurrentStep(previous);
+            if (previous === 'fulfillment') {
                 setFulfillmentPhase('delivery');
             }
         }
@@ -69,12 +70,15 @@ export default function CheckoutFlow() {
         completeStep('fulfillment');
     };
 
+    const handlePayNow = () => {
+        completeStep('review');
+    };
+
     return (
         <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
             <div>
-                {/* Step progress — Nyereka-style */}
                 <nav className="flex flex-wrap gap-2 mb-6" aria-label={t('checkoutProgress')}>
-                    {stepOrder.map((step, index) => {
+                    {stepOrder.map(step => {
                         const done = completedSteps.has(step);
                         const active = currentStep === step;
                         const Icon = stepMeta[step].icon;
@@ -92,9 +96,11 @@ export default function CheckoutFlow() {
                                           : 'bg-muted text-muted-foreground'
                                 }`}
                             >
-                                <span className={`flex size-6 items-center justify-center rounded-full text-[11px] ${
-                                    active ? 'bg-electric-foreground/20' : done ? 'bg-electric/20' : 'bg-background'
-                                }`}>
+                                <span
+                                    className={`flex size-6 items-center justify-center rounded-full text-[11px] ${
+                                        active ? 'bg-electric-foreground/20' : done ? 'bg-electric/20' : 'bg-background'
+                                    }`}
+                                >
                                     {done && !active ? <Check className="size-3.5" /> : <Icon className="size-3.5" />}
                                 </span>
                                 {stepMeta[step].label}
@@ -128,40 +134,45 @@ export default function CheckoutFlow() {
                         </>
                     )}
 
-                    {currentStep === 'payment' && (
-                        <>
-                            <h2 className="flex items-center gap-2 text-lg font-bold mb-5">
-                                <CreditCard className="size-5 text-electric" />
-                                {t('paymentMethod')}
-                            </h2>
-                            <PaymentStep onComplete={() => completeStep('payment')} />
-                        </>
-                    )}
-
                     {currentStep === 'review' && (
                         <>
                             <h2 className="flex items-center gap-2 text-lg font-bold mb-5">
                                 <ClipboardCheck className="size-5 text-electric" />
-                                {t('reviewAndPlaceOrder')}
+                                {t('reviewYourOrder')}
                             </h2>
-                            <ReviewStep onEditStep={(step) => {
-                                if (step === 'contact') setCurrentStep('contact');
-                                else if (step === 'shipping' || step === 'delivery') {
-                                    setCurrentStep('fulfillment');
-                                    setFulfillmentPhase(step === 'shipping' ? 'address' : 'delivery');
-                                }
-                                else if (step === 'payment') setCurrentStep('payment');
-                            }} />
+                            <ReviewStep
+                                onEditStep={step => {
+                                    if (step === 'contact') setCurrentStep('contact');
+                                    else if (step === 'shipping' || step === 'delivery') {
+                                        setCurrentStep('fulfillment');
+                                        setFulfillmentPhase(step === 'shipping' ? 'address' : 'delivery');
+                                    }
+                                }}
+                                onPayNow={handlePayNow}
+                            />
                         </>
                     )}
 
-                    {currentStep !== 'review' && (
+                    {currentStep === 'payment' && (
+                        <>
+                            <h2 className="flex items-center gap-2 text-lg font-bold mb-5">
+                                <CreditCard className="size-5 text-electric" />
+                                {t('completePayment')}
+                            </h2>
+                            <PaymentStep />
+                        </>
+                    )}
+
+                    {currentStep !== 'review' && currentStep !== 'payment' && (
                         <div className="flex justify-between mt-8 pt-5 border-t border-border">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={goBack}
-                                disabled={currentIndex === 0 && !(currentStep === 'fulfillment' && fulfillmentPhase === 'delivery')}
+                                disabled={
+                                    currentIndex === 0 &&
+                                    !(currentStep === 'fulfillment' && fulfillmentPhase === 'delivery')
+                                }
                                 className="gap-1"
                             >
                                 <ChevronLeft className="size-4" />
@@ -170,6 +181,15 @@ export default function CheckoutFlow() {
                             {currentStep === 'fulfillment' && fulfillmentPhase === 'address' && (
                                 <p className="text-xs text-muted-foreground self-center">{t('fulfillmentHint')}</p>
                             )}
+                        </div>
+                    )}
+
+                    {currentStep === 'payment' && (
+                        <div className="flex justify-start mt-8 pt-5 border-t border-border">
+                            <Button type="button" variant="outline" onClick={goBack} className="gap-1">
+                                <ChevronLeft className="size-4" />
+                                {t('back')}
+                            </Button>
                         </div>
                     )}
                 </section>

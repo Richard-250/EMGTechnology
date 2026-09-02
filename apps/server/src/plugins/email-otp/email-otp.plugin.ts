@@ -8,6 +8,7 @@ const shopApiExtensions = gql`
     type CompleteSignupResult {
         success: Boolean!
         message: String!
+        alreadyComplete: Boolean
     }
 
     extend type Mutation {

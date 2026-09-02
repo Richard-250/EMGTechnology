@@ -1,12 +1,14 @@
 import type {Metadata} from 'next';
 import {Suspense} from 'react';
 import Image from 'next/image';
+import {redirect} from '@/i18n/navigation';
 import {getRouteLocale} from '@/i18n/server';
 import {getTranslations} from 'next-intl/server';
 import {AuthTabsPanel} from '@/components/auth/auth-tabs-panel';
 import {Skeleton} from '@/components/ui/skeleton';
 import {SITE_NAME, SITE_LOGO} from '@/lib/metadata';
 import {COMPANY} from '@/lib/company';
+import {getActiveCustomer} from '@/lib/vendure/actions';
 
 export async function generateMetadata(): Promise<Metadata> {
     const locale = await getRouteLocale();
@@ -47,6 +49,11 @@ async function SignInContent({
 export default async function SignInPage({searchParams}: PageProps<'/[locale]/sign-in'>) {
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'Auth'});
+    const customer = await getActiveCustomer();
+
+    if (customer) {
+        redirect({href: '/account/profile', locale});
+    }
 
     return (
         <div className="flex min-h-[calc(100vh-4rem)] mt-16">
@@ -57,7 +64,7 @@ export default async function SignInPage({searchParams}: PageProps<'/[locale]/si
                         alt={SITE_NAME}
                         width={240}
                         height={86}
-                        className="h-16 w-auto object-contain bg-white rounded-sm p-2"
+                        className="h-16 w-auto object-contain"
                         priority
                     />
                     <p className="text-xl text-white/80 leading-relaxed">{t('welcomeBack')}</p>

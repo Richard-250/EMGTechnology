@@ -16,6 +16,10 @@ declare global {
             DB_PASSWORD: string;
             DB_NAME: string;
             DB_SYNCHRONIZE: string;
+            GOOGLE_CLIENT_ID: string;
+            GOOGLE_CLIENT_SECRET: string;
+            STOREFRONT_URL: string;
+            REVALIDATION_SECRET: string;
         }
     }
 }

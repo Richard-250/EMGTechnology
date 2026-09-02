@@ -1,132 +1,94 @@
-{{> header title="Order Receipt" }}
+{{> header title="Order confirmation" }}
 
-<mj-raw>
-    <style type="text/css">
-    .callout {
-        background-color: #375a67;
-        padding: 15px 0;
-    }
-    .callout-large > div {
-        text-align: center !important;
-        color: #fff !important;
-        font-size: 16px !important;
-        font-weight: bold;
-        padding: 0;
-    }
-    .callout-small > div {
-        text-align: center !important;
-        color: #fff !important;
-        font-size: 14px !important;
-        padding: 0;
-    }
-    ul.address {
-        list-style-type: none;
-        padding: 0;
-    }
-    tr.order-row td {
-        border-bottom: 1px dashed #eee;
-    }
-    tr.order-row td:last-child {
-        text-align: center;
-    }
-    tr.total-row {
-        font-weight: bold;
-    }
-    .bg-off-white {
-        background-color: #f5f5f5;
-    }
-    </style>
-</mj-raw>
-
-<mj-section css-class="bg-off-white">
+<mj-section padding="8px 24px 0">
     <mj-column>
-        <mj-text>
+        <mj-text font-size="15px" color="#374151">
             Dear {{ order.customer.firstName }} {{ order.customer.lastName }},
         </mj-text>
-        <mj-text>
-            Thank you for your order!
+        <mj-text font-size="15px" color="#374151">
+            Thank you for your order. Please find your order summary below.
         </mj-text>
     </mj-column>
 </mj-section>
 
-
-<mj-section css-class="callout">
-    <mj-column>
-        <mj-text css-class="callout-large"><strong>Order Code</strong></mj-text>
-        <mj-text css-class="callout-small">{{ order.code }}</mj-text>
-    </mj-column>
-    <mj-column>
-        <mj-text css-class="callout-large"><strong>Order Date</strong></mj-text>
-        <mj-text css-class="callout-small">{{ formatDate order.orderPlacedAt }}</mj-text>
-    </mj-column>
-    <mj-column>
-        <mj-text css-class="callout-large"><strong>Total Price</strong></mj-text>
-        <mj-text css-class="callout-small">{{ formatMoney order.total order.currencyCode 'en' }}</mj-text>
-    </mj-column>
-</mj-section>
-
-
-<mj-section css-class="bg-off-white">
-    <mj-column>
-        <mj-text>
-            {{#with order.shippingAddress }}
-                <h3>Shipping To: {{ fullName }}</h3>
-                <ul class="address">
-                    {{#if company}}<li>{{ company }}</li>{{/if}}
-                    {{#if streetLine1}}<li>{{ streetLine1 }}</li>{{/if}}
-                    {{#if streetLine2}}<li>{{ streetLine2 }}</li>{{/if}}
-                    {{#if city}}<li>{{ city }}</li>{{/if}}
-                    {{#if province}}<li>{{ province }}</li>{{/if}}
-                    {{#if postalCode}}<li>{{ postalCode }}</li>{{/if}}
-                    {{#if country}}<li>{{ country }}</li>{{/if}}
-                    {{#if phoneNumber}}<li>{{ phoneNumber }}</li>{{/if}}
-                </ul>
-            {{/with}}
+<mj-section padding="16px 24px">
+    <mj-column css-class="summary-box" padding="20px">
+        <mj-text css-class="summary-title" padding-bottom="16px">
+            Your Order Summary
         </mj-text>
-    </mj-column>
-</mj-section>
 
-<mj-section>
-    <mj-column>
-        <mj-text>
-            <h3>Order Summary:</h3>
-        </mj-text>
-        <mj-table cellpadding="6px">
-            {{#each order.lines }}
-                <tr class="order-row">
-                    <td>
-                        <img alt="{{ productVariant.name }}"
-                             style="width: 50px; height: 50px;"
-                             src="{{ featuredAsset.preview }}?w=50&h=50" />
-                    </td>
-                    <td>{{ quantity }} x {{ productVariant.name }}</td>
-                    <td>{{ productVariant.quantity }}</td>
-                    <td>{{ formatMoney discountedLinePriceWithTax ../order.currencyCode 'en' }}</td>
-                </tr>
-            {{/each}}
-            {{#each order.discounts }}
-                <tr class="order-row">
-                    <td colspan="3">
-                        {{ description }}
-                    </td>
-                    <td>{{ formatMoney amount ../order.currencyCode 'en' }}</td>
-                </tr>
-            {{/each}}
-            <tr class="order-row">
-                <td colspan="3">Sub-total:</td>
-                <td>{{ formatMoney order.subTotalWithTax order.currencyCode 'en' }}</td>
+        <mj-table css-class="summary-row">
+            <tr>
+                <td style="padding:8px 0;font-size:14px;font-weight:600;color:#111827;">Order Code</td>
+                <td style="padding:8px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ order.code }}</td>
             </tr>
-            {{#each shippingLines }}
-            <tr class="order-row">
-                <td colspan="3">Shipping ({{ shippingMethod.name }}):</td>
-                <td>{{ formatMoney priceWithTax ../order.currencyCode 'en' }}</td>
-            </tr>
-            {{/each}}
-            <tr class="order-row total-row">
-                <td colspan="3">Total:</td>
-                <td>{{ formatMoney order.totalWithTax order.currencyCode 'en' }}</td>
+            <tr>
+                <td colspan="2" style="font-size:12px;color:#6b7280;padding-bottom:8px;">Reference for tracking and support</td>
             </tr>
         </mj-table>
+
+        <mj-table css-class="summary-row">
+            <tr>
+                <td style="padding:8px 0;font-size:14px;font-weight:600;color:#111827;">Order Date</td>
+                <td style="padding:8px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ formatDate order.orderPlacedAt }}</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="font-size:12px;color:#6b7280;padding-bottom:8px;">When your order was placed</td>
+            </tr>
+        </mj-table>
+
+        <mj-table css-class="summary-row">
+            <tr>
+                <td style="padding:8px 0;font-size:14px;font-weight:600;color:#111827;">Subtotal</td>
+                <td style="padding:8px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ formatMoney order.subTotalWithTax order.currencyCode 'en' }}</td>
+            </tr>
+        </mj-table>
+
+        {{#if order.shippingWithTax}}
+        <mj-table css-class="summary-row">
+            <tr>
+                <td style="padding:8px 0;font-size:14px;font-weight:600;color:#111827;">Shipping</td>
+                <td style="padding:8px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ formatMoney order.shippingWithTax order.currencyCode 'en' }}</td>
+            </tr>
+        </mj-table>
+        {{/if}}
+
+        <mj-divider border-color="#e5e7eb" border-style="dashed" padding="12px 0" />
+
+        <mj-table>
+            <tr>
+                <td style="padding:8px 0;font-size:16px;font-weight:700;color:#111827;">Total Paid</td>
+                <td style="padding:8px 0;font-size:16px;font-weight:700;color:#269A2D;text-align:right;">{{ formatMoney order.total order.currencyCode 'en' }}</td>
+            </tr>
+        </mj-table>
+    </mj-column>
+</mj-section>
+
+<mj-section padding="0 24px 16px">
+    <mj-column css-class="summary-box" padding="20px">
+        <mj-text css-class="summary-title" padding-bottom="12px">Items Ordered</mj-text>
+        <mj-table>
+            {{#each order.lines}}
+            <tr style="border-bottom:1px dashed #e5e7eb;">
+                <td style="padding:10px 0;font-size:14px;color:#374151;">{{ quantity }}× {{ productVariant.name }}</td>
+                <td style="padding:10px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ formatMoney linePriceWithTax ../order.currencyCode 'en' }}</td>
+            </tr>
+            {{/each}}
+        </mj-table>
+    </mj-column>
+</mj-section>
+
+<mj-section padding="0 24px 16px">
+    <mj-column css-class="summary-box" padding="20px">
+        <mj-text css-class="summary-title" padding-bottom="8px">Delivery Address</mj-text>
+        <mj-text font-size="14px" color="#374151" line-height="22px">
+            {{#with order.shippingAddress}}
+            {{ fullName }}<br/>
+            {{#if streetLine1}}{{ streetLine1 }}<br/>{{/if}}
+            {{#if city}}{{ city }}{{/if}}{{#if postalCode}}, {{ postalCode }}{{/if}}<br/>
+            {{#if country}}{{ country }}{{/if}}
+            {{/with}}
+        </mj-text>
     </mj-column>
 </mj-section>
 

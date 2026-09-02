@@ -1,8 +1,10 @@
-"use client";
+'use client';
 
-import {FragmentOf} from "@/graphql";
-import {ProductCardFragment} from "@/lib/vendure/fragments";
-import {ProductCard} from "@/components/commerce/product-card";
+import {useMemo} from 'react';
+import {FragmentOf} from '@/graphql';
+import {ProductCardFragment} from '@/lib/vendure/fragments';
+import {getShuffleSeed, shuffleProducts} from '@/lib/product-sort';
+import {ProductCard} from '@/components/commerce/product-card';
 
 interface HomeFitnessCatalogProps {
     products: FragmentOf<typeof ProductCardFragment>[];
@@ -20,10 +22,14 @@ export function HomeFitnessCatalog({
     totalProducts,
     labels,
 }: HomeFitnessCatalogProps) {
+    const displayProducts = useMemo(
+        () => shuffleProducts(products, getShuffleSeed('home-catalog')),
+        [products],
+    );
+
     return (
         <section className="py-6 md:py-10">
             <div className="container mx-auto px-3 md:px-4 space-y-5 md:space-y-6">
-                {/* All Products header — bold, visible & prominent directly on page */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-border/60">
                     <div className="flex items-center gap-3">
                         <span className="w-2 sm:w-2.5 h-8 sm:h-10 bg-electric rounded-full shrink-0 shadow-sm shadow-electric/20" aria-hidden="true" />
@@ -38,18 +44,18 @@ export function HomeFitnessCatalog({
                     </div>
                     <div className="text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded-full bg-muted/80 text-foreground self-start sm:self-center border border-border/60 shadow-xs">
                         {labels.showing
-                            .replace("{count}", String(products.length))
-                            .replace("{total}", String(totalProducts || products.length))}
+                            .replace('{count}', String(displayProducts.length))
+                            .replace('{total}', String(totalProducts || displayProducts.length))}
                     </div>
                 </div>
 
-                {products.length === 0 ? (
+                {displayProducts.length === 0 ? (
                     <div className="text-center py-16 text-muted-foreground">
                         No products available yet.
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 md:gap-3.5">
-                        {products.map((product, i) => (
+                        {displayProducts.map((product, i) => (
                             <ProductCard key={`home-product-${i}`} product={product} variant="compact" />
                         ))}
                     </div>
@@ -58,4 +64,3 @@ export function HomeFitnessCatalog({
         </section>
     );
 }
-

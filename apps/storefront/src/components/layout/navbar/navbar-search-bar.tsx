@@ -3,13 +3,19 @@
 import {useCallback, useEffect, useRef, useState, useTransition} from 'react';
 import {useSearchParams} from 'next/navigation';
 import {useRouter} from '@/i18n/navigation';
-import {Camera, Search} from 'lucide-react';
+import {Camera, Clock, Search, X} from 'lucide-react';
 import Image from 'next/image';
 import {useLocale, useTranslations} from 'next-intl';
 import {cn} from '@/lib/utils';
 import {Price} from '@/components/commerce/price';
 import {resolveProductImage} from '@/lib/product-images';
 import type {SerializedProductCard} from '@/lib/product-price';
+import {
+    addSearchHistory,
+    getSearchHistory,
+    removeSearchHistoryItem,
+    type SearchHistoryEntry,
+} from '@/lib/search-history';
 import {toast} from 'sonner';
 
 interface BrowseCategory {
@@ -39,7 +45,11 @@ export function NavbarSearchBar({
     const [isOpen, setIsOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState(browseCategories[0]?.slug ?? '');
     const [suggestions, setSuggestions] = useState<SerializedProductCard[]>([]);
+    const [historyItems, setHistoryItems] = useState<SearchHistoryEntry[]>([]);
+    const [historyProducts, setHistoryProducts] = useState<SerializedProductCard[]>([]);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+    const [loadingHistoryProducts, setLoadingHistoryProducts] = useState(false);
+    const [visualSearchActive, setVisualSearchActive] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,6 +67,44 @@ export function NavbarSearchBar({
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        setHistoryItems(getSearchHistory());
+    }, []);
+
+    const loadHistoryProducts = useCallback(
+        async (history: SearchHistoryEntry[]) => {
+            if (history.length === 0) {
+                setHistoryProducts([]);
+                return;
+            }
+            setLoadingHistoryProducts(true);
+            try {
+                const results = await Promise.all(
+                    history.slice(0, 3).map(async entry => {
+                        const params = new URLSearchParams({q: entry.query, locale});
+                        const res = await fetch(`/api/search/suggest?${params}`);
+                        const data = (await res.json()) as {items: SerializedProductCard[]};
+                        return data.items?.[0];
+                    }),
+                );
+                setHistoryProducts(results.filter(Boolean) as SerializedProductCard[]);
+            } catch {
+                setHistoryProducts([]);
+            } finally {
+                setLoadingHistoryProducts(false);
+            }
+        },
+        [locale],
+    );
+
+    useEffect(() => {
+        if (isOpen && !searchValue.trim()) {
+            const history = getSearchHistory();
+            setHistoryItems(history);
+            void loadHistoryProducts(history);
+        }
+    }, [isOpen, searchValue, loadHistoryProducts]);
 
     const fetchSuggestions = useCallback(
         async (term: string) => {
@@ -95,11 +143,37 @@ export function NavbarSearchBar({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setIsOpen(false);
+
+        if (visualSearchActive) {
+            sessionStorage.setItem('emg-visual-search', String(Date.now()));
+            startTransition(() => {
+                router.push(`/search?visual=1&sort=shuffle&t=${Date.now()}`);
+            });
+            return;
+        }
+
         if (!searchValue.trim()) return;
+        const nextHistory = addSearchHistory(searchValue.trim());
+        setHistoryItems(nextHistory);
+        startTransition(() => {
+            router.push(`/search?q=${encodeURIComponent(searchValue.trim())}&sort=shuffle`);
+        });
+    };
+
+    const searchFromHistory = (query: string) => {
+        setSearchValue(query);
+        addSearchHistory(query);
+        setHistoryItems(getSearchHistory());
         setIsOpen(false);
         startTransition(() => {
-            router.push(`/search?q=${encodeURIComponent(searchValue.trim())}`);
+            router.push(`/search?q=${encodeURIComponent(query)}`);
         });
+    };
+
+    const removeHistoryItem = (query: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setHistoryItems(removeSearchHistoryItem(query));
     };
 
     const goTo = (href: string) => {
@@ -119,8 +193,10 @@ export function NavbarSearchBar({
             toast.error(t('imageSearchInvalid'));
             return;
         }
-        toast.info(t('imageSearchComingSoon'), {
-            description: t('imageSearchComingSoonHint'),
+        setVisualSearchActive(true);
+        setSearchValue('');
+        toast.success(t('imageSearchReady'), {
+            description: t('imageSearchReadyHint'),
         });
     };
 
@@ -146,8 +222,11 @@ export function NavbarSearchBar({
             >
                 <input
                     type="search"
-                    placeholder={tNav('searchProducts')}
-                    className="flex-1 min-w-0 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+                    placeholder={visualSearchActive ? t('imageSearchPlaceholder') : tNav('searchProducts')}
+                    className={cn(
+                        'flex-1 min-w-0 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground',
+                        visualSearchActive && 'text-electric font-medium',
+                    )}
                     value={searchValue}
                     onChange={e => setSearchValue(e.target.value)}
                     onFocus={() => setIsOpen(true)}
@@ -157,7 +236,10 @@ export function NavbarSearchBar({
                 <button
                     type="button"
                     onClick={handleImageSearch}
-                    className="flex size-9 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    className={cn(
+                        'flex size-9 shrink-0 items-center justify-center transition-colors',
+                        visualSearchActive ? 'text-electric' : 'text-muted-foreground hover:text-foreground',
+                    )}
                     aria-label={t('searchByImage')}
                 >
                     <Camera className="size-4" />
@@ -241,7 +323,77 @@ export function NavbarSearchBar({
                             </button>
                         </div>
                     ) : (
-                        <div className="flex min-h-[20rem] max-h-[28rem]">
+                        <div className="max-h-[28rem] overflow-y-auto">
+                            {historyItems.length > 0 && (
+                                <div className="border-b border-border">
+                                    <p className="px-4 py-2.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                                        <Clock className="size-3.5" />
+                                        {t('recentSearches')}
+                                    </p>
+                                    <ul>
+                                        {historyItems.map(entry => (
+                                            <li key={entry.query}>
+                                                <button
+                                                    type="button"
+                                                    className="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-muted/60 transition-colors group"
+                                                    onMouseDown={e => e.preventDefault()}
+                                                    onClick={() => searchFromHistory(entry.query)}
+                                                >
+                                                    <Search className="size-3.5 text-muted-foreground shrink-0" />
+                                                    <span className="text-sm flex-1 truncate">{entry.query}</span>
+                                                    <span
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-foreground"
+                                                        onClick={e => removeHistoryItem(entry.query, e)}
+                                                        aria-label={t('removeFromHistory')}
+                                                    >
+                                                        <X className="size-3.5" />
+                                                    </span>
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {(historyProducts.length > 0 || loadingHistoryProducts) && (
+                                <div className="px-4 py-3 border-b border-border">
+                                    <p className="text-xs font-semibold text-muted-foreground mb-2">
+                                        {t('basedOnYourSearches')}
+                                    </p>
+                                    {loadingHistoryProducts ? (
+                                        <p className="text-sm text-muted-foreground py-2">{t('searching')}</p>
+                                    ) : (
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {historyProducts.map(item => (
+                                                <button
+                                                    key={item.productId}
+                                                    type="button"
+                                                    className="group text-left"
+                                                    onMouseDown={e => e.preventDefault()}
+                                                    onClick={() => goTo(`/product/${item.slug}`)}
+                                                >
+                                                    <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-1">
+                                                        <Image
+                                                            src={resolveProductImage(item.image, item.slug)}
+                                                            alt=""
+                                                            fill
+                                                            className="object-cover group-hover:scale-105 transition-transform"
+                                                            sizes="72px"
+                                                        />
+                                                    </div>
+                                                    <p className="text-[10px] line-clamp-2 text-muted-foreground group-hover:text-foreground">
+                                                        {item.productName}
+                                                    </p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex min-h-[16rem] max-h-[24rem]">
                             <div className="w-44 shrink-0 border-r border-border bg-muted/20 overflow-y-auto">
                                 <p className="px-3 py-2.5 text-xs font-bold text-foreground">
                                     {t('discoverMore')}
@@ -317,6 +469,7 @@ export function NavbarSearchBar({
                                         ))}
                                     </div>
                                 )}
+                            </div>
                             </div>
                         </div>
                     )}

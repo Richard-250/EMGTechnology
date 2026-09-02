@@ -423,7 +423,9 @@
     "checkoutSignInRequired": "Veuillez vous connecter pour continuer le paiement.",
     "continueWithGoogle": "Continuer avec Google",
     "googleSigningIn": "Connexion avec Google...",
-    "googleSignUpHint": "Inscrivez-vous d'abord avec le même e-mail, puis utilisez Google pour vous connecter.",
+    "googleLoading": "Chargement de la connexion Google...",
+    "googleUnavailable": "La connexion Google n'est pas configurée.",
+    "googleSignUpHint": "Fonctionne pour les nouveaux comptes et les comptes existants. Si vous vous êtes déjà inscrit par e-mail, Google se liera en toute sécurité au même compte.",
     "orWithEmail": "ou avec e-mail",
     "verifyEmailStep": "Vérifier l'e-mail",
     "completeRegistrationStep": "Terminer l'inscription",
@@ -617,6 +619,7 @@
     "verificationTokenRequired": "Verification token is required",
     "failedAddToCart": "Failed to add item to cart",
     "googleAuthFailed": "La connexion Google a échoué. Réessayez ou utilisez l'e-mail.",
-    "invalidOtp": "Code de vérification invalide ou expiré. Réessayez."
+    "invalidOtp": "Code de vérification invalide ou expiré. Réessayez.",
+    "accountExistsSignIn": "Votre compte a été créé. Connectez-vous avec votre e-mail et mot de passe."
   }
 }

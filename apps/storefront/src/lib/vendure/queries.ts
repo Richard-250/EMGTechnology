@@ -93,7 +93,9 @@ export const GetProductDetailQuery = graphql(`
             }
             customFields {
                 isDiscounted
+                discountType
                 discountPercentage
+                discountAmount
                 originalPrice
             }
         }
@@ -112,15 +114,22 @@ export const GetDiscountedProductsQuery = graphql(`
                     id
                     preview
                 }
+                customFields {
+                    isDiscounted
+                    discountType
+                    discountPercentage
+                    discountAmount
+                    originalPrice
+                }
                 variants {
                     id
                     priceWithTax
                     currencyCode
-                }
-                customFields {
-                    isDiscounted
-                    discountPercentage
-                    originalPrice
+                    customFields {
+                        variantDiscountPercentage
+                        variantDiscountAmount
+                        variantOriginalPrice
+                    }
                 }
             }
         }
@@ -188,6 +197,7 @@ export const GetActiveOrderForCheckoutQuery = graphql(`
             totalWithTax
             currencyCode
             couponCodes
+            customFields
             customer {
                 id
                 firstName
@@ -300,6 +310,12 @@ export const GetEligiblePaymentMethodsQuery = graphql(`
             description
             isEligible
             eligibilityMessage
+            customFields {
+                merchantDisplayName
+                merchantPhone
+                merchantMomoCode
+                paymentSteps
+            }
         }
     }
 `);

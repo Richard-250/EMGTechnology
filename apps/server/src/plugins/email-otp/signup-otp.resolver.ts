@@ -37,6 +37,7 @@ export class SignupOtpResolver {
         return {
             success: result.success,
             message: result.message ?? '',
+            alreadyComplete: result.alreadyComplete ?? false,
         };
     }
 }

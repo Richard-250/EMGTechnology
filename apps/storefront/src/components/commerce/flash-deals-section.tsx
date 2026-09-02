@@ -73,7 +73,7 @@ export function FlashDealsSection({products}: FlashDealsSectionProps) {
                     {/* Product row */}
                     <div className="flex-1 min-w-0 overflow-x-auto scrollbar-thin">
                         <div className="flex gap-3 pb-1">
-                            {products.slice(0, 8).map(product => (
+                            {products.map(product => (
                                 <DealProductCard key={product.productId} product={product} />
                             ))}
                         </div>

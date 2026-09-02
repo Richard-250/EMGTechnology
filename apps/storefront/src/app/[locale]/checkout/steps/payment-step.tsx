@@ -5,24 +5,24 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { CreditCard, Loader2, Smartphone, CheckCircle2 } from 'lucide-react';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { CreditCard, Loader2, Smartphone } from 'lucide-react';
 import { useCheckout } from '../checkout-provider';
+import { placeOrder as placeOrderAction } from '../actions';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { Price } from '@/components/commerce/price';
 import {
   buildPaymentMetadata,
+  buildPaymentReference,
   digitsOnly,
   formatCardNumber,
   isCardFormValid,
-  isValidRwandaMobileNumber,
-  normalizeRwandaMobileNumber,
+  isMobileMoneyCheckoutValid,
+  parsePaymentSteps,
 } from '../payment-details';
-
-interface PaymentStepProps {
-  onComplete: () => void;
-}
 
 function PaymentMethodIcon({ code }: { code: string }) {
   if (code === 'mtn-rwanda') {
@@ -134,124 +134,150 @@ function CardPaymentForm() {
   );
 }
 
-function MobileMoneyForm({ providerCode }: { providerCode: 'mtn-rwanda' | 'airtel-rwanda' }) {
+function MobileMoneyCheckoutPanel({
+  providerCode,
+  onPlaceOrder,
+  loading,
+}: {
+  providerCode: 'mtn-rwanda' | 'airtel-rwanda';
+  onPlaceOrder: () => void;
+  loading: boolean;
+}) {
   const t = useTranslations('Checkout');
-  const { mobileMoneyDetails, setMobileMoneyDetails } = useCheckout();
-  const [error, setError] = useState<string | null>(null);
-  const [isWaiting, setIsWaiting] = useState(false);
-
-  const providerName = providerCode === 'mtn-rwanda' ? 'MTN' : 'Airtel';
-
-  const handleRequestPayment = async () => {
-    if (!isValidRwandaMobileNumber(mobileMoneyDetails.phoneNumber)) {
-      setError(t('invalidMobileNumber'));
-      return;
-    }
-
-    setError(null);
-    setIsWaiting(true);
-    setMobileMoneyDetails({ ...mobileMoneyDetails, status: 'pending' });
-
-    // Simulate USSD / mobile money approval on the customer's phone
-    await new Promise((resolve) => setTimeout(resolve, 4500));
-
-    setMobileMoneyDetails({
-      phoneNumber: mobileMoneyDetails.phoneNumber,
-      status: 'completed',
-    });
-    setIsWaiting(false);
-  };
+  const { order, paymentMethods, mobileMoneyDetails, setMobileMoneyDetails } = useCheckout();
+  const method = paymentMethods.find((m) => m.code === providerCode);
+  const fields = method?.customFields;
+  const steps = parsePaymentSteps(fields?.paymentSteps);
+  const paymentReference = buildPaymentReference(providerCode, order.code);
+  const providerName = providerCode === 'mtn-rwanda' ? t('mtnMobileMoney') : t('airtelMoney');
 
   return (
-    <Card className="p-4 border-dashed space-y-4">
-      <div>
-        <p className="text-sm font-medium">{t('mobileMoneyTitle', { provider: providerName })}</p>
-        <p className="text-xs text-muted-foreground mt-1">{t('mobileMoneyHint', { provider: providerName })}</p>
+    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <div className="flex items-start justify-between gap-4 border-b border-border bg-electric/5 px-5 py-4">
+        <h3 className="text-lg font-bold text-electric">{providerName}</h3>
+        <p className="text-lg font-bold text-electric whitespace-nowrap">
+          <Price value={order.totalWithTax} currencyCode={order.currencyCode} />
+        </p>
       </div>
 
-      <Field>
-        <FieldLabel htmlFor="mobilePhone">{t('mobileMoneyPhone')}</FieldLabel>
-        <Input
-          id="mobilePhone"
-          type="tel"
-          inputMode="tel"
-          placeholder="0781234567"
-          value={mobileMoneyDetails.phoneNumber}
-          disabled={mobileMoneyDetails.status === 'pending' || mobileMoneyDetails.status === 'completed'}
-          onChange={(e) => {
-            setError(null);
-            setMobileMoneyDetails({ phoneNumber: e.target.value, status: 'idle' });
-          }}
-        />
-        {error && <FieldError>{error}</FieldError>}
-      </Field>
+      <div className="px-5 py-4 space-y-4 text-sm">
+        <p className="text-foreground">
+          {t('payForMerchant', {
+            name: fields?.merchantDisplayName ?? method?.name ?? 'EMG Technology Ltd',
+            code: fields?.merchantMomoCode ?? '',
+          })}
+        </p>
+        <p className="text-foreground">
+          {t('momoNumberLabel')}{' '}
+          <strong className="text-electric">{fields?.merchantPhone ?? '—'}</strong>
+        </p>
 
-      {mobileMoneyDetails.status === 'idle' && (
-        <Button type="button" className="w-full" onClick={handleRequestPayment} disabled={isWaiting}>
-          {isWaiting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {t('sendPaymentRequest', { provider: providerName })}
+        {steps.length > 0 && (
+          <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+            {steps.map((step, index) => (
+              <li key={index}>{step}</li>
+            ))}
+          </ol>
+        )}
+
+        <div className="rounded-lg bg-muted px-4 py-3 text-sm font-medium text-foreground">
+          {t('paymentReferenceLabel')}: {paymentReference}
+        </div>
+      </div>
+
+      <div className="border-t border-border px-5 py-5 space-y-4 bg-muted/20">
+        <p className="font-semibold text-sm">{t('paymentProofTitle')}</p>
+
+        <Field>
+          <FieldLabel htmlFor="payerAccountName">{t('payerAccountName')}</FieldLabel>
+          <Input
+            id="payerAccountName"
+            placeholder={t('payerAccountNamePlaceholder')}
+            value={mobileMoneyDetails.accountName}
+            onChange={(e) =>
+              setMobileMoneyDetails({ ...mobileMoneyDetails, accountName: e.target.value })
+            }
+          />
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor="payerPhone">{t('payerPhone')}</FieldLabel>
+          <Input
+            id="payerPhone"
+            type="tel"
+            inputMode="tel"
+            placeholder="+250780000000"
+            value={mobileMoneyDetails.phoneNumber}
+            onChange={(e) =>
+              setMobileMoneyDetails({ ...mobileMoneyDetails, phoneNumber: e.target.value })
+            }
+          />
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor="transactionId">{t('transactionId')}</FieldLabel>
+          <Input
+            id="transactionId"
+            placeholder={t('transactionIdPlaceholder')}
+            value={mobileMoneyDetails.transactionId}
+            onChange={(e) =>
+              setMobileMoneyDetails({ ...mobileMoneyDetails, transactionId: e.target.value })
+            }
+          />
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor="paymentNote">{t('paymentNote')}</FieldLabel>
+          <Textarea
+            id="paymentNote"
+            placeholder={t('paymentNotePlaceholder')}
+            rows={3}
+            value={mobileMoneyDetails.note}
+            onChange={(e) => setMobileMoneyDetails({ ...mobileMoneyDetails, note: e.target.value })}
+          />
+        </Field>
+
+        <Button
+          onClick={onPlaceOrder}
+          disabled={loading || !isMobileMoneyCheckoutValid(mobileMoneyDetails)}
+          className="w-full bg-electric hover:bg-electric/90 text-electric-foreground font-semibold py-6"
+        >
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {t('placeOrder')}
         </Button>
-      )}
-
-      {mobileMoneyDetails.status === 'pending' && (
-        <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
-          <div>
-            <p className="font-medium">{t('mobileMoneyPendingTitle')}</p>
-            <p className="mt-1 text-amber-800/90">
-              {t('mobileMoneyPendingMessage', {
-                provider: providerName,
-                phone: normalizeRwandaMobileNumber(mobileMoneyDetails.phoneNumber),
-              })}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {mobileMoneyDetails.status === 'completed' && (
-        <div className="flex items-start gap-3 rounded-md border border-electric/30 bg-electric/5 p-3 text-sm">
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-electric" />
-          <div>
-            <p className="font-medium text-electric">{t('mobileMoneyCompletedTitle')}</p>
-            <p className="mt-1 text-muted-foreground">
-              {t('mobileMoneyCompletedMessage', {
-                provider: providerName,
-                phone: normalizeRwandaMobileNumber(mobileMoneyDetails.phoneNumber),
-              })}
-            </p>
-          </div>
-        </div>
-      )}
-    </Card>
+      </div>
+    </div>
   );
 }
 
-export default function PaymentStep({ onComplete }: PaymentStepProps) {
+export default function PaymentStep() {
   const t = useTranslations('Checkout');
   const {
+    order,
     paymentMethods,
     selectedPaymentMethodCode,
     setSelectedPaymentMethodCode,
     cardDetails,
     mobileMoneyDetails,
-    setPaymentDetailsMetadata,
+    deliveryDateLabel,
   } = useCheckout();
   const [formError, setFormError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const uniqueMethods = paymentMethods.filter(
     (method, index, list) => list.findIndex((m) => m.code === method.code) === index,
   );
 
-  const canContinue = () => {
-    if (!selectedPaymentMethodCode) return false;
-    if (selectedPaymentMethodCode === 'card') return isCardFormValid(cardDetails);
-    if (selectedPaymentMethodCode === 'mtn-rwanda' || selectedPaymentMethodCode === 'airtel-rwanda') {
-      return mobileMoneyDetails.status === 'completed';
-    }
-    return true;
-  };
+  const deliveryMethodName = order.shippingLines?.[0]?.shippingMethod.name;
+  const deliveryDate =
+    deliveryDateLabel ||
+    (typeof order.customFields === 'object' &&
+    order.customFields !== null &&
+    'deliveryDate' in order.customFields
+      ? String((order.customFields as { deliveryDate?: string }).deliveryDate ?? '')
+      : '');
 
-  const handleContinue = () => {
+  const handlePlaceOrder = async () => {
     if (!selectedPaymentMethodCode) return;
 
     if (selectedPaymentMethodCode === 'card' && !isCardFormValid(cardDetails)) {
@@ -261,21 +287,37 @@ export default function PaymentStep({ onComplete }: PaymentStepProps) {
 
     if (
       (selectedPaymentMethodCode === 'mtn-rwanda' || selectedPaymentMethodCode === 'airtel-rwanda') &&
-      mobileMoneyDetails.status !== 'completed'
+      !isMobileMoneyCheckoutValid(mobileMoneyDetails)
     ) {
-      setFormError(t('mobileMoneyNotCompleted'));
+      setFormError(t('mobileMoneyFormIncomplete'));
       return;
     }
 
     setFormError(null);
-    setPaymentDetailsMetadata(
-      buildPaymentMetadata(
-        selectedPaymentMethodCode,
-        selectedPaymentMethodCode === 'card' ? cardDetails : undefined,
-        mobileMoneyDetails.phoneNumber || undefined,
-      ),
-    );
-    onComplete();
+    setLoading(true);
+
+    try {
+      const paymentReference = buildPaymentReference(selectedPaymentMethodCode, order.code);
+      const metadata = buildPaymentMetadata(selectedPaymentMethodCode, {
+        card: selectedPaymentMethodCode === 'card' ? cardDetails : undefined,
+        mobile:
+          selectedPaymentMethodCode === 'mtn-rwanda' || selectedPaymentMethodCode === 'airtel-rwanda'
+            ? mobileMoneyDetails
+            : undefined,
+        paymentReference,
+        deliveryDate,
+        deliveryMethodName,
+      });
+
+      await placeOrderAction(selectedPaymentMethodCode, metadata);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+        throw error;
+      }
+      console.error('Error placing order:', error);
+      setFormError(t('unexpectedError'));
+      setLoading(false);
+    }
   };
 
   if (uniqueMethods.length === 0) {
@@ -320,17 +362,31 @@ export default function PaymentStep({ onComplete }: PaymentStepProps) {
         ))}
       </RadioGroup>
 
-      {selectedPaymentMethodCode === 'card' && <CardPaymentForm />}
-
-      {isMobile && (
-        <MobileMoneyForm providerCode={selectedPaymentMethodCode as 'mtn-rwanda' | 'airtel-rwanda'} />
+      {selectedPaymentMethodCode === 'card' && (
+        <>
+          <CardPaymentForm />
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
+          <Button
+            onClick={handlePlaceOrder}
+            disabled={loading || !isCardFormValid(cardDetails)}
+            className="w-full bg-electric hover:bg-electric/90 text-electric-foreground font-semibold"
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t('placeOrder')}
+          </Button>
+        </>
       )}
 
-      {formError && <p className="text-sm text-destructive">{formError}</p>}
-
-      <Button onClick={handleContinue} disabled={!canContinue()} className="w-full">
-        {t('continueToReview')}
-      </Button>
+      {isMobile && (
+        <>
+          <MobileMoneyCheckoutPanel
+            providerCode={selectedPaymentMethodCode as 'mtn-rwanda' | 'airtel-rwanda'}
+            onPlaceOrder={handlePlaceOrder}
+            loading={loading}
+          />
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
+        </>
+      )}
     </div>
   );
 }

@@ -301,7 +301,13 @@
     "newPassword": "Neues Passwort",
     "confirmPassword": "Passwort bestätigen",
     "resetPassword": "Passwort zurücksetzen",
-    "resettingPassword": "Wird zurückgesetzt..."
+    "resettingPassword": "Wird zurückgesetzt...",
+    "continueWithGoogle": "Mit Google fortfahren",
+    "googleSigningIn": "Anmeldung mit Google...",
+    "googleLoading": "Google-Anmeldung wird geladen...",
+    "googleUnavailable": "Google-Anmeldung ist nicht konfiguriert.",
+    "googleSignUpHint": "Funktioniert für neue und bestehende Konten. Wenn Sie sich bereits per E-Mail registriert haben, verknüpft Google sicher dasselbe Konto.",
+    "orWithEmail": "oder mit E-Mail"
   },
   "Search": {
     "title": "Suche",

@@ -115,8 +115,8 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                             type="button"
                             onClick={handleOpenPreview}
                             className={cn(
-                                'absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-full bg-black/75 hover:bg-black text-white text-[10px] sm:text-[11px] font-bold shadow-md transition-all duration-200 cursor-pointer active:scale-95',
-                                'opacity-90 sm:opacity-0 sm:group-hover:opacity-100',
+                                'absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-full bg-black/75 hover:bg-black text-white text-[10px] sm:text-[11px] font-bold shadow-md transition-all duration-200 cursor-pointer active:scale-95 lg:hidden',
+                                'opacity-90',
                             )}
                             aria-label={t('seePreview')}
                         >
@@ -192,20 +192,12 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                     </div>
                 </Link>
 
-                {/* Desktop hover actions: See preview + Similar items */}
+                {/* Desktop hover actions: Similar items (preview stays on mobile/tablet only) */}
                 <div
                     className={cn(
-                        'hidden group-hover:flex flex-col gap-1.5 px-2 pb-2 pt-1 border-t border-border/50 bg-card',
+                        'hidden lg:group-hover:flex flex-col gap-1.5 px-2 pb-2 pt-1 border-t border-border/50 bg-card',
                     )}
                 >
-                    <Button
-                        type="button"
-                        size="sm"
-                        className="w-full h-8 text-xs font-bold bg-foreground text-background hover:bg-foreground/90 rounded-lg cursor-pointer"
-                        onClick={handleOpenPreview}
-                    >
-                        {t('seePreview')}
-                    </Button>
                     <Button
                         type="button"
                         size="sm"

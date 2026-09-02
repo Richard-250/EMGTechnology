@@ -11,6 +11,7 @@ import { SignupOtp } from './signup-otp.entity';
 import { SignupOtpEvent } from './signup-otp.event';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
+const COMPLETE_GRACE_MS = 30 * 60 * 1000;
 
 @Injectable()
 export class SignupOtpService {
@@ -26,7 +27,6 @@ export class SignupOtpService {
     ): Promise<boolean> {
         const email = input.email.trim().toLowerCase();
 
-        // Check if customer already exists in Vendure
         const existingCustomer = await this.customerService.findAll(ctx, {
             filter: { emailAddress: { eq: email } },
             take: 1,
@@ -53,7 +53,10 @@ export class SignupOtpService {
             row.lastName = input.lastName.trim();
             row.code = code;
             row.expiresAt = new Date(Date.now() + OTP_TTL_MS);
-            row.verified = false;
+            // Keep verified=true once the user has confirmed OTP so resend cannot wipe progress.
+            if (!row.verified) {
+                row.verified = false;
+            }
         }
 
         await repo.save(row);
@@ -63,13 +66,15 @@ export class SignupOtpService {
     }
 
     async verifyOtp(ctx: RequestContext, email: string, code: string): Promise<boolean> {
+        const normalizedEmail = email.trim().toLowerCase();
         const row = await this.connection.getRepository(ctx, SignupOtp).findOne({
-            where: { email: email.trim().toLowerCase() },
+            where: { email: normalizedEmail },
         });
         if (!row || row.code !== code.trim() || row.expiresAt.getTime() < Date.now()) {
             return false;
         }
         row.verified = true;
+        row.expiresAt = new Date(Date.now() + COMPLETE_GRACE_MS);
         await this.connection.getRepository(ctx, SignupOtp).save(row);
         return true;
     }
@@ -77,13 +82,43 @@ export class SignupOtpService {
     async completeSignup(
         ctx: RequestContext,
         input: { email: string; password: string; phoneNumber?: string },
-    ): Promise<{ success: boolean; message?: string }> {
+    ): Promise<{ success: boolean; message?: string; alreadyComplete?: boolean }> {
         const email = input.email.trim().toLowerCase();
-        const row = await this.connection.getRepository(ctx, SignupOtp).findOne({
-            where: { email },
+        const repo = this.connection.getRepository(ctx, SignupOtp);
+        const row = await repo.findOne({ where: { email } });
+
+        const existingCustomer = await this.customerService.findAll(ctx, {
+            filter: { emailAddress: { eq: email } },
+            take: 1,
         });
-        if (!row?.verified) {
+        const customerExists = existingCustomer.items.length > 0 && !!existingCustomer.items[0].user;
+
+        if (!row) {
+            if (customerExists) {
+                await this.markUserVerified(ctx, email);
+                return { success: true, alreadyComplete: true };
+            }
+            return {
+                success: false,
+                message: 'Verification session expired. Please request a new code and try again.',
+            };
+        }
+
+        if (!row.verified) {
             return { success: false, message: 'Please verify your email first.' };
+        }
+
+        if (row.expiresAt.getTime() < Date.now()) {
+            return {
+                success: false,
+                message: 'Verification expired. Please request a new code and verify again.',
+            };
+        }
+
+        if (customerExists) {
+            await this.markUserVerified(ctx, email);
+            await repo.delete({ email });
+            return { success: true, alreadyComplete: true };
         }
 
         const result = await this.customerService.registerCustomerAccount(ctx, {
@@ -100,7 +135,7 @@ export class SignupOtpService {
         }
 
         await this.markUserVerified(ctx, email);
-        await this.connection.getRepository(ctx, SignupOtp).delete({ email });
+        await repo.delete({ email });
         return { success: true };
     }
 

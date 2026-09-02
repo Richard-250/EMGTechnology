@@ -1,17 +1,19 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import logoUrl from './assets/logo.png';
+import { EmgDashboardLoader } from './emg-loader';
 
 const LS_KEY = 'vendure-user-settings';
+const LAYOUT_VERSION = 27;
 
 /** EMG dark dashboard layout — welcome + featured at top, stats below. */
 export const EMG_DEFAULT_WIDGET_LAYOUT: Record<
     string,
     { x: number; y: number; w: number; h: number }
 > = {
-    'emg-welcome-widget': { x: 0, y: 0, w: 8, h: 3 },
-    'emg-featured-widget': { x: 8, y: 0, w: 4, h: 3 },
-    'emg-stats-widget': { x: 0, y: 3, w: 12, h: 2 },
+    'emg-welcome-widget': { x: 0, y: 0, w: 7, h: 3 },
+    'emg-featured-widget': { x: 7, y: 0, w: 5, h: 3 },
+    'emg-stats-widget': { x: 0, y: 3, w: 12, h: 4 },
 };
 
 function sanitizeTitle() {
@@ -27,69 +29,72 @@ function sanitizeTitle() {
 function cleanVendureFromDOM() {
     if (typeof document === 'undefined') return;
 
-    // 1. Remove/disable the forced vendor branding stylesheet
     const styleEl = document.getElementById('vendure-branding-style');
     if (styleEl) {
         styleEl.remove();
     }
 
-    // 2. Hide or remove any [data-vendure-branding] elements
-    const brandingNodes = document.querySelectorAll('[data-vendure-branding]');
-    brandingNodes.forEach(node => {
+    document.querySelectorAll('[data-vendure-branding]').forEach(node => {
         (node as HTMLElement).style.setProperty('display', 'none', 'important');
-        (node as HTMLElement).style.setProperty('visibility', 'hidden', 'important');
-        (node as HTMLElement).style.setProperty('height', '0px', 'important');
-        (node as HTMLElement).style.setProperty('overflow', 'hidden', 'important');
     });
 
-    // 3. Hide redundant "Insights" page title so welcome card is at the very top
-    const h1s = document.querySelectorAll('h1');
-    h1s.forEach(h1 => {
+    document.querySelectorAll('h1').forEach(h1 => {
         if (h1.textContent?.trim() === 'Insights') {
             h1.style.setProperty('display', 'none', 'important');
         }
     });
 
-    // 4. Hide any react-grid-item containers that hold hidden widgets
-    const hiddenItems = document.querySelectorAll('.react-grid-item');
-    hiddenItems.forEach(item => {
+    document.querySelectorAll('.react-grid-item').forEach(item => {
         if (item.querySelector('[data-emg-hidden-widget]') || item.querySelector('.hidden')) {
             (item as HTMLElement).style.setProperty('display', 'none', 'important');
-            (item as HTMLElement).style.setProperty('height', '0px', 'important');
-            (item as HTMLElement).style.setProperty('width', '0px', 'important');
-            (item as HTMLElement).style.setProperty('position', 'absolute', 'important');
-            (item as HTMLElement).style.setProperty('top', '-9999px', 'important');
         }
     });
 
-    // 5. Remove external platform upsell links (e.g., Explore Platform & Cloud / pricing)
-    const links = document.querySelectorAll('a[href*="vendure.io"]');
-    links.forEach(link => {
+    document.querySelectorAll('a[href*="vendure.io"]').forEach(link => {
         const item = link.closest('[data-slot="dropdown-menu-item"]') || link.parentElement;
-        if (item && item.parentElement) {
+        if (item?.parentElement) {
             item.remove();
-        } else {
-            (link as HTMLElement).style.setProperty('display', 'none', 'important');
         }
     });
 
-    // 6. Sanitize meta tags
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) {
-        metaDesc.setAttribute('content', 'EMG Technology Admin Dashboard');
-    }
-    const metaAuthor = document.querySelector('meta[name="author"]');
-    if (metaAuthor) {
-        metaAuthor.setAttribute('content', 'EMG Technology Ltd');
-    }
-
-    // 7. Sanitize document title
     sanitizeTitle();
 }
 
-/** Applies dark theme, removes legacy platform text, and enforces EMG layout. */
+function applyLayoutSettings(): boolean {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        const settings = raw ? JSON.parse(raw) : {};
+        const currentLayout = settings.widgetLayout ?? {};
+        const welcomeY = currentLayout['emg-welcome-widget']?.y;
+        const needsLayout =
+            welcomeY !== 0 ||
+            settings.emgLayoutVersion !== LAYOUT_VERSION ||
+            !currentLayout['emg-welcome-widget'] ||
+            currentLayout['metrics-widget']?.w > 0 ||
+            currentLayout['orders-summary-widget']?.w > 0;
+
+        if (needsLayout || settings.theme !== 'dark') {
+            localStorage.setItem(
+                LS_KEY,
+                JSON.stringify({
+                    ...settings,
+                    theme: 'dark',
+                    emgLayoutVersion: LAYOUT_VERSION,
+                    widgetLayout: EMG_DEFAULT_WIDGET_LAYOUT,
+                }),
+            );
+            return true;
+        }
+    } catch {
+        // ignore storage errors
+    }
+    return false;
+}
+
+/** Applies dark theme, removes legacy platform text, and enforces EMG layout without full-page reloads. */
 export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) {
     const appliedRef = useRef(false);
+    const [bootstrapping, setBootstrapping] = useState(true);
 
     useEffect(() => {
         if (appliedRef.current) {
@@ -100,7 +105,6 @@ export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) 
         document.documentElement.classList.add('dark');
         sanitizeTitle();
 
-        // Update favicon to EMG logo
         const icon =
             document.querySelector<HTMLLinkElement>('link[rel="icon"]') ??
             document.querySelector<HTMLLinkElement>('link[rel="shortcut icon"]');
@@ -109,43 +113,13 @@ export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) 
             icon.type = 'image/png';
         }
 
-        // Layout reset if needed — force Welcome widget at y: 0
-        try {
-            const raw = localStorage.getItem(LS_KEY);
-            const settings = raw ? JSON.parse(raw) : {};
-            const currentLayout = settings.widgetLayout ?? {};
-            const welcomeY = currentLayout['emg-welcome-widget']?.y;
-            const needsLayout =
-                welcomeY !== 0 ||
-                settings.emgLayoutVersion !== 25 ||
-                !currentLayout['emg-welcome-widget'] ||
-                currentLayout['metrics-widget']?.w > 0 ||
-                currentLayout['orders-summary-widget']?.w > 0;
-
-            if (needsLayout || settings.theme !== 'dark') {
-                localStorage.setItem(
-                    LS_KEY,
-                    JSON.stringify({
-                        ...settings,
-                        theme: 'dark',
-                        emgLayoutVersion: 25,
-                        widgetLayout: EMG_DEFAULT_WIDGET_LAYOUT,
-                    }),
-                );
-                if (typeof window !== 'undefined') {
-                    window.location.reload();
-                }
-            }
-        } catch {
-            // ignore storage errors
-        }
-
-        // Initial DOM cleanse
+        applyLayoutSettings();
         cleanVendureFromDOM();
 
-        // Observer to sanitize on dynamic route transitions or DOM insertions
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
         const observer = new MutationObserver(() => {
-            cleanVendureFromDOM();
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(cleanVendureFromDOM, 150);
         });
 
         observer.observe(document.documentElement, {
@@ -153,22 +127,18 @@ export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) 
             subtree: true,
         });
 
-        const titleObserver = new MutationObserver(() => {
-            sanitizeTitle();
-        });
-        const titleEl = document.querySelector('title');
-        if (titleEl) {
-            titleObserver.observe(titleEl, { childList: true });
-        }
-
-        const interval = setInterval(cleanVendureFromDOM, 500);
+        const bootTimer = setTimeout(() => setBootstrapping(false), 350);
 
         return () => {
             observer.disconnect();
-            titleObserver.disconnect();
-            clearInterval(interval);
+            if (debounceTimer) clearTimeout(debounceTimer);
+            clearTimeout(bootTimer);
         };
     }, []);
+
+    if (bootstrapping) {
+        return <EmgDashboardLoader />;
+    }
 
     return <>{children}</>;
 }

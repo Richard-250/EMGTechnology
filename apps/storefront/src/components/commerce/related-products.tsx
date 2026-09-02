@@ -19,7 +19,7 @@ async function getRelatedProducts(collectionSlug: string, currentProductId: stri
 
     const locale = await getRouteLocale();
     cacheTag(`related-products-${collectionSlug}-${locale}-${currencyCode}`);
-    cacheTag('products');
+    cacheTag(`products-${locale}-${currencyCode}`);
 
     const result = await query(GetCollectionProductsQuery, {
         slug: collectionSlug,

@@ -6,20 +6,20 @@ import {Link} from '@/i18n/navigation';
 import {Eye} from 'lucide-react';
 import {Price} from '@/components/commerce/price';
 import {resolveProductImage} from '@/lib/product-images';
-import {getDiscountPercent, getWasPrice} from '@/lib/product-badges';
-import type {SerializedProductCard} from '@/lib/product-price';
+import {resolveDealDiscount, type DealProductCardData} from '@/lib/discount-display';
 import {ProductPreviewModal} from '@/components/commerce/product-preview-modal';
 import {cn} from '@/lib/utils';
 
 interface DealProductCardProps {
-    product: SerializedProductCard;
+    product: DealProductCardData;
     className?: string;
 }
 
 export function DealProductCard({product, className}: DealProductCardProps) {
     const [previewOpen, setPreviewOpen] = useState(false);
-    const discount = getDiscountPercent(product.slug);
-    if (discount == null || product.price == null) return null;
+    const {discountLabel, wasPrice, hasDiscount} = resolveDealDiscount(product);
+
+    if (product.price == null) return null;
 
     const modalData = {
         productId: product.productId,
@@ -50,13 +50,12 @@ export function DealProductCard({product, className}: DealProductCardProps) {
             >
                 <Link href={`/product/${product.slug}`} className="block">
                     <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-2">
-                        {/* Quick View / Preview button */}
                         <button
                             type="button"
                             onClick={handleOpenPreview}
                             className={cn(
-                                'absolute top-1.5 right-1.5 z-20 flex items-center justify-center size-6.5 rounded-full bg-black/75 hover:bg-black text-white text-[10px] shadow-md transition-all duration-200 cursor-pointer active:scale-95',
-                                'opacity-90 sm:opacity-0 sm:group-hover:opacity-100',
+                                'absolute top-1.5 right-1.5 z-20 flex items-center justify-center size-6.5 rounded-full bg-black/75 hover:bg-black text-white text-[10px] shadow-md transition-all duration-200 cursor-pointer active:scale-95 lg:hidden',
+                                'opacity-90',
                             )}
                             aria-label="Preview"
                         >
@@ -77,16 +76,19 @@ export function DealProductCard({product, className}: DealProductCardProps) {
                     <p className="text-base font-bold text-foreground leading-tight">
                         <Price value={product.price} currencyCode={product.currencyCode} />
                     </p>
-                    <p className="text-[11px] text-muted-foreground line-through">
-                        <Price value={getWasPrice(product.price, discount)} currencyCode={product.currencyCode} />
-                    </p>
-                    <span className="mt-1 inline-flex w-fit rounded-sm bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5">
-                        -{discount}%
-                    </span>
+                    {hasDiscount && wasPrice != null && (
+                        <p className="text-[11px] text-muted-foreground line-through">
+                            <Price value={wasPrice} currencyCode={product.currencyCode} />
+                        </p>
+                    )}
+                    {hasDiscount && discountLabel && (
+                        <span className="mt-1 inline-flex w-fit rounded-sm bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5">
+                            {discountLabel}
+                        </span>
+                    )}
                 </Link>
             </div>
 
-            {/* Quick Preview Modal on Click */}
             <ProductPreviewModal
                 open={previewOpen}
                 onOpenChange={setPreviewOpen}

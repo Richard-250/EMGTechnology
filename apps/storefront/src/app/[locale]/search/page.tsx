@@ -5,6 +5,7 @@ import {getRouteLocale} from '@/i18n/server';
 import {SearchResults} from "@/app/[locale]/search/search-results";
 import {SearchTerm, SearchTermSkeleton} from "@/app/[locale]/search/search-term";
 import {SearchResultsSkeleton} from "@/components/shared/skeletons/search-results-skeleton";
+import {VisualSearchBanner} from '@/components/commerce/visual-search-banner';
 import {SITE_NAME, noIndexRobots} from '@/lib/metadata';
 
 export async function generateMetadata({
@@ -29,8 +30,12 @@ export async function generateMetadata({
 }
 
 export default async function SearchPage({searchParams}: PageProps<'/[locale]/search'>) {
+    const resolvedParams = await searchParams;
+    const isVisualSearch = resolvedParams.visual === '1';
+
     return (
         <div className="container mx-auto px-4 py-4 md:py-8">
+            {isVisualSearch && <VisualSearchBanner />}
             <Suspense fallback={<SearchTermSkeleton/>}>
                 <SearchTerm searchParams={searchParams}/>
             </Suspense>

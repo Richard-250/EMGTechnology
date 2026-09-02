@@ -114,7 +114,7 @@ export default async function CollectionPage({params, searchParams}: PageProps<'
     const currencyCode = await getActiveCurrencyCode();
     const t = await getTranslations({locale, namespace: 'Product'});
     const page = getCurrentPage(searchParamsResolved);
-    const sortKey = (searchParamsResolved.sort as string) || 'newest';
+    const sortKey = (searchParamsResolved.sort as string) || 'shuffle';
 
     const productDataPromise = getCollectionProducts(slug, searchParamsResolved, currencyCode);
     const collectionResult = await getCollectionMetadata(slug);

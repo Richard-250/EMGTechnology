@@ -1,73 +1,65 @@
 import {getRouteLocale} from '@/i18n/server';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {query} from '@/lib/vendure/api';
-import {GetDiscountedProductsQuery, SearchProductsQuery} from '@/lib/vendure/queries';
-import {serializeProductCard, type SerializedProductCard} from '@/lib/product-price';
-import {getDiscountPercent} from '@/lib/product-badges';
+import {GetDiscountedProductsQuery} from '@/lib/vendure/queries';
+import type {DealProductCardData, ProductDiscountFields} from '@/lib/discount-display';
 import {cacheLife, cacheTag} from 'next/cache';
 import {FlashDealsSection} from '@/components/commerce/flash-deals-section';
 
-async function getDealProducts(currencyCode: string): Promise<SerializedProductCard[]> {
+async function getDealProducts(currencyCode: string): Promise<DealProductCardData[]> {
     'use cache';
     cacheLife('seconds');
 
     const locale = await getRouteLocale();
     cacheTag(`deals-${locale}-${currencyCode}`);
-    cacheTag('products');
+    cacheTag(`products-${locale}-${currencyCode}`);
 
     try {
-        // Query products with customFields directly from Vendure database
         const result = await query(
             GetDiscountedProductsQuery,
             {
                 options: {
-                    take: 50,
+                    take: 100,
                 },
             },
             {languageCode: locale, currencyCode},
         );
 
-        const items = result.data.products?.items || [];
-        
-        // Filter products that admin explicitly marked as discounted in Vendure Admin Dashboard
-        const adminDiscounted = items.filter(item => {
-            const cf = (item as any).customFields;
-            return cf?.isDiscounted === true || (typeof cf?.discountPercentage === 'number' && cf.discountPercentage > 0);
+        const items = (result.data.products?.items || []).filter(item => {
+            const cf = item.customFields as ProductDiscountFields | null | undefined;
+            return cf?.isDiscounted === true;
         });
 
-        if (adminDiscounted.length > 0) {
-            return adminDiscounted.map(item => {
-                const firstVariant = item.variants?.[0];
-                return {
-                    productId: item.id,
-                    productVariantId: firstVariant?.id || item.id,
-                    productName: item.name,
-                    slug: item.slug,
-                    image: item.featuredAsset?.preview ?? null,
-                    currencyCode: firstVariant?.currencyCode || currencyCode,
-                    price: firstVariant?.priceWithTax ?? null,
-                    priceMin: null,
-                    priceMax: null,
-                };
-            });
-        }
+        return items.map(item => {
+            const cf = item.customFields as ProductDiscountFields | null | undefined;
+            const firstVariant = item.variants?.[0];
+            const variantCf = firstVariant?.customFields as {
+                variantDiscountPercentage?: number | null;
+                variantDiscountAmount?: number | null;
+                variantOriginalPrice?: number | null;
+            } | undefined;
 
-        // Fallback: If no products have been explicitly discounted by admin yet, show featured deal items
-        const searchResult = await query(
-            SearchProductsQuery,
-            {
-                input: {
-                    take: 24,
-                    skip: 0,
-                    groupByProduct: true,
-                },
-            },
-            {languageCode: locale, currencyCode},
-        );
+            const mergedCustomFields: ProductDiscountFields = {
+                isDiscounted: cf?.isDiscounted === true,
+                discountType: cf?.discountType ?? 'percentage',
+                discountPercentage: variantCf?.variantDiscountPercentage ?? cf?.discountPercentage ?? null,
+                discountAmount: variantCf?.variantDiscountAmount ?? cf?.discountAmount ?? null,
+                originalPrice: variantCf?.variantOriginalPrice ?? cf?.originalPrice ?? null,
+            };
 
-        return searchResult.data.search.items
-            .map(item => serializeProductCard(item))
-            .filter(product => getDiscountPercent(product.slug) != null);
+            return {
+                productId: item.id,
+                productVariantId: firstVariant?.id || item.id,
+                productName: item.name,
+                slug: item.slug,
+                image: item.featuredAsset?.preview ?? null,
+                currencyCode: firstVariant?.currencyCode || currencyCode,
+                price: firstVariant?.priceWithTax ?? null,
+                priceMin: null,
+                priceMax: null,
+                customFields: mergedCustomFields,
+            };
+        });
     } catch (error) {
         console.error('Error fetching deal products:', error);
         return [];

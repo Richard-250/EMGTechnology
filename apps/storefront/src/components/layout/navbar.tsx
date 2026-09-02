@@ -14,6 +14,7 @@ import {NavbarUserSkeleton} from '@/components/shared/skeletons/navbar-user-skel
 import {SearchInputSkeleton} from '@/components/shared/skeletons/search-input-skeleton';
 import {SITE_NAME, SITE_LOGO} from '@/lib/metadata';
 import {COMPANY} from '@/lib/company';
+import {WhatsAppIcon} from '@/components/shared/whatsapp-icon';
 
 function RwandaFlag() {
     return (
@@ -58,6 +59,15 @@ export function Navbar() {
                             </div>
 
                             <div className="flex items-center gap-1 md:gap-2 ml-auto shrink-0">
+                                <a
+                                    href={COMPANY.whatsappUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex size-9 items-center justify-center rounded-full text-[#25D366] hover:bg-[#25D366]/10 transition-colors"
+                                    aria-label="Chat on WhatsApp"
+                                >
+                                    <WhatsAppIcon className="size-5" />
+                                </a>
                                 <Suspense fallback={null}>
                                     <ThemeSwitcher />
                                 </Suspense>

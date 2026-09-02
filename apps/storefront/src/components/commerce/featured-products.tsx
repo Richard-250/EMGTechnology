@@ -14,7 +14,7 @@ async function getFeaturedCollectionProducts(currencyCode: string) {
 
     const locale = await getRouteLocale();
     cacheTag(`featured-${locale}-${currencyCode}`);
-    cacheTag('products');
+    cacheTag(`products-${locale}-${currencyCode}`);
 
     const result = await query(GetCollectionProductsQuery, {
         slug: "featured",

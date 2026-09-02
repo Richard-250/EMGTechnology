@@ -4,9 +4,11 @@
 export const COMPANY = {
     legalName: 'EMG Technology Ltd',
     shortName: 'EMG Technology',
-    email: 'dusmanuel40@icloud.com',
+    email: 'info@emgtechnologyltd.com',
     phone: '+250796345773',
     phoneDisplay: '+250 796 345 773',
+    whatsapp: '250796345773',
+    whatsappUrl: 'https://wa.me/250796345773?text=Hello%20EMG%20Technology%2C%20I%20would%20like%20to%20inquire%20about%20your%20products.',
     address: {
         road: 'KN 81 St',
         building: 'KCT Ground Floor',

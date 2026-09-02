@@ -2,7 +2,12 @@
 
 import { createContext, useContext, ReactNode, useState } from 'react';
 import { CheckoutOrder } from './types';
-import type { CardPaymentDetails, MobileMoneyDetails, PaymentDetailsMetadata } from './payment-details';
+import type {
+    CardPaymentDetails,
+    MobileMoneyCheckoutDetails,
+    PaymentDetailsMetadata,
+    PaymentMethodCustomFields,
+} from './payment-details';
 
 interface CustomerAddress {
   id: string;
@@ -40,6 +45,7 @@ interface PaymentMethod {
   description?: string | null;
   isEligible: boolean;
   eligibilityMessage?: string | null;
+  customFields?: PaymentMethodCustomFields | null;
 }
 
 interface CheckoutContextType {
@@ -52,10 +58,12 @@ interface CheckoutContextType {
   setSelectedPaymentMethodCode: (code: string | null) => void;
   cardDetails: CardPaymentDetails;
   setCardDetails: (details: CardPaymentDetails) => void;
-  mobileMoneyDetails: MobileMoneyDetails;
-  setMobileMoneyDetails: (details: MobileMoneyDetails) => void;
+  mobileMoneyDetails: MobileMoneyCheckoutDetails;
+  setMobileMoneyDetails: (details: MobileMoneyCheckoutDetails) => void;
   paymentDetailsMetadata: PaymentDetailsMetadata | null;
   setPaymentDetailsMetadata: (metadata: PaymentDetailsMetadata | null) => void;
+  deliveryDateLabel: string;
+  setDeliveryDateLabel: (value: string) => void;
   isGuest: boolean;
 }
 
@@ -69,9 +77,11 @@ const EMPTY_CARD: CardPaymentDetails = {
   cvv: '',
 };
 
-const EMPTY_MOBILE: MobileMoneyDetails = {
+const EMPTY_MOBILE: MobileMoneyCheckoutDetails = {
+  accountName: '',
   phoneNumber: '',
-  status: 'idle',
+  transactionId: '',
+  note: '',
 };
 
 interface CheckoutProviderProps {
@@ -93,12 +103,11 @@ export function CheckoutProvider({
   paymentMethods,
   isGuest,
 }: CheckoutProviderProps) {
-  const [selectedPaymentMethodCode, setSelectedPaymentMethodCode] = useState<string | null>(
-    paymentMethods.length === 1 ? paymentMethods[0].code : null
-  );
+  const [selectedPaymentMethodCode, setSelectedPaymentMethodCode] = useState<string | null>(null);
   const [cardDetails, setCardDetails] = useState<CardPaymentDetails>(EMPTY_CARD);
-  const [mobileMoneyDetails, setMobileMoneyDetails] = useState<MobileMoneyDetails>(EMPTY_MOBILE);
+  const [mobileMoneyDetails, setMobileMoneyDetails] = useState<MobileMoneyCheckoutDetails>(EMPTY_MOBILE);
   const [paymentDetailsMetadata, setPaymentDetailsMetadata] = useState<PaymentDetailsMetadata | null>(null);
+  const [deliveryDateLabel, setDeliveryDateLabel] = useState('');
 
   const handleSetPaymentMethod = (code: string | null) => {
     setSelectedPaymentMethodCode(code);
@@ -122,6 +131,8 @@ export function CheckoutProvider({
         setMobileMoneyDetails,
         paymentDetailsMetadata,
         setPaymentDetailsMetadata,
+        deliveryDateLabel,
+        setDeliveryDateLabel,
         isGuest,
       }}
     >

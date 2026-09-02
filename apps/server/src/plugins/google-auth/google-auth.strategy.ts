@@ -1,11 +1,13 @@
 import {
     AuthenticationStrategy,
+    CustomerService,
     ExternalAuthenticationService,
     Injector,
     Logger,
     RequestContext,
     User,
 } from '@vendure/core';
+import {OAuth2Client} from 'google-auth-library';
 import {DocumentNode} from 'graphql';
 import gql from 'graphql-tag';
 
@@ -13,13 +15,15 @@ export type GoogleAuthData = {
     token: string;
 };
 
-type GoogleTokenPayload = {
+type GoogleIdTokenPayload = {
     sub: string;
-    email: string;
-    email_verified?: string | boolean;
+    email?: string;
+    email_verified?: boolean;
     given_name?: string;
     family_name?: string;
-    aud: string;
+    name?: string;
+    picture?: string;
+    aud?: string;
 };
 
 export interface GoogleAuthOptions {
@@ -29,12 +33,17 @@ export interface GoogleAuthOptions {
 export class GoogleAuthStrategy implements AuthenticationStrategy<GoogleAuthData> {
     readonly name = 'google';
     private externalAuthenticationService!: ExternalAuthenticationService;
+    private customerService!: CustomerService;
+    private readonly oauthClient: OAuth2Client;
     private readonly logger = new Logger();
 
-    constructor(private readonly options: GoogleAuthOptions) {}
+    constructor(private readonly options: GoogleAuthOptions) {
+        this.oauthClient = new OAuth2Client(options.googleClientId);
+    }
 
     init(injector: Injector) {
         this.externalAuthenticationService = injector.get(ExternalAuthenticationService);
+        this.customerService = injector.get(CustomerService);
     }
 
     defineInputType(): DocumentNode {
@@ -49,29 +58,33 @@ export class GoogleAuthStrategy implements AuthenticationStrategy<GoogleAuthData
         try {
             const payload = await this.verifyIdToken(data.token);
             if (!payload?.email) {
+                this.logger.warn('Google sign-in rejected: token missing email claim', 'GoogleAuthStrategy');
                 return false;
             }
 
-            const existingUser = await this.externalAuthenticationService.findCustomerUser(
+            const existingGoogleUser = await this.externalAuthenticationService.findCustomerUser(
                 ctx,
                 this.name,
                 payload.sub,
             );
-            if (existingUser) {
-                return existingUser;
+            if (existingGoogleUser) {
+                await this.syncCustomerProfile(ctx, existingGoogleUser.id, payload);
+                return existingGoogleUser;
             }
 
-            const emailVerified =
-                payload.email_verified === true || payload.email_verified === 'true';
+            const emailVerified = payload.email_verified === true;
 
-            return this.externalAuthenticationService.createCustomerAndUser(ctx, {
+            const user = await this.externalAuthenticationService.createCustomerAndUser(ctx, {
                 strategy: this.name,
                 externalIdentifier: payload.sub,
                 verified: emailVerified,
                 emailAddress: payload.email,
-                firstName: payload.given_name || 'Google',
-                lastName: payload.family_name || 'User',
+                firstName: payload.given_name || this.extractFirstName(payload.name),
+                lastName: payload.family_name || this.extractLastName(payload.name),
             });
+
+            await this.syncCustomerProfile(ctx, user.id, payload);
+            return user;
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(`Google authentication failed: ${message}`, 'GoogleAuthStrategy');
@@ -79,19 +92,53 @@ export class GoogleAuthStrategy implements AuthenticationStrategy<GoogleAuthData
         }
     }
 
-    private async verifyIdToken(idToken: string): Promise<GoogleTokenPayload | null> {
-        const response = await fetch(
-            `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
-        );
-        if (!response.ok) {
-            return null;
+    private async verifyIdToken(idToken: string): Promise<GoogleIdTokenPayload | null> {
+        const ticket = await this.oauthClient.verifyIdToken({
+            idToken,
+            audience: this.options.googleClientId,
+        });
+        return ticket.getPayload() as GoogleIdTokenPayload | undefined ?? null;
+    }
+
+    private async syncCustomerProfile(
+        ctx: RequestContext,
+        userId: string | number,
+        payload: GoogleIdTokenPayload,
+    ): Promise<void> {
+        const customer = await this.customerService.findOneByUserId(ctx, userId);
+        if (!customer) {
+            return;
         }
 
-        const payload = (await response.json()) as GoogleTokenPayload;
-        if (payload.aud !== this.options.googleClientId) {
-            return null;
-        }
+        const firstName = payload.given_name || this.extractFirstName(payload.name) || customer.firstName;
+        const lastName = payload.family_name || this.extractLastName(payload.name) || customer.lastName;
 
-        return payload;
+        const existingPicture = (customer.customFields as {googleProfileImageUrl?: string} | undefined)
+            ?.googleProfileImageUrl;
+
+        await this.customerService.update(ctx, {
+            id: customer.id,
+            firstName,
+            lastName,
+            customFields: {
+                googleUserId: payload.sub,
+                googleProfileImageUrl: payload.picture ?? existingPicture,
+            },
+        });
+    }
+
+    private extractFirstName(fullName?: string): string {
+        if (!fullName?.trim()) {
+            return 'Google';
+        }
+        return fullName.trim().split(/\s+/)[0] || 'Google';
+    }
+
+    private extractLastName(fullName?: string): string {
+        if (!fullName?.trim()) {
+            return 'User';
+        }
+        const parts = fullName.trim().split(/\s+/);
+        return parts.length > 1 ? parts.slice(1).join(' ') : 'User';
     }
 }

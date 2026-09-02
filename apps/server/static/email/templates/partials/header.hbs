@@ -1,22 +1,29 @@
 <mjml>
     <mj-head>
         <mj-title>{{ title }}</mj-title>
+        <mj-font name="Inter" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+        <mj-attributes>
+            <mj-all font-family="Inter, Helvetica, Arial, sans-serif" />
+            <mj-text font-size="15px" line-height="24px" color="#374151" />
+            <mj-button background-color="#269A2D" color="#ffffff" font-size="15px" font-weight="600" border-radius="8px" inner-padding="14px 28px" />
+        </mj-attributes>
         <mj-style inline="inline">
-            h3 {
-                font-size: 18px;
-                color: #555;
-                font-weight: normal;
-            }
+            .summary-box { border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; }
+            .summary-title { font-size: 16px; font-weight: 700; color: #111827; }
+            .summary-row { border-bottom: 1px dashed #e5e7eb; }
+            .summary-label { font-size: 14px; font-weight: 600; color: #111827; }
+            .summary-value { font-size: 14px; font-weight: 600; color: #111827; text-align: right; }
+            .summary-hint { font-size: 12px; color: #6b7280; }
+            .brand-link { color: #269A2D; text-decoration: none; font-weight: 600; }
         </mj-style>
     </mj-head>
-
-    <mj-body>
-        <mj-section background-color="#0C1210">
+    <mj-body background-color="#ffffff">
+        <mj-section padding="32px 24px 16px">
             <mj-column>
-                <mj-text align="center" color="#ffffff" font-size="20px" font-weight="700">
+                <mj-text align="center" font-size="22px" font-weight="700" color="#111827" padding-bottom="4px">
                     EMG Technology Ltd
                 </mj-text>
-                <mj-text align="center" color="#8FD992" font-size="13px" padding-top="0">
+                <mj-text align="center" font-size="13px" color="#6b7280" padding-top="0">
                     Fitness equipment for home and gym
                 </mj-text>
             </mj-column>

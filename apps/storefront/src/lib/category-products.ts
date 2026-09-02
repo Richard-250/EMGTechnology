@@ -12,7 +12,7 @@ export async function getCategoryProductsMap(
     'use cache';
     cacheLife('hours');
     cacheTag(`category-products-${locale}-${currencyCode}`);
-    cacheTag('products');
+    cacheTag(`products-${locale}-${currencyCode}`);
 
     const collections = await getTopCollections(locale);
     const entries = await Promise.all(

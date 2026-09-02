@@ -2,7 +2,6 @@ import type {Metadata} from 'next';
 import { getActiveCustomer } from '@/lib/vendure/actions';
 import { ChangePasswordForm } from './change-password-form';
 import { EditProfileForm } from './edit-profile-form';
-import { EditEmailForm } from './edit-email-form';
 import {getRouteLocale} from '@/i18n/server';
 import {getTranslations} from 'next-intl/server';
 
@@ -29,8 +28,6 @@ export default async function ProfilePage() {
             </div>
 
             <EditProfileForm customer={customer} />
-
-            <EditEmailForm currentEmail={customer?.emailAddress || ''} />
 
             <ChangePasswordForm />
         </div>

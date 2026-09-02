@@ -1,24 +1,32 @@
-{{> header title="Forgotten password reset" }}
+{{> header title="Reset your password" }}
 
-<mj-section background-color="#fafafa">
+<mj-section padding="8px 24px 0">
     <mj-column>
-        <mj-text color="#525252">
-            Someone requested a new password for your account.
+        <mj-text font-size="15px" color="#374151">
+            Dear Customer,
         </mj-text>
-
-        <mj-button font-family="Helvetica"
-                   background-color="#269A2D"
-                   color="white"
-                   href="{{ passwordResetUrl }}?token={{ passwordResetToken }}">
-            Reset password
-        </mj-button>
-
-        <mj-text color="#525252">
-        If you didn't make this request then you can safely ignore this email - nothing has been changed on your account.
+        <mj-text font-size="15px" color="#374151">
+            We received a request to reset the password for your EMG Technology account.
         </mj-text>
-
     </mj-column>
 </mj-section>
 
+<mj-section padding="16px 24px">
+    <mj-column css-class="summary-box" padding="20px">
+        <mj-text css-class="summary-title" padding-bottom="8px">
+            Password Reset
+        </mj-text>
+        <mj-text css-class="summary-hint" padding-bottom="16px">
+            Click the button below to choose a new password. This link is valid for a limited time.
+        </mj-text>
+        <mj-button href="{{ passwordResetUrl }}?token={{ passwordResetToken }}">
+            Reset Password
+        </mj-button>
+        <mj-divider border-color="#e5e7eb" border-style="dashed" padding-top="16px" />
+        <mj-text css-class="summary-hint" padding-top="12px">
+            If you did not request a password reset, you can safely ignore this email — your account remains secure.
+        </mj-text>
+    </mj-column>
+</mj-section>
 
 {{> footer }}

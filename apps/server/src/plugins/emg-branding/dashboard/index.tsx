@@ -1,7 +1,7 @@
 import { defineDashboardExtension } from '@vendure/dashboard';
 
 import logoUrl from './assets/logo.png';
-import { EmgDefaultLayoutProvider } from './default-layout-provider';
+import {EmgDefaultLayoutProvider} from './default-layout-provider';
 import {
     EmgFeaturedWidget,
     EmgHiddenWidget,
@@ -108,8 +108,8 @@ defineDashboardExtension({
             id: 'emg-stats-widget',
             name: 'EMG Stats',
             component: EmgStatsWidget,
-            defaultSize: { w: 12, h: 2, x: 0, y: 3 },
-            minSize: { w: 6, h: 2 },
+            defaultSize: { w: 12, h: 4, x: 0, y: 3 },
+            minSize: { w: 8, h: 3 },
             requiresPermissions: ['ReadOrder'],
         },
         {

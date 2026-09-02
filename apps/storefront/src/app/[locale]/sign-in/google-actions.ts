@@ -10,24 +10,39 @@ import {getLocale, getTranslations} from 'next-intl/server';
 export async function authenticateWithGoogleAction(token: string, redirectTo?: string) {
     const t = await getTranslations('Errors');
 
-    const result = await mutate(
-        AuthenticateGoogleMutation,
-        {
-            input: {
-                google: {token},
-            },
-        } as never,
-        {useAuthToken: true},
-    );
+    if (!token?.trim()) {
+        return {error: t('googleAuthFailed')};
+    }
+
+    let result;
+    try {
+        result = await mutate(
+            AuthenticateGoogleMutation,
+            {
+                input: {
+                    google: {token},
+                },
+            } as never,
+            {useAuthToken: true},
+        );
+    } catch {
+        return {error: t('googleAuthFailed')};
+    }
 
     const authResult = result.data.authenticate;
 
     if (authResult.__typename !== 'CurrentUser') {
-        return {error: t('googleAuthFailed')};
+        const message =
+            'message' in authResult && authResult.message
+                ? String(authResult.message)
+                : t('googleAuthFailed');
+        return {error: message};
     }
 
     if (result.token) {
         await setAuthToken(result.token);
+    } else {
+        return {error: t('googleAuthFailed')};
     }
 
     const locale = await getLocale();

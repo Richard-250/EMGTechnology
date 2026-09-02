@@ -14,7 +14,7 @@ async function getCatalogProducts(currencyCode: string) {
 
     const locale = await getRouteLocale();
     cacheTag(`home-catalog-${locale}-${currencyCode}`);
-    cacheTag("products");
+    cacheTag(`products-${locale}-${currencyCode}`);
 
     const result = await query(
         SearchProductsQuery,

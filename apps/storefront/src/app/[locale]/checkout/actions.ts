@@ -5,6 +5,7 @@ import {
     SetOrderShippingAddressMutation,
     SetOrderBillingAddressMutation,
     SetOrderShippingMethodMutation,
+    SetOrderCustomFieldsMutation,
     AddPaymentToOrderMutation,
     CreateCustomerAddressMutation,
     TransitionOrderToStateMutation,
@@ -13,6 +14,7 @@ import {
 import {revalidatePath, updateTag} from 'next/cache';
 import {redirect} from '@/i18n/navigation';
 import {getLocale} from 'next-intl/server';
+import type {PaymentDetailsMetadata} from './payment-details';
 
 interface AddressInput {
     fullName: string;
@@ -83,6 +85,21 @@ export async function createCustomerAddress(address: AddressInput) {
     return result.data.createCustomerAddress;
 }
 
+export async function setOrderDeliveryDate(deliveryDate: string) {
+    const result = await mutate(
+        SetOrderCustomFieldsMutation,
+        {input: {customFields: {deliveryDate}}},
+        {useAuthToken: true},
+    );
+
+    if (result.data.setOrderCustomFields.__typename !== 'Order') {
+        throw new Error('Failed to save delivery date');
+    }
+
+    const locale = await getLocale();
+    revalidatePath(`/${locale}/checkout`);
+}
+
 export async function transitionToArrangingPayment() {
     const result = await mutate(
         TransitionOrderToStateMutation,
@@ -103,17 +120,11 @@ export async function transitionToArrangingPayment() {
 
 export async function placeOrder(
     paymentMethodCode: string,
-    paymentDetails?: {
-        cardLast4?: string;
-        cardBrand?: string;
-        mobileMoneyPhone?: string;
-        mobileMoneyProvider?: string;
-    },
+    paymentDetails?: PaymentDetailsMetadata,
 ) {
     // First, transition the order to ArrangingPayment state
     await transitionToArrangingPayment();
 
-    // Dummy handler metadata for card and mobile-money test payments
     const metadata: Record<string, unknown> = {
         shouldDecline: false,
         shouldError: false,

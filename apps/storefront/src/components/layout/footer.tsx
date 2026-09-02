@@ -65,7 +65,7 @@ export async function Footer() {
                                 alt={SITE_NAME}
                                 width={200}
                                 height={72}
-                                className="h-12 w-auto object-contain bg-white rounded-sm p-1.5"
+                                className="h-12 w-auto object-contain"
                             />
                         </NavigationLink>
                         <p className="text-sm text-background/70 dark:text-muted-foreground text-balance leading-relaxed max-w-sm">

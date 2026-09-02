@@ -23,7 +23,9 @@
     "@vendure/dashboard": "3.7.0",
     "@vendure/email-plugin": "3.7.0",
     "@vendure/graphiql-plugin": "3.7.0",
+    "cloudinary": "^2.11.0",
     "dotenv": "17.4.2",
+    "google-auth-library": "^11.0.2",
     "pg": "^8.22.0"
   },
   "devDependencies": {

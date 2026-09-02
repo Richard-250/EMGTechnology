@@ -40,6 +40,7 @@ export function RegistrationForm({redirectTo, embedded = false}: RegistrationFor
     const [otpSentTo, setOtpSentTo] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [emailVerified, setEmailVerified] = useState(false);
 
     const detailsSchema = z.object({
         firstName: z.string().min(1, t('firstNameLabel')),
@@ -104,11 +105,13 @@ export function RegistrationForm({redirectTo, embedded = false}: RegistrationFor
                 setServerError(result.error);
                 return;
             }
+            setEmailVerified(true);
             setStep('password');
         });
     };
 
     const finishSignup = (data: z.infer<typeof passwordSchema>) => {
+        if (isPending) return;
         setServerError(null);
         startTransition(async () => {
             const result = await completeSignupAction({
@@ -250,7 +253,7 @@ export function RegistrationForm({redirectTo, embedded = false}: RegistrationFor
                         <button
                             type="button"
                             className="text-sm text-electric hover:underline w-full"
-                            disabled={isPending}
+                            disabled={isPending || emailVerified}
                             onClick={() =>
                                 sendOtp({
                                     emailAddress: otpSentTo,

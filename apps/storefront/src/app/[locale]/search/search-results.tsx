@@ -20,7 +20,7 @@ export async function SearchResults({searchParams}: SearchResultsProps) {
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
     const page = getCurrentPage(searchParamsResolved);
-    const sortKey = (searchParamsResolved.sort as string) || 'newest';
+    const sortKey = (searchParamsResolved.sort as string) || 'shuffle';
 
     const productDataPromise = query(SearchProductsQuery, {
         input: buildSearchInput({searchParams: searchParamsResolved})

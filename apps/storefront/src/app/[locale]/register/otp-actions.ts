@@ -30,13 +30,14 @@ const VerifySignupOtpDoc = shopMutation<{verifySignupOtp: boolean}, {email: stri
 `);
 
 const CompleteSignupDoc = shopMutation<
-    {completeSignup: {success: boolean; message: string} | null},
+    {completeSignup: {success: boolean; message: string; alreadyComplete?: boolean} | null},
     {email: string; password: string; phoneNumber: string | null}
 >(`
     mutation CompleteSignup($email: String!, $password: String!, $phoneNumber: String) {
         completeSignup(email: $email, password: $password, phoneNumber: $phoneNumber) {
             success
             message
+            alreadyComplete
         }
     }
 `);
@@ -96,7 +97,7 @@ export async function completeSignupAction(input: {
             return {error: payload?.message || t('unexpectedError')};
         }
 
-        // Automatically log in the freshly created user
+        // Automatically log in the freshly created user (or returning user after retry)
         const loginResult = await mutate(LoginMutation, {
             username: input.email,
             password: input.password,
@@ -104,6 +105,9 @@ export async function completeSignupAction(input: {
 
         const authData = loginResult.data.login;
         if (authData.__typename !== 'CurrentUser') {
+            if (payload.alreadyComplete) {
+                return {error: t('accountExistsSignIn')};
+            }
             return {error: t('invalidCredentials')};
         }
 

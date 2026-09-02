@@ -262,6 +262,23 @@ export const SetOrderShippingMethodMutation = graphql(`
     }
 `);
 
+export const SetOrderCustomFieldsMutation = graphql(`
+    mutation SetOrderCustomFields($input: UpdateOrderInput!) {
+        setOrderCustomFields(input: $input) {
+            __typename
+            ... on Order {
+                id
+                code
+                customFields
+            }
+            ... on ErrorResult {
+                errorCode
+                message
+            }
+        }
+    }
+`);
+
 export const TransitionOrderToStateMutation = graphql(`
     mutation TransitionOrderToState($state: String!) {
         transitionOrderToState(state: $state) {

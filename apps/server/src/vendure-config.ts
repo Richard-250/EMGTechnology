@@ -17,6 +17,10 @@ import { EmailOtpPlugin } from './plugins/email-otp/email-otp.plugin';
 import { signupOtpHandler } from './plugins/email-otp/signup-otp.handler';
 import { adminOrderNotificationHandler } from './plugins/email-otp/admin-order.handler';
 import { GoogleAuthPlugin } from './plugins/google-auth/google-auth.plugin';
+import { EmailChangeBlockPlugin } from './plugins/email-change-block/email-change-block.plugin';
+import { EmgDiscountPlugin } from './plugins/emg-discount/emg-discount.plugin';
+import { EmgProductAdminPlugin } from './plugins/emg-product-admin/emg-product-admin.plugin';
+import { EmgCloudinaryAssetPlugin } from './plugins/emg-cloudinary-asset/emg-cloudinary-asset.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3001;
@@ -38,12 +42,19 @@ export const config: VendureConfig = {
     authOptions: {
         tokenMethod: ['bearer', 'cookie'],
         requireVerification: true,
+        sessionDuration: '7d',
         superadminCredentials: {
             identifier: process.env.SUPERADMIN_USERNAME || 'superadmin',
             password: process.env.SUPERADMIN_PASSWORD || 'EmgAdmin2026!Secure',
         },
         cookieOptions: {
             secret: process.env.COOKIE_SECRET || 'emg_production_cookie_secret_998877665544332211',
+            ...(IS_DEV
+                ? {}
+                : {
+                    secure: true,
+                    sameSite: 'lax' as const,
+                }),
         },
     },
     dbConnectionOptions: {
@@ -66,13 +77,39 @@ export const config: VendureConfig = {
     },
     // Custom fields for admin discount and super deals management
     customFields: {
+        Customer: [
+            {
+                name: 'googleUserId',
+                type: 'string',
+                public: false,
+                readonly: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Google User ID' }],
+            },
+            {
+                name: 'googleProfileImageUrl',
+                type: 'string',
+                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Google Profile Image URL' }],
+            },
+        ],
         Product: [
             {
                 name: 'isDiscounted',
                 type: 'boolean',
                 defaultValue: false,
                 label: [{ languageCode: LanguageCode.en, value: 'Super Deal / Discounted' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Check to feature this product in Super Deals' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Feature in Super Deals until you remove it or the product is deleted' }],
+            },
+            {
+                name: 'discountType',
+                type: 'string',
+                defaultValue: 'percentage',
+                label: [{ languageCode: LanguageCode.en, value: 'Discount Type' }],
+                description: [{ languageCode: LanguageCode.en, value: 'percentage or fixed' }],
+                options: [
+                    { value: 'percentage', label: [{ languageCode: LanguageCode.en, value: 'Percentage (%)' }] },
+                    { value: 'fixed', label: [{ languageCode: LanguageCode.en, value: 'Fixed amount' }] },
+                ],
             },
             {
                 name: 'discountPercentage',
@@ -80,13 +117,44 @@ export const config: VendureConfig = {
                 min: 1,
                 max: 99,
                 label: [{ languageCode: LanguageCode.en, value: 'Discount Percentage (%)' }],
-                description: [{ languageCode: LanguageCode.en, value: 'e.g. 20 for 20% off badge' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Used when discount type is percentage' }],
+            },
+            {
+                name: 'discountAmount',
+                type: 'int',
+                min: 1,
+                label: [{ languageCode: LanguageCode.en, value: 'Discount Amount (major units)' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Fixed amount off in RWF/USD major units (e.g. 5000)' }],
             },
             {
                 name: 'originalPrice',
                 type: 'int',
                 label: [{ languageCode: LanguageCode.en, value: 'Original Price Before Discount' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Price in major units (e.g. 50000)' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Auto-filled from variant price when Super Deal is enabled' }],
+            },
+        ],
+        ProductVariant: [
+            {
+                name: 'variantDiscountPercentage',
+                type: 'int',
+                min: 0,
+                max: 99,
+                label: [{ languageCode: LanguageCode.en, value: 'Variant Discount (%)' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Optional override for this variant. Leave empty to use product discount.' }],
+            },
+            {
+                name: 'variantDiscountAmount',
+                type: 'int',
+                min: 0,
+                label: [{ languageCode: LanguageCode.en, value: 'Variant Fixed Discount' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Optional fixed amount off for this variant (major units)' }],
+            },
+            {
+                name: 'variantOriginalPrice',
+                type: 'int',
+                min: 0,
+                label: [{ languageCode: LanguageCode.en, value: 'Variant Original Price' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Auto-filled from this variant price. Override if needed.' }],
             },
         ],
         Order: [
@@ -96,6 +164,71 @@ export const config: VendureConfig = {
                 public: true,
                 label: [{ languageCode: LanguageCode.en, value: 'Delivery Date / Time' }],
                 description: [{ languageCode: LanguageCode.en, value: 'Customer chosen delivery date for order fulfillment' }],
+            },
+        ],
+        Asset: [
+            {
+                name: 'cloudinaryPublicId',
+                type: 'string',
+                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Cloudinary public ID' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Cloudinary asset identifier' }],
+            },
+            {
+                name: 'cloudinarySecureUrl',
+                type: 'string',
+                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Cloudinary URL' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Full secure URL on Cloudinary CDN' }],
+            },
+            {
+                name: 'sourceImageUrl',
+                type: 'string',
+                public: false,
+                label: [{ languageCode: LanguageCode.en, value: 'Original source URL' }],
+                description: [{ languageCode: LanguageCode.en, value: 'URL pasted by admin when importing' }],
+            },
+            {
+                name: 'cloudinaryFormat',
+                type: 'string',
+                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Cloudinary format' }],
+            },
+            {
+                name: 'cloudinaryFolder',
+                type: 'string',
+                public: false,
+                label: [{ languageCode: LanguageCode.en, value: 'Cloudinary folder' }],
+            },
+        ],
+        PaymentMethod: [
+            {
+                name: 'merchantDisplayName',
+                type: 'string',
+                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Registered account name' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Name registered to the MoMo / merchant number (shown to customers at checkout)' }],
+            },
+            {
+                name: 'merchantPhone',
+                type: 'string',
+                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'MoMo / payment phone number' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Phone number customers pay to (e.g. +250796345773)' }],
+            },
+            {
+                name: 'merchantMomoCode',
+                type: 'string',
+                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'USSD / MoMo code' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Dial code customers use (e.g. *182*8*00000#)' }],
+            },
+            {
+                name: 'paymentSteps',
+                type: 'text',
+                public: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Payment instructions' }],
+                description: [{ languageCode: LanguageCode.en, value: 'One instruction per line, shown to customers at checkout' }],
             },
         ],
     },
@@ -136,7 +269,9 @@ export const config: VendureConfig = {
                     route: 'mailbox',
                 }),
             handlers: [
-                ...defaultEmailHandlers.filter(handler => handler.type !== 'email-verification'),
+                ...defaultEmailHandlers.filter(
+                    handler => handler.type !== 'email-verification' && handler.type !== 'email-address-change',
+                ),
                 signupOtpHandler,
                 adminOrderNotificationHandler,
             ],
@@ -178,5 +313,9 @@ export const config: VendureConfig = {
         GoogleAuthPlugin.init({
             googleClientId: process.env.GOOGLE_CLIENT_ID || '',
         }),
+        EmailChangeBlockPlugin,
+        EmgDiscountPlugin,
+        EmgProductAdminPlugin,
+        EmgCloudinaryAssetPlugin,
     ],
 };

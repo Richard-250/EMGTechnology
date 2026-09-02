@@ -10,7 +10,11 @@ type TagKind = 'locale-only' | 'currency-dependent';
 const TAG_RULES: ReadonlyArray<{match: string | RegExp; kind: TagKind}> = [
     {match: 'collections', kind: 'locale-only'},
     {match: 'countries', kind: 'locale-only'},
+    {match: 'products', kind: 'currency-dependent'},
     {match: 'featured', kind: 'currency-dependent'},
+    {match: 'deals', kind: 'currency-dependent'},
+    {match: 'home-catalog', kind: 'currency-dependent'},
+    {match: 'category-products', kind: 'currency-dependent'},
     {match: /^collection-meta-.+$/, kind: 'locale-only'},
     {match: /^footer$/, kind: 'locale-only'},
     {match: /^navbar-collections$/, kind: 'locale-only'},

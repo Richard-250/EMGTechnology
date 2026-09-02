@@ -8,9 +8,14 @@ import type { bootstrap } from '@vendure/core';
 
 const loggerCtx = 'ConfigurePayments';
 
-const DUMMY_HANDLER = {
+const AUTO_SETTLE_HANDLER = {
     code: 'dummy-payment-handler',
     arguments: [{ name: 'automaticSettle', value: 'true' }],
+};
+
+const MANUAL_SETTLE_HANDLER = {
+    code: 'dummy-payment-handler',
+    arguments: [{ name: 'automaticSettle', value: 'false' }],
 };
 
 export const EMG_PAYMENT_METHODS = [
@@ -18,16 +23,34 @@ export const EMG_PAYMENT_METHODS = [
         code: 'card',
         name: 'Card',
         description: 'Pay with Visa, Mastercard or debit card',
+        handler: AUTO_SETTLE_HANDLER,
+        customFields: {},
     },
     {
         code: 'mtn-rwanda',
-        name: 'MTN Rwanda',
+        name: 'MTN Mobile Money',
         description: 'Pay with MTN Mobile Money (Rwanda)',
+        handler: MANUAL_SETTLE_HANDLER,
+        customFields: {
+            merchantDisplayName: 'EMG Technology Ltd',
+            merchantPhone: '+250796345773',
+            merchantMomoCode: '*182*8*1*0796345773#',
+            paymentSteps:
+                'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nFill in your account name and transaction ID below, then place your order',
+        },
     },
     {
         code: 'airtel-rwanda',
-        name: 'Airtel Rwanda',
+        name: 'Airtel Money',
         description: 'Pay with Airtel Money (Rwanda)',
+        handler: MANUAL_SETTLE_HANDLER,
+        customFields: {
+            merchantDisplayName: 'EMG Technology Ltd',
+            merchantPhone: '+250796345773',
+            merchantMomoCode: '*185*1*0796345773#',
+            paymentSteps:
+                'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nFill in your account name and transaction ID below, then place your order',
+        },
     },
 ] as const;
 
@@ -47,7 +70,8 @@ export async function configurePaymentMethods(app: Awaited<ReturnType<typeof boo
             method = await paymentMethodService.create(ctx, {
                 code: target.code,
                 enabled: true,
-                handler: DUMMY_HANDLER,
+                handler: target.handler,
+                customFields: target.customFields,
                 translations: [
                     {
                         languageCode: LanguageCode.en,
@@ -61,6 +85,11 @@ export async function configurePaymentMethods(app: Awaited<ReturnType<typeof boo
             await paymentMethodService.update(ctx, {
                 id: method.id,
                 enabled: true,
+                handler: target.handler,
+                customFields: {
+                    ...(method.customFields ?? {}),
+                    ...target.customFields,
+                },
                 translations: [
                     {
                         languageCode: LanguageCode.en,
@@ -75,7 +104,6 @@ export async function configurePaymentMethods(app: Awaited<ReturnType<typeof boo
         targetIds.push(String(method.id));
     }
 
-    // Disable legacy / duplicate payment methods (e.g. repeated seed runs)
     for (const method of existing) {
         if (!targetIds.includes(String(method.id)) && method.enabled) {
             await paymentMethodService.update(ctx, { id: method.id, enabled: false });
@@ -83,7 +111,5 @@ export async function configurePaymentMethods(app: Awaited<ReturnType<typeof boo
         }
     }
 
-    // New payment methods are assigned to the active channel on create.
-    // Legacy duplicates are disabled above so only Card / MTN / Airtel remain eligible.
     Logger.info(`Payment methods ready: ${EMG_PAYMENT_METHODS.map(m => m.name).join(', ')}`, loggerCtx);
 }
