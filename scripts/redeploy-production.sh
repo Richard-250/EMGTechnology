@@ -50,4 +50,19 @@ curl -sf http://127.0.0.1:3002/en >/dev/null || {
 }
 
 pm2 status
+
+echo ">>> Revalidating storefront caches..."
+REVALIDATION_SECRET=$(grep -E '^REVALIDATION_SECRET=' apps/storefront/.env.local 2>/dev/null | cut -d= -f2- || true)
+if [ -n "$REVALIDATION_SECRET" ]; then
+  curl -sf http://127.0.0.1:3002/api/revalidate \
+    -X POST \
+    -H "Authorization: Bearer ${REVALIDATION_SECRET}" \
+    -H "Content-Type: application/json" \
+    -d '{"tags":["products","featured","deals","home-catalog","category-products","collection","collections"]}' \
+    && echo "Cache revalidated." \
+    || echo "WARNING: Cache revalidation failed (storefront may serve stale data until next request)."
+else
+  echo "WARNING: REVALIDATION_SECRET not set in apps/storefront/.env.local — skipping cache revalidation."
+fi
+
 echo ">>> Deploy complete."

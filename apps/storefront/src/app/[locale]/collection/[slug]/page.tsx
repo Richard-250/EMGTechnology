@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { connection } from 'next/server';
 import { Link } from '@/i18n/navigation';
 import { query } from '@/lib/vendure/api';
+import { withLiveFallback } from '@/lib/vendure/live-fallback';
 import { SearchProductsQuery, GetCollectionProductsQuery } from '@/lib/vendure/queries';
 import { ProductGrid } from '@/components/commerce/product-grid';
 import { FacetFilters } from '@/components/commerce/facet-filters';
@@ -28,7 +30,25 @@ import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {getRouteLocale} from '@/i18n/server';
 import {getTranslations} from 'next-intl/server';
 
-async function getCollectionProducts(slug: string, searchParams: { [key: string]: string | string[] | undefined }, currencyCode: string) {
+async function fetchCollectionProducts(
+    slug: string,
+    searchParams: { [key: string]: string | string[] | undefined },
+    locale: string,
+    currencyCode: string,
+) {
+    return query(SearchProductsQuery, {
+        input: buildSearchInput({
+            searchParams,
+            collectionSlug: slug,
+        }),
+    }, {languageCode: locale, currencyCode});
+}
+
+async function getCollectionProductsCached(
+    slug: string,
+    searchParams: { [key: string]: string | string[] | undefined },
+    currencyCode: string,
+) {
     'use cache';
     cacheLife('hours');
 
@@ -36,12 +56,20 @@ async function getCollectionProducts(slug: string, searchParams: { [key: string]
     cacheTag(`collection-${slug}-${locale}-${currencyCode}`);
     cacheTag('collection');
 
-    return query(SearchProductsQuery, {
-        input: buildSearchInput({
-            searchParams,
-            collectionSlug: slug
-        })
-    }, {languageCode: locale, currencyCode});
+    return fetchCollectionProducts(slug, searchParams, locale, currencyCode);
+}
+
+async function loadCollectionProducts(
+    slug: string,
+    searchParams: { [key: string]: string | string[] | undefined },
+    locale: string,
+    currencyCode: string,
+) {
+    return withLiveFallback(
+        () => getCollectionProductsCached(slug, searchParams, currencyCode),
+        () => fetchCollectionProducts(slug, searchParams, locale, currencyCode),
+        (result) => (result.data.search?.totalItems ?? 0) === 0,
+    );
 }
 
 async function getCollectionMetadata(slug: string) {
@@ -108,6 +136,8 @@ export async function generateMetadata({
 }
 
 export default async function CollectionPage({params, searchParams}: PageProps<'/[locale]/collection/[slug]'>) {
+    await connection();
+
     const { slug } = await params;
     const searchParamsResolved = await searchParams;
     const locale = await getRouteLocale();
@@ -116,7 +146,7 @@ export default async function CollectionPage({params, searchParams}: PageProps<'
     const page = getCurrentPage(searchParamsResolved);
     const sortKey = (searchParamsResolved.sort as string) || 'shuffle';
 
-    const productDataPromise = getCollectionProducts(slug, searchParamsResolved, currencyCode);
+    const productDataPromise = loadCollectionProducts(slug, searchParamsResolved, locale, currencyCode);
     const collectionResult = await getCollectionMetadata(slug);
     const collectionName = collectionResult.data.collection?.name ?? slug;
 

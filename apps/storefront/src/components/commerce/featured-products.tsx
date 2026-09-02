@@ -1,14 +1,33 @@
 import {ProductCarousel} from "@/components/commerce/product-carousel";
 import {getRouteLocale} from "@/i18n/server";
 import {cacheLife, cacheTag} from "next/cache";
+import {connection} from 'next/server';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
+import {withLiveFallback} from '@/lib/vendure/live-fallback';
 import {query} from "@/lib/vendure/api";
 import {GetCollectionProductsQuery} from "@/lib/vendure/queries";
 import { Link } from '@/i18n/navigation';
 import {ArrowRight} from "lucide-react";
 import {getTranslations} from 'next-intl/server';
+import {isPrerenderAbortError} from '@/lib/prerender';
+import type {FragmentOf} from '@/graphql';
+import type {ProductCardFragment} from '@/lib/vendure/fragments';
 
-async function getFeaturedCollectionProducts(currencyCode: string) {
+async function fetchFeaturedProducts(locale: string, currencyCode: string) {
+    const result = await query(GetCollectionProductsQuery, {
+        slug: "featured",
+        input: {
+            collectionSlug: "featured",
+            take: 15,
+            skip: 0,
+            groupByProduct: true,
+        },
+    }, {languageCode: locale, currencyCode});
+
+    return result.data.search.items;
+}
+
+async function getFeaturedCollectionProductsCached(currencyCode: string) {
     'use cache'
     cacheLife('days')
 
@@ -16,30 +35,29 @@ async function getFeaturedCollectionProducts(currencyCode: string) {
     cacheTag(`featured-${locale}-${currencyCode}`);
     cacheTag(`products-${locale}-${currencyCode}`);
 
-    try {
-        const result = await query(GetCollectionProductsQuery, {
-            slug: "featured",
-            input: {
-                collectionSlug: "featured",
-                take: 15,
-                skip: 0,
-                groupByProduct: true
-            }
-        }, {languageCode: locale, currencyCode});
-
-        return result.data.search.items;
-    } catch (error) {
-        console.error('Error fetching featured products:', error);
-        return [];
-    }
+    return fetchFeaturedProducts(locale, currencyCode);
 }
 
 
 export async function FeaturedProducts() {
+    await connection();
+
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
     const t = await getTranslations({locale, namespace: 'Product'});
-    const products = await getFeaturedCollectionProducts(currencyCode);
+
+    let products: FragmentOf<typeof ProductCardFragment>[] = [];
+    try {
+        products = await withLiveFallback(
+            () => getFeaturedCollectionProductsCached(currencyCode),
+            () => fetchFeaturedProducts(locale, currencyCode),
+            (items) => items.length === 0,
+        );
+    } catch (error) {
+        if (!isPrerenderAbortError(error)) {
+            console.error('Error fetching featured products:', error);
+        }
+    }
 
     if (!products.length) {
         return null;
