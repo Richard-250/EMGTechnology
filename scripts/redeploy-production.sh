@@ -16,6 +16,9 @@ echo ">>> Building backend (clean dashboard dist)..."
 rm -rf apps/server/dist/dashboard
 npm run build -w server
 
+echo ">>> Restarting Vendure with new build..."
+pm2 restart emg-server emg-worker --update-env
+
 echo ">>> Syncing database schema (custom fields, etc.)..."
 bash scripts/sync-database-schema.sh
 
@@ -44,8 +47,17 @@ if [ -n "$DASHBOARD_JS" ]; then
   fi
   echo "Dashboard asset OK: ${DASHBOARD_JS}"
 else
-  echo "WARNING: Could not verify dashboard assets in index.html"
+  echo "ERROR: Dashboard index.html missing JS bundle reference."
+  exit 1
 fi
+
+DASHBOARD_STATUS=$(curl -sf http://127.0.0.1:3001/dashboard/__status 2>/dev/null || true)
+if ! echo "$DASHBOARD_STATUS" | grep -q '"hasBuiltFiles":true'; then
+  echo "ERROR: Dashboard is still serving the placeholder page."
+  echo "Run: bash scripts/fix-production-dashboard.sh"
+  exit 1
+fi
+echo "Dashboard status OK (built files served)."
 
 echo ">>> Building storefront..."
 rm -f apps/storefront/.next/lock

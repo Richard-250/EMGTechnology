@@ -21,6 +21,7 @@ import { EmailChangeBlockPlugin } from './plugins/email-change-block/email-chang
 import { EmgDiscountPlugin } from './plugins/emg-discount/emg-discount.plugin';
 import { EmgProductAdminPlugin } from './plugins/emg-product-admin/emg-product-admin.plugin';
 import { EmgCloudinaryAssetPlugin } from './plugins/emg-cloudinary-asset/emg-cloudinary-asset.plugin';
+import { assertBuiltDashboardInProduction, resolveDashboardAppDir } from './resolve-dashboard-app-dir';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3001;
@@ -313,19 +314,9 @@ export const config: VendureConfig = {
         DashboardPlugin.init({
             route: 'dashboard',
             appDir: (() => {
-                const fs = require('fs');
-                const candidates = [
-                    path.resolve(__dirname, 'dashboard'),
-                    path.resolve(__dirname, '..', 'dist', 'dashboard'),
-                    path.resolve(process.cwd(), 'dist', 'dashboard'),
-                    path.resolve(process.cwd(), 'apps', 'server', 'dist', 'dashboard'),
-                ];
-                for (const candidate of candidates) {
-                    if (fs.existsSync(path.join(candidate, 'index.html'))) {
-                        return candidate;
-                    }
-                }
-                return path.resolve(__dirname, 'dashboard');
+                const appDir = resolveDashboardAppDir(__dirname);
+                assertBuiltDashboardInProduction(appDir);
+                return appDir;
             })(),
             viteDevServerPort: +(process.env.DASHBOARD_VITE_PORT || 51799),
         }),
