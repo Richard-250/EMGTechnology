@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
 import logoUrl from './assets/logo.png';
-import { EmgDashboardLoader } from './emg-loader';
 
 const LS_KEY = 'vendure-user-settings';
 const LAYOUT_VERSION = 27;
@@ -93,15 +92,9 @@ function applyLayoutSettings(): boolean {
 
 /** Applies dark theme, removes legacy platform text, and enforces EMG layout without full-page reloads. */
 export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) {
-    const appliedRef = useRef(false);
-    const [bootstrapping, setBootstrapping] = useState(true);
+    const observerRef = useRef<MutationObserver | null>(null);
 
     useEffect(() => {
-        if (appliedRef.current) {
-            return;
-        }
-        appliedRef.current = true;
-
         document.documentElement.classList.add('dark');
         sanitizeTitle();
 
@@ -121,24 +114,19 @@ export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) 
             if (debounceTimer) clearTimeout(debounceTimer);
             debounceTimer = setTimeout(cleanVendureFromDOM, 150);
         });
+        observerRef.current = observer;
 
         observer.observe(document.documentElement, {
             childList: true,
             subtree: true,
         });
 
-        const bootTimer = setTimeout(() => setBootstrapping(false), 350);
-
         return () => {
             observer.disconnect();
+            observerRef.current = null;
             if (debounceTimer) clearTimeout(debounceTimer);
-            clearTimeout(bootTimer);
         };
     }, []);
-
-    if (bootstrapping) {
-        return <EmgDashboardLoader />;
-    }
 
     return <>{children}</>;
 }

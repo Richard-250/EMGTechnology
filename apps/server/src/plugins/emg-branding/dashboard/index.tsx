@@ -1,4 +1,5 @@
-import { defineDashboardExtension } from '@vendure/dashboard';
+import {useEffect, type ReactNode} from 'react';
+import {defineDashboardExtension} from '@vendure/dashboard';
 
 import logoUrl from './assets/logo.png';
 import {EmgDefaultLayoutProvider} from './default-layout-provider';
@@ -43,10 +44,9 @@ function EmgToolbarBrand() {
     );
 }
 
-function EmgFaviconSetter() {
-    // Set the favicon and page title to EMG branding
-    if (typeof document !== 'undefined') {
-        // Set favicon
+/** Sets EMG favicon/title and passes through dashboard children (required for custom providers). */
+function EmgFaviconSetter({children}: {children: ReactNode}) {
+    useEffect(() => {
         let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
         if (!link) {
             link = document.createElement('link');
@@ -55,11 +55,10 @@ function EmgFaviconSetter() {
         }
         link.type = 'image/png';
         link.href = logoUrl;
-
-        // Set page title
         document.title = 'EMG Technology Ltd — Admin';
-    }
-    return null;
+    }, []);
+
+    return <>{children}</>;
 }
 
 defineDashboardExtension({
