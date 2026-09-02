@@ -16,21 +16,26 @@ async function getAllProducts(currencyCode: string) {
 
     const locale = await getRouteLocale();
     cacheTag(`home-catalog-${locale}-${currencyCode}`);
-    const result = await query(
-        SearchProductsQuery,
-        {
-            input: {
-                take: PRODUCTS_TAKE,
-                skip: 0,
-                groupByProduct: true,
+    try {
+        const result = await query(
+            SearchProductsQuery,
+            {
+                input: {
+                    take: PRODUCTS_TAKE,
+                    skip: 0,
+                    groupByProduct: true,
+                },
             },
-        },
-        {languageCode: locale, currencyCode},
-    );
-    return {
-        items: sortProductsNewestFirst(result.data.search.items),
-        totalItems: result.data.search.totalItems,
-    };
+            {languageCode: locale, currencyCode},
+        );
+        return {
+            items: sortProductsNewestFirst(result.data.search.items),
+            totalItems: result.data.search.totalItems,
+        };
+    } catch (error) {
+        console.error('Error fetching home catalog products:', error);
+        return {items: [], totalItems: 0};
+    }
 }
 
 export async function HomeFitnessCatalogSection() {

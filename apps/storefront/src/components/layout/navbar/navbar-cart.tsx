@@ -9,12 +9,16 @@ export async function NavbarCart() {
     cacheTag('cart');
     cacheTag('active-order');
 
-    const orderResult = await query(GetActiveOrderQuery, undefined, {
-        useAuthToken: true,
-        tags: ['cart'],
-    });
+    try {
+        const orderResult = await query(GetActiveOrderQuery, undefined, {
+            useAuthToken: true,
+            tags: ['cart'],
+        });
 
-    const cartItemCount = orderResult.data.activeOrder?.totalQuantity || 0;
-
-    return <CartIcon cartItemCount={cartItemCount} />;
+        const cartItemCount = orderResult.data.activeOrder?.totalQuantity || 0;
+        return <CartIcon cartItemCount={cartItemCount} />;
+    } catch (error) {
+        console.error('Error fetching active order for cart icon:', error);
+        return <CartIcon cartItemCount={0} />;
+    }
 }

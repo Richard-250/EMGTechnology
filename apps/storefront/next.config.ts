@@ -37,6 +37,10 @@ const nextConfig: NextConfig = {
             {
                 hostname: 'demo.vendure.io',
             },
+            {
+                protocol: 'https',
+                hostname: 'res.cloudinary.com',
+            },
         ],
     },
     experimental: {

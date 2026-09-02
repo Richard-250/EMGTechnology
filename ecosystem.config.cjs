@@ -26,8 +26,8 @@ module.exports = {
     {
       name: 'emg-storefront',
       cwd: './apps/storefront',
-      script: 'node_modules/.bin/next',
-      args: 'start --port 3002',
+      script: 'npm',
+      args: 'run serve:only',
       env: {
         NODE_ENV: 'production',
         PORT: 3002,
