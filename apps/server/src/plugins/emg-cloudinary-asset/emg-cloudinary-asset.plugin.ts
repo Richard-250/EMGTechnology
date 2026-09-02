@@ -1,12 +1,14 @@
 import {PluginCommonModule, VendurePlugin} from '@vendure/core';
 
 import {adminApiExtensions} from './api-extensions';
+import {CloudinaryAssetListener} from './cloudinary-asset.listener';
+import {CloudinaryClientService} from './cloudinary-client.service';
 import {EmgCloudinaryAssetResolver} from './emg-cloudinary-asset.resolver';
 import {EmgCloudinaryAssetService} from './emg-cloudinary-asset.service';
 
 @VendurePlugin({
     imports: [PluginCommonModule],
-    providers: [EmgCloudinaryAssetService],
+    providers: [CloudinaryClientService, EmgCloudinaryAssetService, CloudinaryAssetListener],
     adminApiExtensions: {
         schema: adminApiExtensions,
         resolvers: [EmgCloudinaryAssetResolver],

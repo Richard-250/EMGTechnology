@@ -1,7 +1,12 @@
 import {getStoreProductImage, STORE_IMAGES} from '@/lib/store-images';
+import {cloudinaryResponsiveUrl, isCloudinaryUrl} from '@/lib/cloudinary-url';
 
-function normalizeAssetUrl(url: string): string {
-    return url.replace(/\\/g, '/');
+function normalizeAssetUrl(url: string, width?: number): string {
+    const normalized = url.replace(/\\/g, '/');
+    if (width && isCloudinaryUrl(normalized)) {
+        return cloudinaryResponsiveUrl(normalized, width);
+    }
+    return normalized;
 }
 
 /** Generic seed PNGs from initial import — not real product photos. */
@@ -48,8 +53,8 @@ export function resolveProductCarouselImages(
     if (realAssets.length) {
         return realAssets.map(asset => ({
             id: asset.id,
-            preview: normalizeAssetUrl(asset.preview),
-            source: normalizeAssetUrl(asset.source),
+            preview: normalizeAssetUrl(asset.preview, 800),
+            source: normalizeAssetUrl(asset.source, 1200),
         }));
     }
 

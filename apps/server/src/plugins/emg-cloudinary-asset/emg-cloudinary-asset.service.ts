@@ -10,118 +10,111 @@ import {
     TransactionalConnection,
     TranslatorService,
 } from '@vendure/core';
-import {v2 as cloudinary} from 'cloudinary';
-import {Injectable, OnModuleInit} from '@nestjs/common';
+import {Injectable} from '@nestjs/common';
+
+import {CloudinaryClientService} from './cloudinary-client.service';
+import type {CloudinaryMediaFolderKey} from './cloudinary.constants';
+import type {
+    CloudinaryMediaMetadata,
+    CloudinaryUploadResult,
+    CreateCloudinaryMediaOptions,
+    GraphqlUploadFile,
+} from './cloudinary-media.types';
 
 const loggerCtx = 'EmgCloudinaryAssetService';
 
-export interface CloudinaryUploadResult {
-    public_id: string;
-    secure_url: string;
-    url: string;
-    format: string;
-    width: number;
-    height: number;
-    bytes: number;
-    resource_type: string;
-    folder?: string;
-}
-
 @Injectable()
-export class EmgCloudinaryAssetService implements OnModuleInit {
-    private configured = false;
-
+export class EmgCloudinaryAssetService {
     constructor(
         private connection: TransactionalConnection,
         private channelService: ChannelService,
         private productService: ProductService,
         private translator: TranslatorService,
+        private cloudinaryClient: CloudinaryClientService,
     ) {}
 
-    onModuleInit() {
-        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-        const apiKey = process.env.CLOUDINARY_API_KEY;
-        const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    async createAssetFromImageUrl(ctx: RequestContext, url: string, options: CreateCloudinaryMediaOptions) {
+        const sourceUrl = this.cloudinaryClient.validateRemoteUrl(url);
+        const folder = this.cloudinaryClient.resolveFolder(options.folder, options.productId);
+        const upload = await this.cloudinaryClient.uploadFromUrl(sourceUrl, folder);
+        return this.persistUpload(ctx, upload, {...options, sourceUrl});
+    }
 
-        if (!cloudName || !apiKey || !apiSecret) {
-            Logger.warn(
-                'Cloudinary credentials missing — paste-URL asset import will be unavailable until CLOUDINARY_* env vars are set.',
+    async uploadMediaFile(ctx: RequestContext, file: GraphqlUploadFile, options: CreateCloudinaryMediaOptions) {
+        const folder = this.cloudinaryClient.resolveFolder(options.folder, options.productId);
+        const upload = await this.cloudinaryClient.uploadFromFile(file, folder);
+        return this.persistUpload(ctx, upload, options);
+    }
+
+    private async persistUpload(
+        ctx: RequestContext,
+        upload: CloudinaryUploadResult,
+        options: CreateCloudinaryMediaOptions,
+    ) {
+        const metadata = this.buildMetadata(upload, options);
+        let savedAsset: Asset | undefined;
+
+        try {
+            savedAsset = await this.saveAssetRecord(ctx, upload, metadata);
+            let assignedToProduct = false;
+
+            if (options.productId) {
+                assignedToProduct = await this.assignAssetToProduct(
+                    ctx,
+                    options.productId,
+                    savedAsset.id,
+                    options.featured ?? false,
+                );
+            }
+
+            Logger.info(
+                `Cloudinary media saved as Asset ${savedAsset.id} (${upload.resource_type}: ${upload.public_id})`,
                 loggerCtx,
             );
-            return;
+
+            return {
+                asset: this.translator.translate(savedAsset, ctx),
+                assignedToProduct,
+            };
+        } catch (error) {
+            await this.cloudinaryClient.destroy(upload.public_id, upload.resource_type);
+            throw error;
         }
-
-        cloudinary.config({
-            cloud_name: cloudName,
-            api_key: apiKey,
-            api_secret: apiSecret,
-            secure: true,
-        });
-        this.configured = true;
-        Logger.info(`Cloudinary asset import ready (cloud: ${cloudName})`, loggerCtx);
     }
 
-    isConfigured(): boolean {
-        return this.configured;
-    }
-
-    private validateImageUrl(url: string): string {
-        const trimmed = url.trim();
-        let parsed: URL;
-        try {
-            parsed = new URL(trimmed);
-        } catch {
-            throw new Error('Enter a valid image URL (must start with http:// or https://).');
-        }
-
-        if (!['http:', 'https:'].includes(parsed.protocol)) {
-            throw new Error('Only http and https image URLs are supported.');
-        }
-
-        return trimmed;
-    }
-
-    private buildPreviewUrl(publicId: string): string {
-        return cloudinary.url(publicId, {
-            secure: true,
-            transformation: [{width: 800, height: 800, crop: 'limit', quality: 'auto'}],
-        });
-    }
-
-    async uploadFromUrl(sourceUrl: string): Promise<CloudinaryUploadResult> {
-        if (!this.configured) {
-            throw new Error(
-                'Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.',
-            );
-        }
-
-        const folder = process.env.CLOUDINARY_FOLDER || 'emg-products';
-        const result = await cloudinary.uploader.upload(sourceUrl, {
-            folder,
-            resource_type: 'auto',
-            overwrite: false,
-            unique_filename: true,
-        });
-
-        return result as CloudinaryUploadResult;
-    }
-
-    async createAssetFromImageUrl(
-        ctx: RequestContext,
-        url: string,
-        options?: {productId?: ID; featured?: boolean},
-    ) {
-        const sourceUrl = this.validateImageUrl(url);
-        const upload = await this.uploadFromUrl(sourceUrl);
-
-        const mimeType =
-            upload.resource_type === 'image'
-                ? `image/${upload.format === 'jpg' ? 'jpeg' : upload.format}`
-                : `${upload.resource_type}/${upload.format}`;
-
-        const assetType = mimeType.startsWith('image/') ? AssetType.IMAGE : AssetType.BINARY;
+    private buildMetadata(
+        upload: CloudinaryUploadResult,
+        options: CreateCloudinaryMediaOptions,
+    ): CloudinaryMediaMetadata {
         const secureUrl = upload.secure_url || upload.url;
-        const previewUrl = this.buildPreviewUrl(upload.public_id);
+        return {
+            cloudinaryPublicId: upload.public_id,
+            cloudinarySecureUrl: secureUrl,
+            cloudinaryResourceType: upload.resource_type,
+            cloudinaryFormat: upload.format,
+            cloudinaryFolder: upload.folder ?? this.cloudinaryClient.resolveFolder(options.folder, options.productId),
+            cloudinaryDuration: upload.duration ?? null,
+            sourceImageUrl: options.sourceUrl ?? null,
+        };
+    }
+
+    private async saveAssetRecord(
+        ctx: RequestContext,
+        upload: CloudinaryUploadResult,
+        metadata: CloudinaryMediaMetadata,
+    ): Promise<Asset> {
+        const isVideo = upload.resource_type === 'video';
+        const mimeType = isVideo
+            ? `video/${upload.format}`
+            : `image/${upload.format === 'jpg' ? 'jpeg' : upload.format}`;
+
+        const assetType = isVideo ? AssetType.VIDEO : AssetType.IMAGE;
+        const sourceUrl = this.cloudinaryClient.buildDeliveryUrl(upload.public_id, upload.resource_type, 'source');
+        const previewUrl = this.cloudinaryClient.buildDeliveryUrl(
+            upload.public_id,
+            upload.resource_type,
+            isVideo ? 'thumbnail' : 'preview',
+        );
         const fileName = upload.public_id.split('/').pop() || upload.public_id;
 
         const asset = new Asset({
@@ -130,16 +123,10 @@ export class EmgCloudinaryAssetService implements OnModuleInit {
             height: upload.height ?? 0,
             fileSize: upload.bytes ?? 0,
             mimeType,
-            source: secureUrl,
+            source: sourceUrl,
             preview: previewUrl,
             focalPoint: null,
-            customFields: {
-                cloudinaryPublicId: upload.public_id,
-                cloudinarySecureUrl: secureUrl,
-                sourceImageUrl: sourceUrl,
-                cloudinaryFormat: upload.format,
-                cloudinaryFolder: upload.folder ?? process.env.CLOUDINARY_FOLDER ?? 'emg-products',
-            },
+            customFields: metadata,
         });
 
         await this.channelService.assignToCurrentChannel(asset, ctx);
@@ -153,25 +140,16 @@ export class EmgCloudinaryAssetService implements OnModuleInit {
         await this.connection.getRepository(ctx, AssetTranslation).save(translation);
         savedAsset.translations = [translation];
 
-        let assignedToProduct = false;
-        if (options?.productId) {
-            assignedToProduct = await this.assignAssetToProduct(
-                ctx,
-                options.productId,
-                savedAsset.id,
-                options.featured ?? false,
-            );
+        return savedAsset;
+    }
+
+    async deleteCloudinaryAssetIfManaged(asset: Asset): Promise<void> {
+        const fields = asset.customFields as CloudinaryMediaMetadata | undefined;
+        const publicId = fields?.cloudinaryPublicId;
+        if (!publicId) {
+            return;
         }
-
-        Logger.info(
-            `Created Cloudinary asset ${savedAsset.id} from ${sourceUrl} (public_id: ${upload.public_id})`,
-            loggerCtx,
-        );
-
-        return {
-            asset: this.translator.translate(savedAsset, ctx),
-            assignedToProduct,
-        };
+        await this.cloudinaryClient.destroy(publicId, fields.cloudinaryResourceType || 'image');
     }
 
     private async assignAssetToProduct(
@@ -197,5 +175,21 @@ export class EmgCloudinaryAssetService implements OnModuleInit {
         });
 
         return true;
+    }
+
+    parseFolder(value?: string | null): CloudinaryMediaFolderKey {
+        switch (value?.toUpperCase()) {
+            case 'CATEGORIES':
+                return 'categories';
+            case 'BANNERS':
+                return 'banners';
+            case 'USER_AVATARS':
+                return 'userAvatars';
+            case 'BLOG':
+                return 'blog';
+            case 'PRODUCTS':
+            default:
+                return 'products';
+        }
     }
 }
