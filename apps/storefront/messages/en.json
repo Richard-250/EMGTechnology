@@ -480,6 +480,7 @@
     "googleLoading": "Loading Google Sign-In...",
     "googleUnavailable": "Google Sign-In is not configured.",
     "googleSignUpHint": "Works for new and existing accounts. If you already registered with email, Google will securely link to the same account.",
+    "googleLegalNotice": "By continuing with Google, you agree to our <privacy>Privacy Policy</privacy> and <terms>Terms of Service</terms>.",
     "orWithEmail": "or with email",
     "verifyEmailStep": "Verify Email",
     "completeRegistrationStep": "Complete Registration",
@@ -652,7 +653,9 @@
     "shopAll": "Shop All",
     "orders": "Orders",
     "account": "Account",
-    "copyright": "EMG Technology Ltd. All rights reserved."
+    "copyright": "EMG Technology Ltd. All rights reserved.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
   },
   "Common": {
     "loading": "Loading...",

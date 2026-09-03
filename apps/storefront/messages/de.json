@@ -307,6 +307,7 @@
     "googleLoading": "Google-Anmeldung wird geladen...",
     "googleUnavailable": "Google-Anmeldung ist nicht konfiguriert.",
     "googleSignUpHint": "Funktioniert für neue und bestehende Konten. Wenn Sie sich bereits per E-Mail registriert haben, verknüpft Google sicher dasselbe Konto.",
+    "googleLegalNotice": "Mit der Fortsetzung über Google stimmen Sie unserer <privacy>Datenschutzrichtlinie</privacy> und den <terms>Nutzungsbedingungen</terms> zu.",
     "orWithEmail": "oder mit E-Mail"
   },
   "Search": {
@@ -476,7 +477,9 @@
     "shopAll": "Alle Produkte",
     "orders": "Bestellungen",
     "account": "Konto",
-    "copyright": "EMG Technology Ltd. Alle Rechte vorbehalten."
+    "copyright": "EMG Technology Ltd. Alle Rechte vorbehalten.",
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "termsOfService": "Nutzungsbedingungen"
   },
   "Common": {
     "loading": "Wird geladen...",

@@ -426,6 +426,7 @@
     "googleLoading": "Chargement de la connexion Google...",
     "googleUnavailable": "La connexion Google n'est pas configurée.",
     "googleSignUpHint": "Fonctionne pour les nouveaux comptes et les comptes existants. Si vous vous êtes déjà inscrit par e-mail, Google se liera en toute sécurité au même compte.",
+    "googleLegalNotice": "En continuant avec Google, vous acceptez notre <privacy>Politique de confidentialité</privacy> et nos <terms>Conditions d'utilisation</terms>.",
     "orWithEmail": "ou avec e-mail",
     "verifyEmailStep": "Vérifier l'e-mail",
     "completeRegistrationStep": "Terminer l'inscription",
@@ -598,7 +599,9 @@
     "shopAll": "Shop All",
     "orders": "Orders",
     "account": "Account",
-    "copyright": "EMG Technology Ltd. All rights reserved."
+    "copyright": "EMG Technology Ltd. All rights reserved.",
+    "privacyPolicy": "Politique de confidentialité",
+    "termsOfService": "Conditions d'utilisation"
   },
   "Common": {
     "loading": "Loading...",

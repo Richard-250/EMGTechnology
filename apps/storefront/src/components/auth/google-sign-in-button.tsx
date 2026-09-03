@@ -1,7 +1,7 @@
 'use client';
 
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useRouter} from '@/i18n/navigation';
+import {Link, useRouter} from '@/i18n/navigation';
 import {authenticateWithGoogleAction} from '@/app/[locale]/sign-in/google-actions';
 import {useTranslations} from 'next-intl';
 import {cn} from '@/lib/utils';
@@ -156,6 +156,20 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
             </div>
             <p className="text-xs text-center text-muted-foreground leading-relaxed">
                 {t('googleSignUpHint')}
+            </p>
+            <p className="text-xs text-center text-muted-foreground leading-relaxed">
+                {t.rich('googleLegalNotice', {
+                    privacy: chunks => (
+                        <Link href="/privacy-policy" className="underline underline-offset-2 hover:text-foreground">
+                            {chunks}
+                        </Link>
+                    ),
+                    terms: chunks => (
+                        <Link href="/terms-of-service" className="underline underline-offset-2 hover:text-foreground">
+                            {chunks}
+                        </Link>
+                    ),
+                })}
             </p>
             {pending && (
                 <p className="text-sm text-center text-muted-foreground">{t('googleSigningIn')}</p>

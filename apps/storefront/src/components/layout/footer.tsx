@@ -189,6 +189,20 @@ export async function Footer() {
 
                 <div className="mt-12 pt-8 border-t border-background/15 dark:border-border flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-background/60 dark:text-muted-foreground">
                     <Copyright/>
+                    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+                        <NavigationLink
+                            href="/privacy-policy"
+                            className="hover:text-electric transition-colors"
+                        >
+                            {t('privacyPolicy')}
+                        </NavigationLink>
+                        <NavigationLink
+                            href="/terms-of-service"
+                            className="hover:text-electric transition-colors"
+                        >
+                            {t('termsOfService')}
+                        </NavigationLink>
+                    </div>
                 </div>
             </div>
         </footer>

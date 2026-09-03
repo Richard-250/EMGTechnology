@@ -20,6 +20,10 @@ export const COMPANY = {
         instagram: 'https://www.instagram.com/emgymtech?igsh=MXF6emxkc3cxY3Z1MQ%3D%3D&utm_source=qr',
         tiktok: 'https://www.tiktok.com/@emgymtechnologyltd',
     },
+    legal: {
+        privacyPolicyUrl: 'https://emgtechnologyltd.com/privacy-policy',
+        termsOfServiceUrl: 'https://emgtechnologyltd.com/terms-of-service',
+    },
 } as const;
 
 export function formatCompanyAddress(): string {

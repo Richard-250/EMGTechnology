@@ -10,6 +10,21 @@ const nextConfig: NextConfig = {
         root: path.join(__dirname, '../..'),
     },
     cacheComponents: true,
+    // Exact URLs required for Google OAuth / Cloud Console verification.
+    async redirects() {
+        return [
+            {
+                source: '/privacy-policy',
+                destination: '/en/privacy-policy',
+                permanent: false,
+            },
+            {
+                source: '/terms-of-service',
+                destination: '/en/terms-of-service',
+                permanent: false,
+            },
+        ];
+    },
     images: {
         // This is necessary to display images from your local Vendure instance
         dangerouslyAllowLocalIP: true,

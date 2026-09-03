@@ -426,6 +426,7 @@
     "googleLoading": "Gutegura kwinjira na Google...",
     "googleUnavailable": "Kwinjira na Google ntibyashyizweho.",
     "googleSignUpHint": "Ikora ku makonti mashya n'amakonti asanzwe. Niba wari wiyandikishije ukoresheje imeri, Google izahuza neza n'iyo konti imwe.",
+    "googleLegalNotice": "Ukomeza na Google, wemera <privacy>Politiki y'ibanga</privacy> n'<terms>Amabwiriza yo gukoresha</terms>.",
     "orWithEmail": "cyangwa ukoreshe imeri",
     "verifyEmailStep": "Emeza imeri",
     "completeRegistrationStep": "Rangiza kwiyandikisha",
@@ -598,7 +599,9 @@
     "shopAll": "Shop All",
     "orders": "Orders",
     "account": "Account",
-    "copyright": "EMG Technology Ltd. All rights reserved."
+    "copyright": "EMG Technology Ltd. All rights reserved.",
+    "privacyPolicy": "Politiki y'ibanga",
+    "termsOfService": "Amabwiriza yo gukoresha"
   },
   "Common": {
     "loading": "Loading...",
