@@ -6,7 +6,7 @@ import {authenticateWithGoogleAction} from '@/app/[locale]/sign-in/google-action
 import {useTranslations} from 'next-intl';
 import {cn} from '@/lib/utils';
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '').trim();
 
 declare global {
     interface Window {
@@ -18,6 +18,7 @@ declare global {
                         callback: (response: {credential: string}) => void;
                         auto_select?: boolean;
                         cancel_on_tap_outside?: boolean;
+                        use_fedcm_for_prompt?: boolean;
                     }) => void;
                     renderButton: (
                         parent: HTMLElement,
@@ -34,6 +35,11 @@ interface GoogleSignInButtonProps {
     redirectTo?: string;
 }
 
+/**
+ * Google Identity Services "Continue with Google" button.
+ * Works for new customers (creates account) and existing customers (login / email link).
+ * Requires NEXT_PUBLIC_GOOGLE_CLIENT_ID at storefront build time.
+ */
 export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
     const t = useTranslations('Auth');
     const router = useRouter();
@@ -41,9 +47,14 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
     const [pending, setPending] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [sdkReady, setSdkReady] = useState(false);
+    const [sdkError, setSdkError] = useState(false);
 
     const handleCredential = useCallback(
         async (response: {credential: string}) => {
+            if (!response?.credential) {
+                setError(t('googleAuthFailed'));
+                return;
+            }
             setPending(true);
             setError(null);
             try {
@@ -67,10 +78,15 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
             return;
         }
 
-        const initializeGoogle = () => {
-            if (!window.google || !buttonRef.current) {
+        let cancelled = false;
+        let resizeObserver: ResizeObserver | null = null;
+
+        const renderGoogleButton = () => {
+            if (cancelled || !window.google || !buttonRef.current) {
                 return;
             }
+
+            const width = Math.max(buttonRef.current.offsetWidth || 0, 280);
 
             window.google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
@@ -87,31 +103,68 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
                 text: 'continue_with',
                 shape: 'rectangular',
                 logo_alignment: 'left',
-                width: buttonRef.current.offsetWidth || 360,
+                width,
             });
-            setSdkReady(true);
+
+            // Ensure the rendered iframe/button is interactive and full-width.
+            const iframe = buttonRef.current.querySelector('iframe');
+            if (iframe) {
+                iframe.style.maxWidth = '100%';
+                iframe.style.pointerEvents = 'auto';
+            }
+            buttonRef.current.style.pointerEvents = 'auto';
+            buttonRef.current.style.minHeight = '44px';
+
+            if (!cancelled) {
+                setSdkReady(true);
+                setSdkError(false);
+            }
+        };
+
+        const initializeGoogle = () => {
+            if (cancelled || !window.google || !buttonRef.current) {
+                return;
+            }
+
+            renderGoogleButton();
+
+            resizeObserver = new ResizeObserver(() => {
+                renderGoogleButton();
+            });
+            resizeObserver.observe(buttonRef.current);
         };
 
         if (window.google) {
             initializeGoogle();
-            return;
-        }
+        } else {
+            const existingScript = document.querySelector(
+                'script[src="https://accounts.google.com/gsi/client"]',
+            ) as HTMLScriptElement | null;
 
-        const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-        if (existingScript) {
-            existingScript.addEventListener('load', initializeGoogle);
-            return () => existingScript.removeEventListener('load', initializeGoogle);
+            if (existingScript) {
+                if (window.google) {
+                    initializeGoogle();
+                } else {
+                    existingScript.addEventListener('load', initializeGoogle);
+                }
+            } else {
+                const script = document.createElement('script');
+                script.src = 'https://accounts.google.com/gsi/client';
+                script.async = true;
+                script.defer = true;
+                script.onload = initializeGoogle;
+                script.onerror = () => {
+                    if (!cancelled) {
+                        setSdkError(true);
+                    }
+                };
+                document.head.appendChild(script);
+            }
         }
-
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-        script.onload = initializeGoogle;
-        document.head.appendChild(script);
 
         return () => {
-            script.onload = null;
+            cancelled = true;
+            resizeObserver?.disconnect();
         };
     }, [handleCredential]);
 
@@ -121,10 +174,25 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
                 <div
                     className={cn(
                         'flex h-11 w-full items-center justify-center rounded-md border border-dashed border-border/80',
-                        'bg-muted/30 px-4 text-sm text-muted-foreground',
+                        'bg-muted/30 px-4 text-sm text-muted-foreground text-center',
                     )}
                 >
                     {t('googleUnavailable')}
+                </div>
+            </div>
+        );
+    }
+
+    if (sdkError) {
+        return (
+            <div className="space-y-2">
+                <div
+                    className={cn(
+                        'flex h-11 w-full items-center justify-center rounded-md border border-dashed border-border/80',
+                        'bg-muted/30 px-4 text-sm text-muted-foreground text-center',
+                    )}
+                >
+                    {t('googleAuthFailed')}
                 </div>
             </div>
         );
@@ -134,7 +202,7 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
         <div className="space-y-2">
             <div
                 className={cn(
-                    'relative w-full min-h-11 rounded-md border border-border/80 bg-background',
+                    'relative w-full min-h-11 overflow-hidden rounded-md border border-border/80 bg-background',
                     'shadow-xs transition-opacity',
                     pending && 'pointer-events-none opacity-70',
                 )}
@@ -142,13 +210,15 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
                 <div
                     ref={buttonRef}
                     className={cn(
-                        'flex w-full justify-center [&>div]:w-full! [&>div]:justify-center!',
+                        'relative z-10 flex w-full min-h-11 items-center justify-center',
+                        '[&>div]:w-full! [&>div]:flex! [&>div]:justify-center!',
+                        '[&_iframe]:pointer-events-auto!',
                         !sdkReady && 'invisible absolute inset-0',
                     )}
                     aria-hidden={!sdkReady}
                 />
                 {!sdkReady && (
-                    <div className="flex h-11 items-center justify-center gap-2 px-4 text-sm font-medium text-muted-foreground">
+                    <div className="pointer-events-none flex h-11 items-center justify-center gap-2 px-4 text-sm font-medium text-muted-foreground">
                         <span className="size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
                         {t('googleLoading')}
                     </div>
