@@ -34,7 +34,7 @@ export class EmgCloudinaryAssetService {
     ) {}
 
     async createAssetFromImageUrl(ctx: RequestContext, url: string, options: CreateCloudinaryMediaOptions) {
-        const sourceUrl = this.cloudinaryClient.validateRemoteUrl(url);
+        const sourceUrl = await this.cloudinaryClient.validateRemoteUrl(url);
         const folder = this.cloudinaryClient.resolveFolder(options.folder, options.productId);
         const upload = await this.cloudinaryClient.uploadFromUrl(sourceUrl, folder);
         return this.persistUpload(ctx, upload, {...options, sourceUrl});
@@ -150,6 +150,53 @@ export class EmgCloudinaryAssetService {
             return;
         }
         await this.cloudinaryClient.destroy(publicId, fields.cloudinaryResourceType || 'image');
+    }
+
+    /**
+     * When admin uses native Vendure asset upload (local disk), mirror the file to Cloudinary
+     * and rewrite Asset source/preview + metadata so the DB never remains the binary source of truth.
+     */
+    async migrateLocalAssetToCloudinary(ctx: RequestContext, asset: Asset, fileBuffer: Buffer): Promise<void> {
+        if (!this.cloudinaryClient.isConfigured()) {
+            return;
+        }
+
+        const fields = asset.customFields as CloudinaryMediaMetadata | undefined;
+        if (fields?.cloudinaryPublicId) {
+            return;
+        }
+
+        if (asset.source?.startsWith('http://') || asset.source?.startsWith('https://')) {
+            return;
+        }
+
+        const filename = asset.source.split('/').pop() || `asset-${asset.id}`;
+        const folder = this.cloudinaryClient.resolveFolder('products');
+        const upload = await this.cloudinaryClient.uploadFromBuffer(
+            fileBuffer,
+            filename,
+            asset.mimeType || 'application/octet-stream',
+            folder,
+        );
+
+        const metadata = this.buildMetadata(upload, {folder: 'products'});
+        const isVideo = upload.resource_type === 'video';
+        asset.source = this.cloudinaryClient.buildDeliveryUrl(upload.public_id, upload.resource_type, 'source');
+        asset.preview = this.cloudinaryClient.buildDeliveryUrl(
+            upload.public_id,
+            upload.resource_type,
+            isVideo ? 'thumbnail' : 'preview',
+        );
+        asset.customFields = {
+            ...(asset.customFields as object),
+            ...metadata,
+        };
+        asset.width = upload.width ?? asset.width;
+        asset.height = upload.height ?? asset.height;
+        asset.fileSize = upload.bytes ?? asset.fileSize;
+
+        await this.connection.getRepository(ctx, Asset).save(asset);
+        Logger.info(`Migrated local Asset ${asset.id} to Cloudinary (${upload.public_id})`, loggerCtx);
     }
 
     private async assignAssetToProduct(

@@ -1,6 +1,8 @@
 import {Logger} from '@vendure/core';
 import {Injectable, OnModuleInit} from '@nestjs/common';
 import {v2 as cloudinary} from 'cloudinary';
+import {lookup as dnsLookup} from 'node:dns/promises';
+import {isIP} from 'node:net';
 import {Readable} from 'stream';
 
 import {
@@ -15,6 +17,12 @@ import {
 import type {CloudinaryUploadResult, GraphqlUploadFile} from './cloudinary-media.types';
 
 const loggerCtx = 'CloudinaryClientService';
+
+const BLOCKED_HOSTNAMES = new Set([
+    'localhost',
+    'metadata.google.internal',
+    'metadata',
+]);
 
 @Injectable()
 export class CloudinaryClientService implements OnModuleInit {
@@ -58,7 +66,11 @@ export class CloudinaryClientService implements OnModuleInit {
         return base;
     }
 
-    validateRemoteUrl(url: string): string {
+    /**
+     * Validate a remote media URL before asking Cloudinary to fetch it.
+     * Blocks non-http(s), credentialed URLs, and common private/SSRF targets.
+     */
+    async validateRemoteUrl(url: string): Promise<string> {
         const trimmed = url.trim();
         let parsed: URL;
         try {
@@ -66,10 +78,71 @@ export class CloudinaryClientService implements OnModuleInit {
         } catch {
             throw new Error('Enter a valid media URL (must start with http:// or https://).');
         }
+
         if (!['http:', 'https:'].includes(parsed.protocol)) {
             throw new Error('Only http and https URLs are supported.');
         }
+
+        if (parsed.username || parsed.password) {
+            throw new Error('URLs with embedded credentials are not allowed.');
+        }
+
+        const hostname = parsed.hostname.toLowerCase();
+        if (BLOCKED_HOSTNAMES.has(hostname) || hostname.endsWith('.localhost') || hostname.endsWith('.local')) {
+            throw new Error('That host cannot be used for media import.');
+        }
+
+        if (hostname === '0.0.0.0' || hostname === '::' || hostname === '[::1]' || hostname === '::1') {
+            throw new Error('That host cannot be used for media import.');
+        }
+
+        const literalIp = isIP(hostname.replace(/^\[|\]$/g, ''));
+        if (literalIp && this.isPrivateIp(hostname.replace(/^\[|\]$/g, ''))) {
+            throw new Error('Private or local network URLs are not allowed.');
+        }
+
+        if (!literalIp) {
+            try {
+                const records = await dnsLookup(hostname, {all: true});
+                for (const record of records) {
+                    if (this.isPrivateIp(record.address)) {
+                        throw new Error('That URL resolves to a private network address and cannot be imported.');
+                    }
+                }
+            } catch (error) {
+                if (error instanceof Error && error.message.includes('private network')) {
+                    throw error;
+                }
+                // DNS failures are left to Cloudinary; we only hard-fail private resolutions.
+            }
+        }
+
+        const pathname = parsed.pathname.toLowerCase();
+        const looksLikeMedia =
+            /\.(jpe?g|png|gif|webp|avif|mp4|webm|mov|m4v)(\?|$)/i.test(pathname) ||
+            hostname.includes('cloudinary.com') ||
+            hostname.includes('googleusercontent.com') ||
+            hostname.includes('ggpht.com') ||
+            hostname.includes('fbcdn.net') ||
+            hostname.includes('cdninstagram.com');
+
+        if (!looksLikeMedia && !pathname.includes('/image') && !pathname.includes('/media')) {
+            // Soft guidance only — Cloudinary will still validate content type.
+            Logger.warn(`Importing URL without a clear media extension: ${trimmed}`, loggerCtx);
+        }
+
         return trimmed;
+    }
+
+    private isPrivateIp(address: string): boolean {
+        const ip = address.replace(/^\[|\]$/g, '');
+        if (ip === '127.0.0.1' || ip === '::1') return true;
+        if (ip.startsWith('10.')) return true;
+        if (ip.startsWith('192.168.')) return true;
+        if (ip.startsWith('169.254.')) return true;
+        if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return true;
+        if (ip.startsWith('fc') || ip.startsWith('fd') || ip.startsWith('fe80')) return true;
+        return false;
     }
 
     validateFileMeta(filename: string, mimetype: string, bytes: number): 'image' | 'video' {
@@ -87,11 +160,15 @@ export class CloudinaryClientService implements OnModuleInit {
             return 'video';
         }
         throw new Error(
-            `Unsupported file type "${mimetype}" for "${filename}". Allowed: images (JPEG, PNG, WebP, GIF) and videos (MP4, WebM, MOV).`,
+            `Unsupported file type "${mimetype}" for "${filename}". Allowed: images (JPEG, PNG, WebP, GIF, AVIF) and videos (MP4, WebM, MOV).`,
         );
     }
 
-    buildDeliveryUrl(publicId: string, resourceType: string, variant: 'source' | 'preview' | 'thumbnail' = 'preview'): string {
+    buildDeliveryUrl(
+        publicId: string,
+        resourceType: string,
+        variant: 'source' | 'preview' | 'thumbnail' = 'preview',
+    ): string {
         if (resourceType === 'video') {
             if (variant === 'thumbnail') {
                 return cloudinary.url(publicId, {
@@ -130,20 +207,14 @@ export class CloudinaryClientService implements OnModuleInit {
         return result as CloudinaryUploadResult;
     }
 
-    async uploadFromFile(file: GraphqlUploadFile, folder: string): Promise<CloudinaryUploadResult> {
+    async uploadFromBuffer(
+        buffer: Buffer,
+        filename: string,
+        mimetype: string,
+        folder: string,
+    ): Promise<CloudinaryUploadResult> {
         this.assertConfigured();
-        const stream = file.createReadStream();
-        const chunks: Buffer[] = [];
-        let totalBytes = 0;
-
-        for await (const chunk of stream) {
-            const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-            totalBytes += buffer.length;
-            chunks.push(buffer);
-        }
-
-        const resourceType = this.validateFileMeta(file.filename, file.mimetype, totalBytes);
-        const buffer = Buffer.concat(chunks);
+        const resourceType = this.validateFileMeta(filename, mimetype, buffer.length);
 
         return new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
@@ -167,6 +238,21 @@ export class CloudinaryClientService implements OnModuleInit {
             );
             Readable.from(buffer).pipe(uploadStream);
         });
+    }
+
+    async uploadFromFile(file: GraphqlUploadFile, folder: string): Promise<CloudinaryUploadResult> {
+        this.assertConfigured();
+        const stream = file.createReadStream();
+        const chunks: Buffer[] = [];
+        let totalBytes = 0;
+
+        for await (const chunk of stream) {
+            const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+            totalBytes += buffer.length;
+            chunks.push(buffer);
+        }
+
+        return this.uploadFromBuffer(Buffer.concat(chunks), file.filename, file.mimetype, folder);
     }
 
     async destroy(publicId: string, resourceType: string): Promise<void> {

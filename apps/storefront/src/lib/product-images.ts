@@ -1,12 +1,9 @@
 import {getStoreProductImage, STORE_IMAGES} from '@/lib/store-images';
-import {cloudinaryResponsiveUrl, isCloudinaryUrl} from '@/lib/cloudinary-url';
+import {pickAssetUrl} from '@/lib/cloudinary-url';
 
 function normalizeAssetUrl(url: string, width?: number): string {
     const normalized = url.replace(/\\/g, '/');
-    if (width && isCloudinaryUrl(normalized)) {
-        return cloudinaryResponsiveUrl(normalized, width);
-    }
-    return normalized;
+    return pickAssetUrl(normalized, undefined, width) || normalized;
 }
 
 /** Generic seed PNGs from initial import — not real product photos. */

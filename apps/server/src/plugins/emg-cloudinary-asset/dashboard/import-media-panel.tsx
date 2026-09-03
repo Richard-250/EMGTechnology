@@ -41,6 +41,7 @@ export function ImportMediaPanel({
     const [featured, setFeatured] = useState(true);
     const [folder, setFolder] = useState<CloudinaryMediaFolder>('PRODUCTS');
     const [lastPreview, setLastPreview] = useState<string | null>(null);
+    const [lastSource, setLastSource] = useState<string | null>(null);
     const [lastType, setLastType] = useState<string | null>(null);
 
     const invalidate = () => {
@@ -59,6 +60,7 @@ export function ImportMediaPanel({
         onSuccess: result => {
             const asset = result.createAssetFromImageUrl.asset;
             setLastPreview(asset.preview);
+            setLastSource(asset.source);
             setLastType(asset.type);
             setUrl('');
             toast.success(
@@ -82,6 +84,7 @@ export function ImportMediaPanel({
         onSuccess: result => {
             const asset = result.uploadMediaToCloudinary.asset;
             setLastPreview(asset.preview);
+            setLastSource(asset.source);
             setLastType(asset.type);
             toast.success(
                 productId
@@ -134,7 +137,7 @@ export function ImportMediaPanel({
                     id="emg-media-file"
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                    accept="image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/webm,video/quicktime"
                     disabled={busy}
                     onChange={event => {
                         const file = event.target.files?.[0];
@@ -199,7 +202,8 @@ export function ImportMediaPanel({
                     </p>
                     {lastType === 'VIDEO' ? (
                         <video
-                            src={lastPreview}
+                            src={lastSource || lastPreview}
+                            poster={lastPreview}
                             controls
                             className="max-h-40 w-full rounded-md border border-border"
                         />
