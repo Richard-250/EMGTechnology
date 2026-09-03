@@ -30,6 +30,12 @@ export interface GoogleAuthOptions {
     googleClientId: string;
 }
 
+/**
+ * Google Identity Services (GIS) ID-token authentication for the Shop API.
+ *
+ * Flow: browser GIS button → Google ID token (JWT) → Vendure authenticate({ google: { token } }).
+ * No OAuth authorization-code redirect / callback URL is used. GOOGLE_CLIENT_SECRET is not required.
+ */
 export class GoogleAuthStrategy implements AuthenticationStrategy<GoogleAuthData> {
     readonly name = 'google';
     private externalAuthenticationService!: ExternalAuthenticationService;
@@ -56,8 +62,17 @@ export class GoogleAuthStrategy implements AuthenticationStrategy<GoogleAuthData
 
     async authenticate(ctx: RequestContext, data: GoogleAuthData): Promise<User | false> {
         try {
+            if (!data?.token?.trim()) {
+                this.logger.warn('Google sign-in rejected: empty token', 'GoogleAuthStrategy');
+                return false;
+            }
+
             const payload = await this.verifyIdToken(data.token);
-            if (!payload?.email) {
+            if (!payload?.sub) {
+                this.logger.warn('Google sign-in rejected: token missing subject', 'GoogleAuthStrategy');
+                return false;
+            }
+            if (!payload.email) {
                 this.logger.warn('Google sign-in rejected: token missing email claim', 'GoogleAuthStrategy');
                 return false;
             }
@@ -72,6 +87,7 @@ export class GoogleAuthStrategy implements AuthenticationStrategy<GoogleAuthData
                 return existingGoogleUser;
             }
 
+            // Only link to an existing email account when Google verified the email ownership.
             const emailVerified = payload.email_verified === true;
 
             const user = await this.externalAuthenticationService.createCustomerAndUser(ctx, {
@@ -87,6 +103,18 @@ export class GoogleAuthStrategy implements AuthenticationStrategy<GoogleAuthData
             return user;
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
+            // Surface unverified-email linking failures distinctly for the storefront.
+            if (
+                message.includes('UnverifiedExternalEmail') ||
+                message.toLowerCase().includes('unverified') ||
+                (error as {name?: string})?.name === 'UnverifiedExternalEmailError'
+            ) {
+                this.logger.warn(
+                    'Google sign-in blocked: cannot link to an existing unverified email account',
+                    'GoogleAuthStrategy',
+                );
+                throw new Error('GOOGLE_EMAIL_NOT_VERIFIED');
+            }
             this.logger.error(`Google authentication failed: ${message}`, 'GoogleAuthStrategy');
             return false;
         }
@@ -97,7 +125,7 @@ export class GoogleAuthStrategy implements AuthenticationStrategy<GoogleAuthData
             idToken,
             audience: this.options.googleClientId,
         });
-        return ticket.getPayload() as GoogleIdTokenPayload | undefined ?? null;
+        return (ticket.getPayload() as GoogleIdTokenPayload | undefined) ?? null;
     }
 
     private async syncCustomerProfile(

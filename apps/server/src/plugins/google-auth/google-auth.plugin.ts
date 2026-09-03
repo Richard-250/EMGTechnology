@@ -13,6 +13,11 @@ export interface GoogleAuthPluginOptions {
             config.authOptions.shopAuthenticationStrategy.push(
                 new GoogleAuthStrategy({googleClientId: options.googleClientId}),
             );
+        } else if (process.env.APP_ENV === 'prod' || process.env.NODE_ENV === 'production') {
+            // eslint-disable-next-line no-console
+            console.warn(
+                '[GoogleAuthPlugin] GOOGLE_CLIENT_ID is empty — Continue with Google is disabled in production.',
+            );
         }
         return config;
     },

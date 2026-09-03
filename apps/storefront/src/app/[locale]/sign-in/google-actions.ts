@@ -7,6 +7,16 @@ import {redirect} from '@/i18n/navigation';
 import {revalidatePath} from 'next/cache';
 import {getLocale, getTranslations} from 'next-intl/server';
 
+function mapGoogleAuthError(message: string | undefined, t: Awaited<ReturnType<typeof getTranslations>>) {
+    if (!message) {
+        return t('googleAuthFailed');
+    }
+    if (message.includes('GOOGLE_EMAIL_NOT_VERIFIED') || /unverified/i.test(message)) {
+        return t('googleEmailNotVerified');
+    }
+    return message.length < 160 ? message : t('googleAuthFailed');
+}
+
 export async function authenticateWithGoogleAction(token: string, redirectTo?: string) {
     const t = await getTranslations('Errors');
 
@@ -22,11 +32,12 @@ export async function authenticateWithGoogleAction(token: string, redirectTo?: s
                 input: {
                     google: {token},
                 },
-            } as never,
+            },
             {useAuthToken: true},
         );
-    } catch {
-        return {error: t('googleAuthFailed')};
+    } catch (error) {
+        const message = error instanceof Error ? error.message : undefined;
+        return {error: mapGoogleAuthError(message, t)};
     }
 
     const authResult = result.data.authenticate;
@@ -35,8 +46,8 @@ export async function authenticateWithGoogleAction(token: string, redirectTo?: s
         const message =
             'message' in authResult && authResult.message
                 ? String(authResult.message)
-                : t('googleAuthFailed');
-        return {error: message};
+                : undefined;
+        return {error: mapGoogleAuthError(message, t)};
     }
 
     if (result.token) {

@@ -20,11 +20,22 @@ export default async function ProfilePage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold">{t('profile')}</h1>
-                <p className="text-muted-foreground mt-2">
-                    {t('manageAccountInfo')}
-                </p>
+            <div className="flex items-start gap-4">
+                {customer?.customFields?.googleProfileImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={customer.customFields.googleProfileImageUrl}
+                        alt=""
+                        className="size-16 rounded-full object-cover border border-border"
+                        referrerPolicy="no-referrer"
+                    />
+                ) : null}
+                <div>
+                    <h1 className="text-3xl font-bold">{t('profile')}</h1>
+                    <p className="text-muted-foreground mt-2">
+                        {t('manageAccountInfo')}
+                    </p>
+                </div>
             </div>
 
             <EditProfileForm customer={customer} />

@@ -626,6 +626,7 @@
     "verificationTokenRequired": "Verification token is required",
     "failedAddToCart": "Failed to add item to cart",
     "googleAuthFailed": "Kwinjira na Google byanze. Ongera ugerageze cyangwa ukoreshe imeri.",
+    "googleEmailNotVerified": "Iyi imeri ifite konti itaremejwe. Banza wemeze imeri yawe, hanyuma ongera ugerageze Komeza na Google.",
     "invalidOtp": "Kode yo kwemeza ntiyemewe cyangwa yararangiye. Ongera ugerageze."
   }
 }

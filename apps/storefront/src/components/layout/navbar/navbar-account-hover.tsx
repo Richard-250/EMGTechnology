@@ -11,6 +11,7 @@ import {cn} from '@/lib/utils';
 
 interface CustomerSummary {
     firstName: string;
+    profileImageUrl?: string | null;
 }
 
 interface NavbarAccountHoverProps {
@@ -34,7 +35,17 @@ export function NavbarAccountHover({customer}: NavbarAccountHoverProps) {
                         />
                     }
                 >
-                    <User className="size-5" />
+                    {customer?.profileImageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={customer.profileImageUrl}
+                            alt=""
+                            className="size-5 rounded-full object-cover"
+                            referrerPolicy="no-referrer"
+                        />
+                    ) : (
+                        <User className="size-5" />
+                    )}
                 </PopoverTrigger>
             </div>
             <PopoverContent
@@ -96,7 +107,20 @@ function LoggedInPanel({customer}: {customer: CustomerSummary}) {
 
     return (
         <div>
-            <div className="px-4 py-3 border-b border-border/60 bg-muted/30">
+            <div className="px-4 py-3 border-b border-border/60 bg-muted/30 flex items-center gap-3">
+                {customer.profileImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={customer.profileImageUrl}
+                        alt=""
+                        className="size-9 rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                    />
+                ) : (
+                    <div className="flex size-9 items-center justify-center rounded-full bg-muted">
+                        <User className="size-4 text-muted-foreground" />
+                    </div>
+                )}
                 <p className="text-sm font-semibold">{t('greeting', {name: customer.firstName})}</p>
             </div>
             <div className="py-1">

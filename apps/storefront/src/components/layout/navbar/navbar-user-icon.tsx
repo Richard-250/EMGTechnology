@@ -13,7 +13,10 @@ export async function NavbarUserIcon() {
             <NavbarAccountHover
                 customer={
                     customer
-                        ? {firstName: customer.firstName}
+                        ? {
+                              firstName: customer.firstName,
+                              profileImageUrl: customer.customFields?.googleProfileImageUrl ?? null,
+                          }
                         : null
                 }
             />

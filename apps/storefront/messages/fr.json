@@ -626,6 +626,7 @@
     "verificationTokenRequired": "Verification token is required",
     "failedAddToCart": "Failed to add item to cart",
     "googleAuthFailed": "La connexion Google a échoué. Réessayez ou utilisez l'e-mail.",
+    "googleEmailNotVerified": "Cette adresse e-mail a déjà un compte non vérifié. Vérifiez d'abord votre e-mail, puis réessayez Continuer avec Google.",
     "invalidOtp": "Code de vérification invalide ou expiré. Réessayez.",
     "accountExistsSignIn": "Votre compte a été créé. Connectez-vous avec votre e-mail et mot de passe."
   }

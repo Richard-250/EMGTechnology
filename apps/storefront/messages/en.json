@@ -680,6 +680,7 @@
     "verificationTokenRequired": "Verification token is required",
     "failedAddToCart": "Failed to add item to cart",
     "googleAuthFailed": "Google sign-in failed. Please try again or use email.",
+    "googleEmailNotVerified": "This email already has an account that is not verified yet. Verify your email first, then try Continue with Google again.",
     "invalidOtp": "Invalid or expired verification code. Please try again.",
     "accountExistsSignIn": "Your account was created. Please sign in with your email and password."
   }

@@ -502,6 +502,8 @@
     "newPasswordMustDiffer": "Das neue Passwort muss sich vom aktuellen Passwort unterscheiden",
     "failedPasswordReset": "Passwort-Zurücksetzung konnte nicht angefordert werden",
     "verificationTokenRequired": "Bestätigungs-Token ist erforderlich",
-    "failedAddToCart": "Artikel konnte nicht zum Warenkorb hinzugefügt werden"
+    "failedAddToCart": "Artikel konnte nicht zum Warenkorb hinzugefügt werden",
+    "googleAuthFailed": "Google-Anmeldung fehlgeschlagen. Bitte erneut versuchen oder E-Mail verwenden.",
+    "googleEmailNotVerified": "Für diese E-Mail existiert bereits ein nicht verifiziertes Konto. Bestätigen Sie zuerst Ihre E-Mail und versuchen Sie dann Weiter mit Google erneut."
   }
 }
