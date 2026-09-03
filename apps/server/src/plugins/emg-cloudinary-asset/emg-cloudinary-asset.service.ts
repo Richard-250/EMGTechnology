@@ -154,7 +154,7 @@ export class EmgCloudinaryAssetService {
 
     /**
      * When admin uses native Vendure asset upload (local disk), mirror the file to Cloudinary
-     * and rewrite Asset source/preview + metadata so the DB never remains the binary source of truth.
+     * and rewrite Asset source/preview + metadata so the DB never stores the binary.
      */
     async migrateLocalAssetToCloudinary(ctx: RequestContext, asset: Asset, fileBuffer: Buffer): Promise<void> {
         if (!this.cloudinaryClient.isConfigured()) {
@@ -166,11 +166,7 @@ export class EmgCloudinaryAssetService {
             return;
         }
 
-        if (asset.source?.startsWith('http://') || asset.source?.startsWith('https://')) {
-            return;
-        }
-
-        const filename = asset.source.split('/').pop() || `asset-${asset.id}`;
+        const filename = asset.source?.split('/').pop() || `asset-${asset.id}`;
         const folder = this.cloudinaryClient.resolveFolder('products');
         const upload = await this.cloudinaryClient.uploadFromBuffer(
             fileBuffer,
@@ -179,7 +175,47 @@ export class EmgCloudinaryAssetService {
             folder,
         );
 
-        const metadata = this.buildMetadata(upload, {folder: 'products'});
+        await this.applyCloudinaryUploadToAsset(ctx, asset, upload, {folder: 'products'});
+    }
+
+    /**
+     * When an Asset already points at an external http(s) image that is NOT on Cloudinary,
+     * fetch it into Cloudinary and rewrite the Asset so the library stays visible with CDN URLs only.
+     */
+    async migrateExternalUrlAssetToCloudinary(ctx: RequestContext, asset: Asset): Promise<void> {
+        if (!this.cloudinaryClient.isConfigured()) {
+            return;
+        }
+
+        const fields = asset.customFields as CloudinaryMediaMetadata | undefined;
+        if (fields?.cloudinaryPublicId) {
+            return;
+        }
+
+        const source = asset.source?.trim();
+        if (!source || (!source.startsWith('http://') && !source.startsWith('https://'))) {
+            return;
+        }
+        if (source.includes('res.cloudinary.com')) {
+            return;
+        }
+
+        const validated = await this.cloudinaryClient.validateRemoteUrl(source);
+        const folder = this.cloudinaryClient.resolveFolder('products');
+        const upload = await this.cloudinaryClient.uploadFromUrl(validated, folder);
+        await this.applyCloudinaryUploadToAsset(ctx, asset, upload, {
+            folder: 'products',
+            sourceUrl: validated,
+        });
+    }
+
+    private async applyCloudinaryUploadToAsset(
+        ctx: RequestContext,
+        asset: Asset,
+        upload: CloudinaryUploadResult,
+        options: CreateCloudinaryMediaOptions,
+    ): Promise<void> {
+        const metadata = this.buildMetadata(upload, options);
         const isVideo = upload.resource_type === 'video';
         asset.source = this.cloudinaryClient.buildDeliveryUrl(upload.public_id, upload.resource_type, 'source');
         asset.preview = this.cloudinaryClient.buildDeliveryUrl(
@@ -196,7 +232,7 @@ export class EmgCloudinaryAssetService {
         asset.fileSize = upload.bytes ?? asset.fileSize;
 
         await this.connection.getRepository(ctx, Asset).save(asset);
-        Logger.info(`Migrated local Asset ${asset.id} to Cloudinary (${upload.public_id})`, loggerCtx);
+        Logger.info(`Asset ${asset.id} now points at Cloudinary (${upload.public_id})`, loggerCtx);
     }
 
     private async assignAssetToProduct(

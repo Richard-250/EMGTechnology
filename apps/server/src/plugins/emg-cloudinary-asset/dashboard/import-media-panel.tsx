@@ -105,10 +105,11 @@ export function ImportMediaPanel({
                     <Upload className="size-4" />
                 </span>
                 <div>
-                    <h3 className="font-semibold text-sm">Cloudinary media upload</h3>
+                    <h3 className="font-semibold text-sm">Add product media (Cloudinary)</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                        Upload images or videos through the backend to Cloudinary. Only the URL and metadata are
-                        stored in the database{productId ? ' for this product' : ''}.
+                        Files and pasted online image URLs are stored on Cloudinary. Your database keeps only the
+                        secure URL + metadata. The image stays visible in Assets / on the product — the binary is
+                        not saved on this server.
                     </p>
                 </div>
             </div>
@@ -160,7 +161,7 @@ export function ImportMediaPanel({
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="emg-image-url">Media URL</Label>
+                <Label htmlFor="emg-image-url">Paste image URL from the internet</Label>
                 <Input
                     id="emg-image-url"
                     type="url"
@@ -169,6 +170,10 @@ export function ImportMediaPanel({
                     disabled={busy}
                     onChange={event => setUrl(event.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                    We download it into Cloudinary, create an Asset in your library, and save only the Cloudinary URL
+                    + metadata in the database.
+                </p>
             </div>
 
             {productId ? (
@@ -192,7 +197,7 @@ export function ImportMediaPanel({
                 ) : (
                     <Link2 className="mr-2 size-4" />
                 )}
-                Import URL to Cloudinary
+                Import pasted URL to Cloudinary + Assets
             </Button>
 
             {lastPreview ? (
