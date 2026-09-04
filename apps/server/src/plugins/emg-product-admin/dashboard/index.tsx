@@ -1,6 +1,6 @@
 import {defineDashboardExtension} from '@vendure/dashboard';
 
-import {EmgAssetUploadPanel, EmgUploadAssetsButton} from './asset-upload-panel';
+import {EmgUploadAssetsButton} from './asset-upload-panel';
 import {AutoSkuInput} from './auto-sku-input';
 import {VariantNameQuickEditCell, VariantQuickEditor} from './variant-quick-editor';
 
@@ -19,35 +19,28 @@ defineDashboardExtension({
     ],
     actionBarItems: [
         {
+            // One Upload button on Assets — replaces the built-in gallery upload control.
             pageId: 'asset-list',
+            id: 'emg-upload-assets',
             requiresPermission: ['CreateAsset'],
-            component: () => <EmgUploadAssetsButton />,
+            position: {itemId: 'upload-assets-button', order: 'replace'},
+            component: () => <EmgUploadAssetsButton label="Upload" />,
         },
     ],
     pageBlocks: [
         {
-            id: 'emg-asset-upload-assets',
-            title: 'Upload images',
-            location: {
-                pageId: 'asset-list',
-                column: 'main',
-                position: {blockId: 'asset-gallery', order: 'before'},
-            },
-            component: () => <EmgAssetUploadPanel />,
-            requiresPermission: ['CreateAsset'],
-        },
-        {
+            // One Upload button on product Assets sidebar.
             id: 'emg-asset-upload-product',
-            title: 'Upload images',
+            title: 'Upload',
             location: {
                 pageId: 'product-detail',
                 column: 'side',
                 position: {blockId: 'assets', order: 'after'},
             },
             component: ({context}) => (
-                <EmgAssetUploadPanel
+                <EmgUploadAssetsButton
+                    label="Upload"
                     productId={context.entity?.id}
-                    productName={context.entity?.name}
                     existingAssetIds={(context.entity?.assets ?? []).map((asset: {id: string}) => asset.id)}
                 />
             ),

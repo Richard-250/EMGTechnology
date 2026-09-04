@@ -29,7 +29,12 @@ echo "==> Ensure asset upload directory exists and is writable"
 mkdir -p apps/server/static/assets/source apps/server/static/assets/preview apps/server/static/assets/cache
 chmod -R u+rwX apps/server/static/assets
 
-echo "==> Tip: if large uploads fail, set nginx client_max_body_size 25m; for the API location and reload nginx"
+echo "==> Raise nginx upload limit (fixes HTTP 413)"
+if [ "$(id -u)" -eq 0 ] || command -v sudo >/dev/null 2>&1; then
+  sudo bash scripts/fix-nginx-upload-limit.sh || bash scripts/fix-nginx-upload-limit.sh || true
+else
+  echo "Run as root when possible: bash scripts/fix-nginx-upload-limit.sh"
+fi
 
 echo "==> Install + production build (server/worker, then dashboard last)"
 npm install

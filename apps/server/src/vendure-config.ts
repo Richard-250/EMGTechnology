@@ -93,8 +93,8 @@ export const config: VendureConfig = {
         importAssetsDir: path.join(__dirname, '../assets/import'),
     },
     assetOptions: {
-        // 20 MB — matches graphql-upload middleware; nginx should allow >= this (client_max_body_size 25m).
-        uploadMaxFileSize: 20 * 1024 * 1024,
+        // 50 MB app limit; nginx must allow at least this (client_max_body_size 50m).
+        uploadMaxFileSize: 50 * 1024 * 1024,
         permittedFileTypes: [
             'image/*',
             'video/*',

@@ -4,6 +4,10 @@ import {Loader2, Upload} from 'lucide-react';
 import {useRef, useState} from 'react';
 import {toast} from 'sonner';
 
+/** Target max encoded size before upload (keeps most phone photos under common nginx 1–2MB limits). */
+const TARGET_MAX_BYTES = 1.5 * 1024 * 1024;
+const MAX_EDGE = 1920;
+
 const createAssetsDocument = graphql(`
     mutation EmgCreateAssets($input: [CreateAssetInput!]!) {
         createAssets(input: $input) {
@@ -38,8 +42,8 @@ const updateProductAssetsDocument = graphql(`
 
 type CreateAssetsResult = {
     createAssets: Array<
-        | {id: string; name: string; preview: string; source: string; mimeType: string; message?: undefined}
-        | {errorCode: string; message: string; id?: undefined}
+        | {id: string; name: string; preview: string; source: string; mimeType: string}
+        | {errorCode: string; message: string}
     >;
 };
 
@@ -49,9 +53,68 @@ function isAssetResult(
     return typeof (row as {id?: string}).id === 'string' && !('errorCode' in row);
 }
 
+function formatUploadError(error: unknown): string {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (/413|payload too large|entity too large|request entity/i.test(msg)) {
+        return 'Upload blocked: file too large (HTTP 413). The image was compressed — if this continues, set nginx client_max_body_size 50m and reload nginx.';
+    }
+    return msg || 'Could not upload image.';
+}
+
+/**
+ * Shrink large photos so multipart uploads fit typical reverse-proxy body limits.
+ * Non-image files are returned unchanged.
+ */
+async function prepareFileForUpload(file: File): Promise<File> {
+    if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
+        return file;
+    }
+    if (file.size <= TARGET_MAX_BYTES) {
+        return file;
+    }
+
+    try {
+        const bitmap = await createImageBitmap(file);
+        const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+        const width = Math.max(1, Math.round(bitmap.width * scale));
+        const height = Math.max(1, Math.round(bitmap.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            bitmap.close();
+            return file;
+        }
+        ctx.drawImage(bitmap, 0, 0, width, height);
+        bitmap.close();
+
+        let quality = 0.85;
+        let blob: Blob | null = null;
+        for (let i = 0; i < 6; i++) {
+            blob = await new Promise<Blob | null>(resolve =>
+                canvas.toBlob(resolve, 'image/jpeg', quality),
+            );
+            if (!blob || blob.size <= TARGET_MAX_BYTES) {
+                break;
+            }
+            quality -= 0.1;
+        }
+        if (!blob) {
+            return file;
+        }
+
+        const baseName = file.name.replace(/\.[^.]+$/, '') || 'upload';
+        return new File([blob], `${baseName}.jpg`, {type: 'image/jpeg', lastModified: Date.now()});
+    } catch {
+        return file;
+    }
+}
+
 async function uploadFiles(files: File[]) {
+    const prepared = await Promise.all(files.map(prepareFileForUpload));
     const data = (await api.mutate(createAssetsDocument, {
-        input: files.map(file => ({file})),
+        input: prepared.map(file => ({file})),
     })) as CreateAssetsResult;
 
     const created: Array<{id: string; name: string}> = [];
@@ -71,17 +134,19 @@ async function uploadFiles(files: File[]) {
 }
 
 /**
- * Reliable asset uploader with visible success/error toasts.
- * Built-in AssetGallery upload can fail silently when createAssets returns MimeTypeError.
+ * Single reliable Upload button for Assets / product pages.
+ * Compresses large images client-side and surfaces clear errors (including HTTP 413).
  */
 export function EmgUploadAssetsButton({
     productId,
     existingAssetIds = [],
     setFeatured = true,
+    label = 'Upload',
 }: {
     productId?: string;
     existingAssetIds?: string[];
     setFeatured?: boolean;
+    label?: string;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
@@ -124,7 +189,7 @@ export function EmgUploadAssetsButton({
             queryClient.invalidateQueries({queryKey: ['asset-gallery']});
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Could not upload image.');
+            toast.error(formatUploadError(error));
         },
         onSettled: () => setBusy(false),
     });
@@ -151,6 +216,7 @@ export function EmgUploadAssetsButton({
             <Button
                 type="button"
                 variant="default"
+                className="whitespace-nowrap"
                 disabled={busy || mutation.isPending}
                 onClick={() => inputRef.current?.click()}
             >
@@ -159,32 +225,8 @@ export function EmgUploadAssetsButton({
                 ) : (
                     <Upload className="mr-2 size-4" />
                 )}
-                Upload images
+                {label}
             </Button>
         </>
-    );
-}
-
-export function EmgAssetUploadPanel({
-    productId,
-    productName,
-    existingAssetIds = [],
-}: {
-    productId?: string;
-    productName?: string;
-    existingAssetIds?: string[];
-}) {
-    return (
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-            <div>
-                <h3 className="font-semibold text-sm">Upload images</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                    {productId
-                        ? `Add photos for ${productName ?? 'this product'} from your computer. You’ll see a clear success or error message.`
-                        : 'Choose image files from your computer. You’ll see a clear success or error message if something fails.'}
-                </p>
-            </div>
-            <EmgUploadAssetsButton productId={productId} existingAssetIds={existingAssetIds} />
-        </div>
     );
 }
