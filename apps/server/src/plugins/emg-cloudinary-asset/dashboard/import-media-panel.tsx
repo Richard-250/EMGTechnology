@@ -10,15 +10,11 @@ import {
     Switch,
 } from '@vendure/dashboard';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {Link2, Loader2, Upload} from 'lucide-react';
-import {useRef, useState} from 'react';
+import {Link2, Loader2} from 'lucide-react';
+import {useState} from 'react';
 import {toast} from 'sonner';
 
-import {
-    createAssetFromImageUrl,
-    type CloudinaryMediaFolder,
-    uploadMediaToCloudinary,
-} from './graphql';
+import {createAssetFromImageUrl, type CloudinaryMediaFolder} from './graphql';
 
 const FOLDER_OPTIONS: Array<{value: CloudinaryMediaFolder; label: string}> = [
     {value: 'PRODUCTS', label: 'Products'},
@@ -28,6 +24,10 @@ const FOLDER_OPTIONS: Array<{value: CloudinaryMediaFolder; label: string}> = [
     {value: 'BLOG', label: 'Blog'},
 ];
 
+/**
+ * Optional helper: paste a public image URL.
+ * Normal file uploads use the standard Vendure Assets UI (Cloudinary storage behind the scenes).
+ */
 export function ImportMediaPanel({
     productId,
     productName,
@@ -36,7 +36,6 @@ export function ImportMediaPanel({
     productName?: string;
 }) {
     const queryClient = useQueryClient();
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [url, setUrl] = useState('');
     const [featured, setFeatured] = useState(true);
     const [folder, setFolder] = useState<CloudinaryMediaFolder>('PRODUCTS');
@@ -65,53 +64,24 @@ export function ImportMediaPanel({
             setUrl('');
             toast.success(
                 productId
-                    ? `Media added to ${productName ?? 'product'} via Cloudinary.`
-                    : 'Media imported to Cloudinary.',
+                    ? `Image URL imported for ${productName ?? 'product'}.`
+                    : 'Image URL imported to Assets.',
             );
             invalidate();
         },
         onError: (error: Error) => toast.error(error.message || 'Could not import from URL.'),
     });
 
-    const fileMutation = useMutation({
-        mutationFn: (file: File) =>
-            uploadMediaToCloudinary({
-                file,
-                productId,
-                featured: productId ? featured : false,
-                folder: productId ? 'PRODUCTS' : folder,
-            }),
-        onSuccess: result => {
-            const asset = result.uploadMediaToCloudinary.asset;
-            setLastPreview(asset.preview);
-            setLastSource(asset.source);
-            setLastType(asset.type);
-            toast.success(
-                productId
-                    ? `Uploaded to ${productName ?? 'product'} on Cloudinary.`
-                    : 'Uploaded to Cloudinary asset library.',
-            );
-            invalidate();
-        },
-        onError: (error: Error) => toast.error(error.message || 'Upload failed.'),
-    });
-
-    const busy = urlMutation.isPending || fileMutation.isPending;
+    const busy = urlMutation.isPending;
 
     return (
         <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-            <div className="flex items-start gap-3">
-                <span className="flex size-9 items-center justify-center rounded-lg bg-electric/10 text-electric shrink-0">
-                    <Upload className="size-4" />
-                </span>
-                <div>
-                    <h3 className="font-semibold text-sm">Add product media (Cloudinary)</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        Files and pasted online image URLs are stored on Cloudinary. Your database keeps only the
-                        secure URL + metadata. The image stays visible in Assets / on the product — the binary is
-                        not saved on this server.
-                    </p>
-                </div>
+            <div>
+                <h3 className="font-semibold text-sm">Paste image URL (optional)</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                    Use the normal Assets upload control to add files. Or paste a public image URL here — we store
+                    it on Cloudinary and keep only the CDN URL in the database.
+                </p>
             </div>
 
             {!productId ? (
@@ -133,35 +103,7 @@ export function ImportMediaPanel({
             ) : null}
 
             <div className="space-y-2">
-                <Label htmlFor="emg-media-file">Upload file (image or video)</Label>
-                <Input
-                    id="emg-media-file"
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/webm,video/quicktime"
-                    disabled={busy}
-                    onChange={event => {
-                        const file = event.target.files?.[0];
-                        if (file) {
-                            fileMutation.mutate(file);
-                            event.target.value = '';
-                        }
-                    }}
-                />
-                <p className="text-xs text-muted-foreground">Max 10 MB images, 100 MB videos.</p>
-            </div>
-
-            <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">or paste URL</span>
-                </div>
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="emg-image-url">Paste image URL from the internet</Label>
+                <Label htmlFor="emg-image-url">Image URL</Label>
                 <Input
                     id="emg-image-url"
                     type="url"
@@ -170,10 +112,6 @@ export function ImportMediaPanel({
                     disabled={busy}
                     onChange={event => setUrl(event.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
-                    We download it into Cloudinary, create an Asset in your library, and save only the Cloudinary URL
-                    + metadata in the database.
-                </p>
             </div>
 
             {productId ? (
@@ -197,13 +135,13 @@ export function ImportMediaPanel({
                 ) : (
                     <Link2 className="mr-2 size-4" />
                 )}
-                Import pasted URL to Cloudinary + Assets
+                Import URL
             </Button>
 
             {lastPreview ? (
                 <div className="rounded-lg border border-border p-3">
                     <p className="text-xs font-medium text-muted-foreground mb-2">
-                        Last upload{lastType ? ` (${lastType.toLowerCase()})` : ''}
+                        Last import{lastType ? ` (${lastType.toLowerCase()})` : ''}
                     </p>
                     {lastType === 'VIDEO' ? (
                         <video
@@ -215,7 +153,7 @@ export function ImportMediaPanel({
                     ) : (
                         <img
                             src={lastPreview}
-                            alt="Uploaded media preview"
+                            alt="Imported media preview"
                             className="max-h-40 rounded-md border border-border object-contain"
                         />
                     )}
