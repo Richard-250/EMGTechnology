@@ -20,7 +20,8 @@ import { GoogleAuthPlugin } from './plugins/google-auth/google-auth.plugin';
 import { EmailChangeBlockPlugin } from './plugins/email-change-block/email-change-block.plugin';
 import { EmgDiscountPlugin } from './plugins/emg-discount/emg-discount.plugin';
 import { EmgProductAdminPlugin } from './plugins/emg-product-admin/emg-product-admin.plugin';
-import { EmgCloudinaryAssetPlugin } from './plugins/emg-cloudinary-asset/emg-cloudinary-asset.plugin';
+// Cloudinary plugin temporarily disabled — native asset upload must stay on local AssetServerPlugin.
+// import { EmgCloudinaryAssetPlugin } from './plugins/emg-cloudinary-asset/emg-cloudinary-asset.plugin';
 import { assertBuiltDashboardInProduction, resolveDashboardAppDir } from './resolve-dashboard-app-dir';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
@@ -328,6 +329,6 @@ export const config: VendureConfig = {
         EmailChangeBlockPlugin,
         EmgDiscountPlugin,
         EmgProductAdminPlugin,
-        EmgCloudinaryAssetPlugin,
+        // EmgCloudinaryAssetPlugin — disabled until native createAssets is confirmed working on production
     ],
 };
