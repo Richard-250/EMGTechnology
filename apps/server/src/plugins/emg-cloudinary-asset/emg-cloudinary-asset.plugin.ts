@@ -7,11 +7,9 @@ import {EmgCloudinaryAssetResolver} from './emg-cloudinary-asset.resolver';
 import {EmgCloudinaryAssetService} from './emg-cloudinary-asset.service';
 
 /**
- * Cloudinary media for Vendure.
- *
- * Binary storage is handled by {@link configureCloudinaryAssetStorage} on AssetServerPlugin
- * so the native admin upload UI is unchanged. This plugin adds optional paste-URL import
- * and keeps Asset custom-field metadata in sync.
+ * Optional Cloudinary helpers (paste image URL).
+ * Native admin asset uploads use Vendure's standard local AssetServerPlugin storage —
+ * unchanged traditional upload UX.
  */
 @VendurePlugin({
     imports: [PluginCommonModule],
@@ -21,5 +19,17 @@ import {EmgCloudinaryAssetService} from './emg-cloudinary-asset.service';
         resolvers: [EmgCloudinaryAssetResolver],
     },
     dashboard: './dashboard/index.tsx',
+    configuration: config => {
+        // Allow Asset.source/preview that are already absolute CDN URLs (paste-URL imports).
+        const strategy = config.assetOptions.assetStorageStrategy;
+        const originalToAbsoluteUrl = strategy.toAbsoluteUrl?.bind(strategy);
+        strategy.toAbsoluteUrl = (request, identifier) => {
+            if (identifier?.startsWith('http://') || identifier?.startsWith('https://')) {
+                return identifier;
+            }
+            return originalToAbsoluteUrl?.(request, identifier) ?? identifier;
+        };
+        return config;
+    },
 })
 export class EmgCloudinaryAssetPlugin {}

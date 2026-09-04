@@ -79,8 +79,8 @@ export function ImportMediaPanel({
             <div>
                 <h3 className="font-semibold text-sm">Paste image URL (optional)</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                    Use the normal Assets upload control to add files. Or paste a public image URL here — we store
-                    it on Cloudinary and keep only the CDN URL in the database.
+                    To upload a file from your computer, use the normal Assets upload above. This box is only for
+                    pasting a public image link from the internet.
                 </p>
             </div>
 

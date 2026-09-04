@@ -3,8 +3,8 @@ import {defineDashboardExtension} from '@vendure/dashboard';
 import {ImportMediaPanel} from './import-media-panel';
 
 /**
- * Optional: paste a public image URL into Cloudinary + Assets.
- * Native file upload still uses the standard Vendure Assets UI (backed by Cloudinary storage).
+ * Optional paste-URL import only.
+ * File uploads use the normal Vendure Assets control (local storage).
  */
 defineDashboardExtension({
     pageBlocks: [

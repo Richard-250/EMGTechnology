@@ -21,7 +21,6 @@ import { EmailChangeBlockPlugin } from './plugins/email-change-block/email-chang
 import { EmgDiscountPlugin } from './plugins/emg-discount/emg-discount.plugin';
 import { EmgProductAdminPlugin } from './plugins/emg-product-admin/emg-product-admin.plugin';
 import { EmgCloudinaryAssetPlugin } from './plugins/emg-cloudinary-asset/emg-cloudinary-asset.plugin';
-import { configureCloudinaryAssetStorage } from './plugins/emg-cloudinary-asset/cloudinary-asset-storage-strategy';
 import { assertBuiltDashboardInProduction, resolveDashboardAppDir } from './resolve-dashboard-app-dir';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
@@ -268,8 +267,6 @@ export const config: VendureConfig = {
                     (process.env.STOREFRONT_URL
                         ? `${process.env.STOREFRONT_URL.replace(/\/$/, '')}/assets/`
                         : 'https://emgtechnologyltd.com/assets/')),
-            // Native admin uploads go to Cloudinary; DB stores CDN URLs only (no local binary).
-            storageStrategyFactory: configureCloudinaryAssetStorage(),
         }),
         DefaultSchedulerPlugin.init(),
         DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
