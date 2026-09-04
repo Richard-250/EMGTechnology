@@ -7,7 +7,6 @@
     "dev:worker": "vendure dev worker",
     "dev:dashboard": "vendure dev dashboard",
     "dev": "vendure dev all",
-    "prebuild": "rm -rf dist",
     "build": "vendure build all",
     "build:server": "vendure build server",
     "build:worker": "vendure build worker",

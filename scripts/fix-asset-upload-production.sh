@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Stretch Cloud: restore traditional Vendure asset uploads (local disk).
-# Run from /var/www/EMGTechnology
+# Stretch Cloud: restore traditional local asset uploads + working admin dashboard.
+# IMPORTANT: use build-server-production.sh so Vite dashboard is built LAST
+# (vendure build all builds dashboard first; tsc/clean can leave the placeholder UI).
 set -euo pipefail
 
 cd /var/www/EMGTechnology
@@ -10,7 +11,7 @@ git fetch origin main
 git checkout main
 git pull origin main
 
-echo "==> Current commit (must be this or newer for asset fix):"
+echo "==> Current commit:"
 git log -1 --oneline
 
 echo "==> Verify Cloudinary storage strategy is NOT wired"
@@ -28,20 +29,21 @@ echo "==> Ensure asset upload directory exists and is writable"
 mkdir -p apps/server/static/assets
 chmod -R u+rwX apps/server/static/assets
 
-echo "==> Clean build (removes stale dist Cloudinary strategy)"
-rm -rf apps/server/dist
+echo "==> Install + production build (server/worker, then dashboard last)"
 npm install
-npm run build -w server
+bash scripts/build-server-production.sh
 
 echo "==> Confirm built config has no Cloudinary storage factory"
-if grep -R "configureCloudinaryAssetStorage" apps/server/dist --include='*.js' | grep -v 'cloudinary-asset-storage-strategy' >/dev/null 2>&1; then
-  echo "WARN: configureCloudinaryAssetStorage string found in dist — check vendure-config.js"
-fi
 if grep -q "storageStrategyFactory" apps/server/dist/vendure-config.js 2>/dev/null; then
   echo "ERROR: built vendure-config.js still has storageStrategyFactory"
   exit 1
 fi
 echo "OK: built config uses default local asset storage"
+
+echo "==> Confirm dashboard files exist"
+test -f apps/server/dist/dashboard/index.html
+grep -q 'id="app"' apps/server/dist/dashboard/index.html
+echo "OK: dashboard index.html is a real build (not placeholder)"
 
 echo "==> Restart PM2"
 pm2 restart emg-server emg-worker --update-env
@@ -49,5 +51,5 @@ pm2 save
 pm2 status
 
 echo ""
-echo "Done. Hard-refresh the admin dashboard (Cmd/Ctrl+Shift+R), then upload an image via Assets."
-echo "If it still fails, run: pm2 logs emg-server --lines 80"
+echo "Done. Hard-refresh /dashboard (Cmd/Ctrl+Shift+R)."
+echo "If placeholder remains: bash scripts/fix-production-dashboard.sh"
