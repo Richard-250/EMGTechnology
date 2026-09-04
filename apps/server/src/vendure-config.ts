@@ -11,6 +11,7 @@ import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import { DashboardPlugin } from '@vendure/dashboard/plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
+import fs from 'fs';
 import path from 'path';
 import { EmgBrandingPlugin } from './plugins/emg-branding/emg-branding.plugin';
 import { EmailOtpPlugin } from './plugins/email-otp/email-otp.plugin';
@@ -26,6 +27,20 @@ import { assertBuiltDashboardInProduction, resolveDashboardAppDir } from './reso
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3001;
+
+/** Absolute, writable folder for admin asset uploads (source/preview/cache). */
+function resolveAssetUploadDir(): string {
+    const configured = process.env.ASSET_UPLOAD_DIR?.trim();
+    const dir = configured
+        ? path.resolve(configured)
+        : path.resolve(__dirname, '../static/assets');
+    for (const sub of ['', 'source', 'preview', 'cache']) {
+        fs.mkdirSync(sub ? path.join(dir, sub) : dir, { recursive: true });
+    }
+    return dir;
+}
+
+const ASSET_UPLOAD_DIR = resolveAssetUploadDir();
 
 export const config: VendureConfig = {
     apiOptions: {
@@ -76,6 +91,28 @@ export const config: VendureConfig = {
     },
     importExportOptions: {
         importAssetsDir: path.join(__dirname, '../assets/import'),
+    },
+    assetOptions: {
+        // 20 MB — matches graphql-upload middleware; nginx should allow >= this (client_max_body_size 25m).
+        uploadMaxFileSize: 20 * 1024 * 1024,
+        permittedFileTypes: [
+            'image/*',
+            'video/*',
+            'audio/*',
+            '.pdf',
+            '.jpg',
+            '.jpeg',
+            '.png',
+            '.gif',
+            '.webp',
+            '.avif',
+            '.svg',
+            '.heic',
+            '.heif',
+            '.mp4',
+            '.webm',
+            '.mov',
+        ],
     },
     // Custom fields for admin discount and super deals management
     customFields: {
@@ -259,7 +296,7 @@ export const config: VendureConfig = {
         GraphiqlPlugin.init(),
         AssetServerPlugin.init({
             route: 'assets',
-            assetUploadDir: path.join(__dirname, '../static/assets'),
+            assetUploadDir: ASSET_UPLOAD_DIR,
             // In production, assetUrlPrefix MUST be a full absolute URL (e.g. https://emgtechnologyltd.com/assets/)
             // so that Vendure Dashboard image preview URL constructors (new URL(asset.preview)) succeed without errors.
             assetUrlPrefix: IS_DEV

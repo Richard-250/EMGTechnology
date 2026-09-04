@@ -26,8 +26,10 @@ fi
 echo "OK: traditional AssetServerPlugin only"
 
 echo "==> Ensure asset upload directory exists and is writable"
-mkdir -p apps/server/static/assets
+mkdir -p apps/server/static/assets/source apps/server/static/assets/preview apps/server/static/assets/cache
 chmod -R u+rwX apps/server/static/assets
+
+echo "==> Tip: if large uploads fail, set nginx client_max_body_size 25m; for the API location and reload nginx"
 
 echo "==> Install + production build (server/worker, then dashboard last)"
 npm install

@@ -1,5 +1,6 @@
 import {defineDashboardExtension} from '@vendure/dashboard';
 
+import {EmgAssetUploadPanel, EmgUploadAssetsButton} from './asset-upload-panel';
 import {AutoSkuInput} from './auto-sku-input';
 import {VariantNameQuickEditCell, VariantQuickEditor} from './variant-quick-editor';
 
@@ -16,7 +17,42 @@ defineDashboardExtension({
             ],
         },
     ],
+    actionBarItems: [
+        {
+            pageId: 'asset-list',
+            requiresPermission: ['CreateAsset'],
+            component: () => <EmgUploadAssetsButton />,
+        },
+    ],
     pageBlocks: [
+        {
+            id: 'emg-asset-upload-assets',
+            title: 'Upload images',
+            location: {
+                pageId: 'asset-list',
+                column: 'main',
+                position: {blockId: 'asset-gallery', order: 'before'},
+            },
+            component: () => <EmgAssetUploadPanel />,
+            requiresPermission: ['CreateAsset'],
+        },
+        {
+            id: 'emg-asset-upload-product',
+            title: 'Upload images',
+            location: {
+                pageId: 'product-detail',
+                column: 'side',
+                position: {blockId: 'assets', order: 'after'},
+            },
+            component: ({context}) => (
+                <EmgAssetUploadPanel
+                    productId={context.entity?.id}
+                    productName={context.entity?.name}
+                    existingAssetIds={(context.entity?.assets ?? []).map((asset: {id: string}) => asset.id)}
+                />
+            ),
+            requiresPermission: ['CreateAsset', 'UpdateCatalog'],
+        },
         {
             id: 'emg-variant-quick-editor',
             title: 'Quick variant editor',
