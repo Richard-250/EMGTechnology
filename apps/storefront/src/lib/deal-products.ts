@@ -1,6 +1,7 @@
 import {query} from '@/lib/vendure/api';
 import {GetDiscountedProductsQuery} from '@/lib/vendure/queries';
 import type {DealProductCardData, ProductDiscountFields} from '@/lib/discount-display';
+import {mergeDiscountFields} from '@/lib/merge-discount-fields';
 
 export function mapDealProducts(
     items: Array<{
@@ -51,14 +52,7 @@ export function mapDealProducts(
             const primaryCollection =
                 item.collections?.find(c => c.parent?.id) ?? item.collections?.[0];
 
-            const mergedCustomFields: ProductDiscountFields = {
-                isDiscounted: cf?.isDiscounted === true,
-                discountType: cf?.discountType ?? 'percentage',
-                discountPercentage:
-                    variantCf?.variantDiscountPercentage ?? cf?.discountPercentage ?? null,
-                discountAmount: variantCf?.variantDiscountAmount ?? cf?.discountAmount ?? null,
-                originalPrice: variantCf?.variantOriginalPrice ?? cf?.originalPrice ?? null,
-            };
+            const mergedCustomFields = mergeDiscountFields(cf, variantCf);
 
             return {
                 productId: item.id,

@@ -48,10 +48,11 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
 
     const rating = getProductRating(data.slug);
     const sold = getSoldCount(data.slug);
-    const {discountLabel, wasPrice, hasDiscount, isSuperDeal} = resolveDealDiscount({
+    const {discountLabel, wasPrice, salePrice, hasDiscount, isSuperDeal} = resolveDealDiscount({
         price: data.price,
         customFields: data.customFields,
     });
+    const displayPrice = salePrice ?? data.price;
     const similarQuery = encodeURIComponent(data.productName.split(' ')[0] ?? data.slug);
 
     const handleAddToCart = (e: React.MouseEvent) => {
@@ -88,8 +89,8 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
     };
 
     const priceDisplay =
-        data.price != null ? (
-            <Price value={data.price} currencyCode={data.currencyCode} />
+        displayPrice != null ? (
+            <Price value={displayPrice} currencyCode={data.currencyCode} />
         ) : data.isPriceRange && data.priceMin != null ? (
             <Price value={data.priceMin} currencyCode={data.currencyCode} />
         ) : null;
@@ -188,7 +189,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                             <ProductStarRating stars={rating.stars} count={rating.count} size="sm" />
                         </div>
                         <div className={cn('space-y-0.5', compact ? '' : 'px-2')}>
-                            {hasDiscount && wasPrice != null && data.price != null && (
+                            {hasDiscount && wasPrice != null && (
                                 <p className="text-[10px] text-muted-foreground line-through">
                                     <Price value={wasPrice} currencyCode={data.currencyCode} />
                                 </p>

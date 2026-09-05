@@ -17,7 +17,8 @@ interface DealProductCardProps {
 
 export function DealProductCard({product, className}: DealProductCardProps) {
     const [previewOpen, setPreviewOpen] = useState(false);
-    const {discountLabel, wasPrice, hasDiscount} = resolveDealDiscount(product);
+    const {discountLabel, wasPrice, salePrice, hasDiscount} = resolveDealDiscount(product);
+    const displayPrice = salePrice ?? product.price;
 
     if (product.price == null) return null;
 
@@ -79,7 +80,7 @@ export function DealProductCard({product, className}: DealProductCardProps) {
                         {product.productName}
                     </p>
                     <p className="text-base font-bold text-foreground leading-tight">
-                        <Price value={product.price} currencyCode={product.currencyCode} />
+                        <Price value={displayPrice!} currencyCode={product.currencyCode} />
                     </p>
                     {hasDiscount && wasPrice != null && (
                         <p className="text-[11px] text-muted-foreground line-through">

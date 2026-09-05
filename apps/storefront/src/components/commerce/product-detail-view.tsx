@@ -26,6 +26,7 @@ import {ProductDetailGallery} from '@/components/commerce/product-detail-gallery
 import {ProductStarRating} from '@/components/commerce/product-star-rating';
 import {getProductRating, getSoldCount} from '@/lib/product-badges';
 import {resolveDealDiscount, type ProductDiscountFields} from '@/lib/discount-display';
+import {mergeDiscountFields} from '@/lib/merge-discount-fields';
 import {COMPANY} from '@/lib/company';
 import {WhatsAppIcon} from '@/components/shared/whatsapp-icon';
 import {buildProductWhatsAppUrl} from '@/lib/whatsapp';
@@ -135,15 +136,28 @@ export function ProductDetailView({
             return {
                 discountLabel: '',
                 wasPrice: null as number | null,
+                salePrice: null as number | null,
                 hasDiscount: false,
                 isSuperDeal: product.customFields?.isDiscounted === true,
             };
         }
+        const variantCf = (
+            selectedVariant as {
+                customFields?: {
+                    variantDiscountPercentage?: number | null;
+                    variantDiscountAmount?: number | null;
+                    variantOriginalPrice?: number | null;
+                } | null;
+            }
+        ).customFields;
         return resolveDealDiscount({
             price: selectedVariant.priceWithTax,
-            customFields: product.customFields,
+            customFields: mergeDiscountFields(product.customFields, variantCf),
         });
     }, [selectedVariant, product.customFields]);
+
+    const displayPrice =
+        discountInfo.salePrice ?? selectedVariant?.priceWithTax ?? null;
 
     const handleOptionChange = (groupId: string, optionId: string) => {
         setSelectedOptions(prev => ({...prev, [groupId]: optionId}));
@@ -216,7 +230,10 @@ export function ProductDetailView({
                         <div className="rounded-xl bg-electric/10 dark:bg-electric/15 border border-electric/25 p-4 space-y-2">
                             <div className="flex items-baseline gap-2 flex-wrap">
                                 <span className="text-2xl sm:text-3xl font-black tracking-tight text-electric">
-                                    <Price value={selectedVariant.priceWithTax} currencyCode={currencyCode} />
+                                    <Price
+                                        value={displayPrice ?? selectedVariant.priceWithTax}
+                                        currencyCode={currencyCode}
+                                    />
                                 </span>
                                 {discountInfo.hasDiscount && discountInfo.wasPrice != null && (
                                     <>

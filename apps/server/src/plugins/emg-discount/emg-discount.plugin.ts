@@ -6,6 +6,7 @@ import {
     Product,
     ProductEvent,
     ProductService,
+    ProductVariant,
     RequestContext,
     TransactionalConnection,
     VendurePlugin,
@@ -23,13 +24,19 @@ export class EmgDiscountService implements OnModuleInit {
 
     onModuleInit() {
         this.eventBus.ofType(ProductEvent).subscribe(event => {
+            // Only sync the product being saved — never clear or rewrite other Super Deals
             if (event.type === 'updated' || event.type === 'created') {
-                void this.syncOriginalPrice(event.ctx, event.entity.id);
+                void this.syncOriginalPrices(event.ctx, event.entity.id);
             }
         });
     }
 
-    private async syncOriginalPrice(ctx: RequestContext, productId: string | number) {
+    /**
+     * Auto-fill product.originalPrice and each variant's variantOriginalPrice from
+     * current catalog prices when a discount/Super Deal is configured and originals
+     * are missing. Does not touch other products' isDiscounted flags.
+     */
+    private async syncOriginalPrices(ctx: RequestContext, productId: string | number) {
         const product = await this.productService.findOne(ctx, productId, ['variants']);
         if (!product) {
             return;
@@ -48,27 +55,60 @@ export class EmgDiscountService implements OnModuleInit {
             (cf.discountAmount != null && cf.discountAmount > 0) ||
             cf.isDiscounted === true;
 
-        if (!hasDiscountConfig || (cf.originalPrice && cf.originalPrice > 0)) {
+        if (!hasDiscountConfig) {
             return;
         }
 
         const variants = product.variants ?? [];
         const prices = variants
-            .map(v => (v as {priceWithTax?: number; price?: number}).priceWithTax ?? (v as {price?: number}).price)
+            .map(
+                v =>
+                    (v as {priceWithTax?: number; price?: number}).priceWithTax ??
+                    (v as {price?: number}).price,
+            )
             .filter((p): p is number => typeof p === 'number' && p > 0);
 
-        if (!prices.length) {
-            return;
+        let productChanged = false;
+        if ((!cf.originalPrice || cf.originalPrice <= 0) && prices.length) {
+            const maxPriceMajor = Math.round(Math.max(...prices) / 100);
+            product.customFields = {
+                ...cf,
+                originalPrice: maxPriceMajor,
+            };
+            productChanged = true;
+            this.logger.debug(
+                `Auto-set originalPrice=${maxPriceMajor} for product ${productId}`,
+                'EmgDiscountPlugin',
+            );
         }
 
-        const maxPriceMajor = Math.round(Math.max(...prices) / 100);
-        product.customFields = {
-            ...cf,
-            originalPrice: maxPriceMajor,
-        };
+        if (productChanged) {
+            await this.connection.getRepository(ctx, Product).save(product);
+        }
 
-        await this.connection.getRepository(ctx, Product).save(product);
-        this.logger.debug(`Auto-set originalPrice=${maxPriceMajor} for product ${productId}`, 'EmgDiscountPlugin');
+        // Per-variant originals so % / fixed discounts calculate independently
+        for (const variant of variants) {
+            const price =
+                (variant as {priceWithTax?: number; price?: number}).priceWithTax ??
+                (variant as {price?: number}).price;
+            if (typeof price !== 'number' || price <= 0) {
+                continue;
+            }
+            const vcf = ((variant as ProductVariant).customFields ?? {}) as {
+                variantOriginalPrice?: number | null;
+                variantDiscountPercentage?: number | null;
+                variantDiscountAmount?: number | null;
+            };
+            if (vcf.variantOriginalPrice != null && vcf.variantOriginalPrice > 0) {
+                continue;
+            }
+            const major = Math.round(price / 100);
+            (variant as ProductVariant).customFields = {
+                ...vcf,
+                variantOriginalPrice: major,
+            };
+            await this.connection.getRepository(ctx, ProductVariant).save(variant);
+        }
     }
 }
 

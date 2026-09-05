@@ -26,8 +26,12 @@ export function hasConfiguredDiscount(cf?: ProductDiscountFields | null): boolea
 
 /**
  * Resolve was/now pricing from admin custom fields.
- * Super Deal toggle (`isDiscounted`) is NOT required — any configured discount shows.
- * Use `isDiscounted` separately for Super Deal badges / deals listing.
+ *
+ * Modes:
+ * 1) originalPrice stored and higher than current → current is the sale price (admin lowered it)
+ * 2) percentage/fixed with no usable original → treat current price as list price and compute sale
+ *
+ * Super Deal toggle (`isDiscounted`) controls Super Deal badges / deals listing only.
  */
 export function resolveDealDiscount(product: {
     price?: number | null;
@@ -35,6 +39,8 @@ export function resolveDealDiscount(product: {
 }): {
     discountLabel: string;
     wasPrice: number | null;
+    /** When set, show this as the “now” price instead of the raw catalog price. */
+    salePrice: number | null;
     hasDiscount: boolean;
     isSuperDeal: boolean;
 } {
@@ -43,48 +49,85 @@ export function resolveDealDiscount(product: {
     const isSuperDeal = cf?.isDiscounted === true;
 
     if (currentPrice == null || !hasConfiguredDiscount(cf)) {
-        return {discountLabel: '', wasPrice: null, hasDiscount: false, isSuperDeal};
+        return {
+            discountLabel: '',
+            wasPrice: null,
+            salePrice: null,
+            hasDiscount: false,
+            isSuperDeal,
+        };
     }
 
     const type = cf!.discountType === 'fixed' ? 'fixed' : 'percentage';
+    const storedOriginalMinor =
+        cf!.originalPrice && cf!.originalPrice > 0 ? cf!.originalPrice * 100 : null;
 
-    if (type === 'fixed' && cf!.discountAmount && cf!.discountAmount > 0) {
-        const wasPrice = cf!.originalPrice
-            ? cf!.originalPrice * 100
-            : currentPrice + cf!.discountAmount * 100;
+    // Admin already lowered the selling price and stored the old list price
+    if (storedOriginalMinor != null && storedOriginalMinor > currentPrice) {
+        const pct = Math.round((1 - currentPrice / storedOriginalMinor) * 100);
         return {
-            discountLabel: `-${cf!.discountAmount.toLocaleString()}`,
-            wasPrice,
-            hasDiscount: wasPrice > currentPrice,
-            isSuperDeal,
-        };
-    }
-
-    if (cf!.discountPercentage && cf!.discountPercentage > 0) {
-        const wasPrice = cf!.originalPrice
-            ? cf!.originalPrice * 100
-            : Math.round(currentPrice / (1 - cf!.discountPercentage / 100));
-        return {
-            discountLabel: `-${cf!.discountPercentage}%`,
-            wasPrice,
-            hasDiscount: wasPrice > currentPrice,
-            isSuperDeal,
-        };
-    }
-
-    if (cf!.originalPrice && cf!.originalPrice > 0) {
-        const wasPrice = cf!.originalPrice * 100;
-        if (wasPrice <= currentPrice) {
-            return {discountLabel: '', wasPrice: null, hasDiscount: false, isSuperDeal};
-        }
-        const pct = Math.round((1 - currentPrice / wasPrice) * 100);
-        return {
-            discountLabel: pct > 0 ? `-${pct}%` : '',
-            wasPrice,
+            discountLabel:
+                type === 'fixed' && cf!.discountAmount
+                    ? `-${cf!.discountAmount.toLocaleString()}`
+                    : cf!.discountPercentage
+                      ? `-${cf!.discountPercentage}%`
+                      : pct > 0
+                        ? `-${pct}%`
+                        : '',
+            wasPrice: storedOriginalMinor,
+            salePrice: null,
             hasDiscount: true,
             isSuperDeal,
         };
     }
 
-    return {discountLabel: '', wasPrice: null, hasDiscount: false, isSuperDeal};
+    // Current catalog price is the list price — compute sale from % or fixed amount
+    if (type === 'fixed' && cf!.discountAmount && cf!.discountAmount > 0) {
+        const offMinor = cf!.discountAmount * 100;
+        const sale = Math.max(0, currentPrice - offMinor);
+        if (sale >= currentPrice) {
+            return {
+                discountLabel: '',
+                wasPrice: null,
+                salePrice: null,
+                hasDiscount: false,
+                isSuperDeal,
+            };
+        }
+        return {
+            discountLabel: `-${cf!.discountAmount.toLocaleString()}`,
+            wasPrice: currentPrice,
+            salePrice: sale,
+            hasDiscount: true,
+            isSuperDeal,
+        };
+    }
+
+    if (cf!.discountPercentage && cf!.discountPercentage > 0) {
+        const sale = Math.round(currentPrice * (1 - cf!.discountPercentage / 100));
+        if (sale >= currentPrice) {
+            return {
+                discountLabel: '',
+                wasPrice: null,
+                salePrice: null,
+                hasDiscount: false,
+                isSuperDeal,
+            };
+        }
+        return {
+            discountLabel: `-${cf!.discountPercentage}%`,
+            wasPrice: currentPrice,
+            salePrice: sale,
+            hasDiscount: true,
+            isSuperDeal,
+        };
+    }
+
+    return {
+        discountLabel: '',
+        wasPrice: null,
+        salePrice: null,
+        hasDiscount: false,
+        isSuperDeal,
+    };
 }

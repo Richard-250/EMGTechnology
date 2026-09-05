@@ -4,6 +4,7 @@ import {Calculator} from 'lucide-react';
 import {EmgUploadAssetsButton} from './asset-upload-panel';
 import {AutoSkuInput} from './auto-sku-input';
 import {ExchangeRateCalculatorPage} from './exchange-rate-page';
+import {ProductDiscountPanel} from './product-discount-panel';
 import {VariantNameQuickEditCell, VariantQuickEditor} from './variant-quick-editor';
 
 defineDashboardExtension({
@@ -61,6 +62,18 @@ defineDashboardExtension({
                 />
             ),
             requiresPermission: ['CreateAsset', 'UpdateCatalog'],
+        },
+        {
+            id: 'emg-product-discount',
+            title: 'Discount / Super Deal',
+            location: {
+                pageId: 'product-detail',
+                column: 'side',
+                position: {blockId: 'assets', order: 'after'},
+            },
+            shouldRender: context => Boolean(context.entity?.id),
+            component: ({context}) => <ProductDiscountPanel context={context} />,
+            requiresPermission: ['UpdateCatalog', 'UpdateProduct'],
         },
         {
             id: 'emg-variant-quick-editor',

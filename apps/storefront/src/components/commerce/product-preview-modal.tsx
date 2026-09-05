@@ -163,7 +163,8 @@ export function ProductPreviewModal({
 
     const activeDiscountLabel = discountInfo.discountLabel;
     const wasPrice = discountInfo.wasPrice;
-    const discountSavings = wasPrice != null ? wasPrice - currentPrice : null;
+    const displayPrice = discountInfo.salePrice ?? currentPrice;
+    const discountSavings = wasPrice != null ? wasPrice - displayPrice : null;
 
     // Handle mouse move for interactive zoom lens
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -359,7 +360,7 @@ export function ProductPreviewModal({
                                 <div className="flex items-baseline gap-2 flex-wrap">
                                     <span className="text-2xl sm:text-3xl font-black tracking-tight text-electric">
                                         <Price
-                                            value={currentPrice}
+                                            value={displayPrice}
                                             currencyCode={currencyCode}
                                         />
                                     </span>
