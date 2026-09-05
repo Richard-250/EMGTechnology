@@ -69,7 +69,11 @@
     "todaysDeals": "Offres du jour",
     "endsIn": "Se termine dans",
     "viewAll": "Voir toutes les offres",
-    "shopNow": "Acheter"
+    "shopNow": "Acheter",
+    "pageTitle": "Super Deals",
+    "pageDescription": "Tous les produits Super Deal chez {siteName} — remises admin avec prix barré et prix actuel.",
+    "empty": "Aucun Super Deal actif pour le moment. Revenez bientôt ou parcourez le catalogue.",
+    "browseCatalog": "Parcourir tout l'équipement"
   },
   "Search": {
     "trending": "Recherches populaires",

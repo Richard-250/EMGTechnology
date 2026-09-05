@@ -17,8 +17,9 @@ import {useEffect, useRef, useState} from 'react';
 import {toast} from 'sonner';
 
 import {generateProductSku} from './generate-sku';
-import {rwfMinorToUsdMinor, usdMinorToRwfMinor} from './currency-convert';
+import {DEFAULT_RWF_PER_USD, rwfMinorToUsdMinor, usdMinorToRwfMinor} from './currency-convert';
 import {
+    fetchExchangeRate,
     fetchProductVariants,
     fetchTaxCategories,
     fetchVariantDetail,
@@ -72,6 +73,17 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
         queryFn: fetchTaxCategories,
     });
 
+    const exchangeRateQuery = useQuery({
+        queryKey: ['emg-exchange-rate'],
+        queryFn: fetchExchangeRate,
+        staleTime: 60_000,
+    });
+
+    const rwfPerUsd =
+        exchangeRateQuery.data?.emgExchangeRate?.rwfPerUsd > 0
+            ? exchangeRateQuery.data.emgExchangeRate.rwfPerUsd
+            : DEFAULT_RWF_PER_USD;
+
     const saveMutation = useMutation({
         mutationFn: updateVariant,
         onSuccess: async () => {
@@ -121,7 +133,7 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
             0;
 
         setPriceRwf(rwf);
-        setPriceUsd(usd > 0 ? usd : rwfMinorToUsdMinor(rwf));
+        setPriceUsd(usd > 0 ? usd : rwfMinorToUsdMinor(rwf, rwfPerUsd));
 
         setStockLevels(
             (variant.stockLevels ?? []).map(
@@ -135,19 +147,19 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
         queueMicrotask(() => {
             hydrating.current = false;
         });
-    }, [variantDetailQuery.data]);
+    }, [variantDetailQuery.data, rwfPerUsd]);
 
     const handleRwfChange = (next: number) => {
         setPriceRwf(next);
         if (!hydrating.current && linkConversion) {
-            setPriceUsd(rwfMinorToUsdMinor(next));
+            setPriceUsd(rwfMinorToUsdMinor(next, rwfPerUsd));
         }
     };
 
     const handleUsdChange = (next: number) => {
         setPriceUsd(next);
         if (!hydrating.current && linkConversion) {
-            setPriceRwf(usdMinorToRwfMinor(next));
+            setPriceRwf(usdMinorToRwfMinor(next, rwfPerUsd));
         }
     };
 
@@ -273,8 +285,9 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
                         <div className="min-w-0">
                             <Label htmlFor="emg-link-conversion">Auto-convert RWF ↔ USD</Label>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                                When on, editing one currency updates the other (~1 USD = 1,300 RWF).
-                                Turn off to set each amount independently.
+                                When on, editing one currency updates the other (1 USD ={' '}
+                                {rwfPerUsd.toLocaleString()} RWF). Turn off to set each amount
+                                independently. Change the rate in Settings → Exchange rate.
                             </p>
                         </div>
                         <Switch

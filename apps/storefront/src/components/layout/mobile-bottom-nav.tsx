@@ -8,7 +8,7 @@ import {cn} from '@/lib/utils';
 const tabs = [
     { href: '/', icon: Home, labelKey: 'home' as const },
     { href: '/search', icon: LayoutGrid, labelKey: 'categories' as const },
-    { href: '/collection/featured', icon: Zap, labelKey: 'deals' as const },
+    { href: '/deals', icon: Zap, labelKey: 'deals' as const },
     { href: '/cart', icon: ShoppingCart, labelKey: 'cart' as const },
     { href: '/account/profile', icon: User, labelKey: 'account' as const },
 ];

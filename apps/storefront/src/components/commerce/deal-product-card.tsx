@@ -82,7 +82,7 @@ export function DealProductCard({product, className}: DealProductCardProps) {
                         </p>
                     )}
                     {hasDiscount && discountLabel && (
-                        <span className="mt-1 inline-flex w-fit rounded-sm bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5">
+                        <span className="mt-1 inline-flex w-fit rounded-sm bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5">
                             {discountLabel}
                         </span>
                     )}

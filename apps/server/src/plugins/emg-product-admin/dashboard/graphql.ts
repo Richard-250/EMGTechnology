@@ -91,6 +91,14 @@ export const emgUpdateVariantDocument = graphql(`
     }
 `);
 
+export const emgExchangeRateDocument = graphql(`
+    query EmgExchangeRateQuick {
+        emgExchangeRate {
+            rwfPerUsd
+        }
+    }
+`);
+
 export async function fetchProductVariants(productId: string) {
     return api.query(emgProductVariantsDocument, {productId});
 }
@@ -101,6 +109,10 @@ export async function fetchVariantDetail(variantId: string) {
 
 export async function fetchTaxCategories() {
     return api.query(emgTaxCategoriesDocument, {});
+}
+
+export async function fetchExchangeRate() {
+    return api.query(emgExchangeRateDocument, {});
 }
 
 export async function updateVariant(input: Record<string, unknown>) {

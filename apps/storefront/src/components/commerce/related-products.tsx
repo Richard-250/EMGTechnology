@@ -9,6 +9,7 @@ import {ProductCardFragment} from '@/lib/vendure/fragments';
 import {getTranslations} from 'next-intl/server';
 import {Link} from '@/i18n/navigation';
 import {ArrowRight} from 'lucide-react';
+import {fetchDiscountFieldsByProductIds} from '@/lib/product-discount-fields';
 
 interface RelatedProductsProps {
     collectionSlug: string;
@@ -43,12 +44,23 @@ async function getRelatedProducts(
         {languageCode: locale, currencyCode},
     );
 
-    return result.data.search.items
+    const items = result.data.search.items
         .filter(item => {
             const product = readFragment(ProductCardFragment, item);
             return product.productId !== currentProductId;
         })
         .slice(0, RELATED_TAKE);
+
+    const ids = items.map(item => readFragment(ProductCardFragment, item).productId);
+    const discountMap = await fetchDiscountFieldsByProductIds(ids, locale, currencyCode);
+
+    return items.map(item => {
+        const product = readFragment(ProductCardFragment, item);
+        return {
+            item,
+            customFields: discountMap.get(product.productId) ?? null,
+        };
+    });
 }
 
 export async function RelatedProducts({collectionSlug, currentProductId}: RelatedProductsProps) {
@@ -83,9 +95,15 @@ export async function RelatedProducts({collectionSlug, currentProductId}: Relate
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5 overflow-visible relative z-10">
-                    {products.map(product => {
-                        const card = readFragment(ProductCardFragment, product);
-                        return <ProductCard key={card.productId} product={product} />;
+                    {products.map(({item, customFields}) => {
+                        const card = readFragment(ProductCardFragment, item);
+                        return (
+                            <ProductCard
+                                key={card.productId}
+                                product={item}
+                                customFields={customFields}
+                            />
+                        );
                     })}
                 </div>
 

@@ -114,6 +114,13 @@ export const GetDiscountedProductsQuery = graphql(`
                     id
                     preview
                 }
+                collections {
+                    id
+                    slug
+                    parent {
+                        id
+                    }
+                }
                 customFields {
                     isDiscounted
                     discountType

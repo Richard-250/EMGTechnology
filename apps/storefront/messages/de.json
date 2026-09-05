@@ -315,6 +315,18 @@
     "googleLegalNotice": "Mit der Fortsetzung über Google stimmen Sie unserer <privacy>Datenschutzrichtlinie</privacy> und den <terms>Nutzungsbedingungen</terms> zu.",
     "orWithEmail": "oder mit E-Mail"
   },
+  "Deals": {
+    "flashDeals": "Blitzangebote",
+    "superDeals": "SuperDeals",
+    "todaysDeals": "Angebote von heute",
+    "endsIn": "Endet in",
+    "viewAll": "Alle Angebote ansehen",
+    "shopNow": "Jetzt shoppen",
+    "pageTitle": "Super Deals",
+    "pageDescription": "Alle Super-Deal-Produkte bei {siteName} — echte Admin-Rabatte mit durchgestrichenem Preis.",
+    "empty": "Derzeit sind keine Super Deals aktiv. Schauen Sie später wieder vorbei oder durchstöbern Sie den Katalog.",
+    "browseCatalog": "Gesamtes Equipment ansehen"
+  },
   "Search": {
     "title": "Suche",
     "pageTitle": "Produkte suchen",

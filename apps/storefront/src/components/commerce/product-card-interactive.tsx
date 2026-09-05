@@ -9,12 +9,11 @@ import {cn} from '@/lib/utils';
 import {Price} from '@/components/commerce/price';
 import {ProductStarRating} from '@/components/commerce/product-star-rating';
 import {resolveProductImage} from '@/lib/product-images';
+import {getProductRating, getSoldCount} from '@/lib/product-badges';
 import {
-    getDiscountPercent,
-    getProductRating,
-    getSoldCount,
-    getWasPrice,
-} from '@/lib/product-badges';
+    resolveDealDiscount,
+    type ProductDiscountFields,
+} from '@/lib/discount-display';
 import {addToCart} from '@/app/[locale]/product/[slug]/actions';
 import {useCartConfirmation} from '@/components/commerce/cart-confirmation-provider';
 import {toast} from 'sonner';
@@ -33,6 +32,7 @@ export interface ProductCardData {
     priceMin?: number | null;
     priceMax?: number | null;
     isPriceRange: boolean;
+    customFields?: ProductDiscountFields | null;
 }
 
 interface ProductCardInteractiveProps {
@@ -49,7 +49,10 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
 
     const rating = getProductRating(data.slug);
     const sold = getSoldCount(data.slug);
-    const discount = getDiscountPercent(data.slug);
+    const {discountLabel, wasPrice, hasDiscount, isSuperDeal} = resolveDealDiscount({
+        price: data.price,
+        customFields: data.customFields,
+    });
     const similarQuery = encodeURIComponent(data.productName.split(' ')[0] ?? data.slug);
 
     const handleAddToCart = (e: React.MouseEvent) => {
@@ -111,10 +114,19 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                     onClick={() => recordProductClick(data.productId)}
                 >
                     <div className="relative bg-muted overflow-hidden aspect-square rounded-t-xl">
-                        {discount != null && (
-                            <span className="absolute top-2 left-2 z-10 rounded-md bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5 shadow-xs pointer-events-none">
-                                -{discount}%
-                            </span>
+                        {(hasDiscount || isSuperDeal) && (
+                            <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 pointer-events-none">
+                                {hasDiscount && discountLabel && (
+                                    <span className="rounded-md bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5 shadow-xs w-fit">
+                                        {discountLabel}
+                                    </span>
+                                )}
+                                {isSuperDeal && (
+                                    <span className="rounded-md bg-foreground text-background text-[10px] font-bold px-1.5 py-0.5 shadow-xs w-fit">
+                                        Super Deal
+                                    </span>
+                                )}
+                            </div>
                         )}
 
                         {/* Quick View / Preview button */}
@@ -174,12 +186,9 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                             <ProductStarRating stars={rating.stars} count={rating.count} size="sm" />
                         </div>
                         <div className={cn('space-y-0.5', compact ? '' : 'px-2')}>
-                            {discount != null && data.price != null && (
+                            {hasDiscount && wasPrice != null && data.price != null && (
                                 <p className="text-[10px] text-muted-foreground line-through">
-                                    <Price
-                                        value={getWasPrice(data.price, discount)}
-                                        currencyCode={data.currencyCode}
-                                    />
+                                    <Price value={wasPrice} currencyCode={data.currencyCode} />
                                 </p>
                             )}
                             <p

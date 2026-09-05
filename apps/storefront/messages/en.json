@@ -69,7 +69,11 @@
     "todaysDeals": "Today's deals",
     "endsIn": "Ends in",
     "viewAll": "View all deals",
-    "shopNow": "Shop now"
+    "shopNow": "Shop now",
+    "pageTitle": "Super Deals",
+    "pageDescription": "All Super Deal products at {siteName} — real admin discounts with clear before/after prices.",
+    "empty": "No Super Deal products are active right now. Check back soon or browse the full catalog.",
+    "browseCatalog": "Browse all equipment"
   },
   "Search": {
     "trending": "Trending searches",

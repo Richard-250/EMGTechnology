@@ -4,11 +4,11 @@ import {useEffect, useState} from 'react';
 import {Clock} from 'lucide-react';
 import {DealProductCard} from '@/components/commerce/deal-product-card';
 import {Link} from '@/i18n/navigation';
-import type {SerializedProductCard} from '@/lib/product-price';
+import type {DealProductCardData} from '@/lib/discount-display';
 import {useTranslations} from 'next-intl';
 
 interface FlashDealsSectionProps {
-    products: SerializedProductCard[];
+    products: DealProductCardData[];
 }
 
 function useCountdown() {
@@ -63,7 +63,7 @@ export function FlashDealsSection({products}: FlashDealsSectionProps) {
                             </div>
                         </div>
                         <Link
-                            href="/collection/featured"
+                            href="/deals"
                             className="inline-flex items-center justify-center rounded-md bg-foreground text-background px-5 py-2.5 text-sm font-bold hover:bg-foreground/90 transition-colors shrink-0"
                         >
                             {t('shopNow')}

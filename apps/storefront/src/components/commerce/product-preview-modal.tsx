@@ -7,12 +7,8 @@ import {useRouter, Link} from '@/i18n/navigation';
 import {Button} from '@/components/ui/button';
 import {Price} from '@/components/commerce/price';
 import {ProductStarRating} from '@/components/commerce/product-star-rating';
-import {
-    getDiscountPercent,
-    getProductRating,
-    getSoldCount,
-    getWasPrice,
-} from '@/lib/product-badges';
+import {getProductRating, getSoldCount} from '@/lib/product-badges';
+import {resolveDealDiscount, type ProductDiscountFields} from '@/lib/discount-display';
 import {addToCart, fetchProductDetail} from '@/app/[locale]/product/[slug]/actions';
 import {useCartConfirmation} from '@/components/commerce/cart-confirmation-provider';
 import {toast} from 'sonner';
@@ -117,7 +113,6 @@ export function ProductPreviewModal({
     // Badges & rating
     const rating = getProductRating(initialData.slug);
     const sold = getSoldCount(initialData.slug);
-    const discount = getDiscountPercent(initialData.slug);
 
     // Fetch full product details on modal open
     useEffect(() => {
@@ -156,24 +151,18 @@ export function ProductPreviewModal({
 
     const currentPrice = selectedVariant?.priceWithTax ?? initialData.price ?? 0;
     const currencyCode = detail?.currencyCode || initialData.currencyCode;
-    
-    // Dynamic discount from admin customFields or fallback
-    const activeDiscount = useMemo(() => {
-        const cf = (detail as any)?.customFields;
-        if (typeof cf?.discountPercentage === 'number' && cf.discountPercentage > 0) {
-            return cf.discountPercentage;
-        }
-        return discount;
-    }, [detail, discount]);
 
-    const wasPrice = useMemo(() => {
-        const cf = (detail as any)?.customFields;
-        if (typeof cf?.originalPrice === 'number' && cf.originalPrice > 0) {
-            return cf.originalPrice * 100;
-        }
-        return activeDiscount != null && currentPrice > 0 ? getWasPrice(currentPrice, activeDiscount) : null;
-    }, [detail, activeDiscount, currentPrice]);
+    const discountInfo = useMemo(() => {
+        const cf = ((detail as {customFields?: ProductDiscountFields} | null)?.customFields ??
+            null) as ProductDiscountFields | null;
+        return resolveDealDiscount({
+            price: currentPrice,
+            customFields: cf,
+        });
+    }, [detail, currentPrice]);
 
+    const activeDiscountLabel = discountInfo.discountLabel;
+    const wasPrice = discountInfo.wasPrice;
     const discountSavings = wasPrice != null ? wasPrice - currentPrice : null;
 
     // Handle mouse move for interactive zoom lens
@@ -328,9 +317,9 @@ export function ProductPreviewModal({
                                     priority
                                 />
 
-                                {activeDiscount != null && (
-                                    <span className="absolute top-2.5 left-2.5 z-10 rounded-sm bg-[#e02b2b] text-white text-xs font-black px-2 py-0.5 shadow-sm">
-                                        -{activeDiscount}% OFF
+                                {discountInfo.hasDiscount && activeDiscountLabel && (
+                                    <span className="absolute top-2.5 left-2.5 z-10 rounded-sm bg-electric text-electric-foreground text-xs font-black px-2 py-0.5 shadow-sm">
+                                        {activeDiscountLabel} OFF
                                     </span>
                                 )}
 
@@ -374,10 +363,10 @@ export function ProductPreviewModal({
                                             currencyCode={currencyCode}
                                         />
                                     </span>
-                                    {activeDiscount != null && wasPrice != null && (
+                                    {discountInfo.hasDiscount && wasPrice != null && (
                                         <>
                                             <span className="text-xs font-bold text-electric bg-electric/15 px-1.5 py-0.5 rounded">
-                                                {activeDiscount}% off
+                                                {activeDiscountLabel || 'Sale'}
                                             </span>
                                             <span className="text-xs text-muted-foreground line-through">
                                                 <Price
@@ -390,17 +379,19 @@ export function ProductPreviewModal({
                                 </div>
 
                                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-0.5">
-                                    <span className="inline-flex items-center gap-1 text-electric font-bold text-[10px] bg-electric/15 px-1.5 py-0.5 rounded-sm">
-                                        <Tag className="size-2.5" />
-                                        Super Deal
-                                    </span>
+                                    {discountInfo.isSuperDeal && (
+                                        <span className="inline-flex items-center gap-1 text-electric font-bold text-[10px] bg-electric/15 px-1.5 py-0.5 rounded-sm">
+                                            <Tag className="size-2.5" />
+                                            Super Deal
+                                        </span>
+                                    )}
                                     <span>Tax included · Free delivery across Rwanda</span>
                                 </div>
 
                                 {/* Instant coupon banner */}
-                                {discountSavings != null && (
+                                {discountInfo.hasDiscount && discountSavings != null && discountSavings > 0 && (
                                     <div className="mt-1 flex items-center justify-between text-[11px] font-semibold text-electric bg-electric/10 px-2 py-1 rounded-md">
-                                        <span>% Save <Price value={discountSavings} currencyCode={currencyCode} /> with Instant discount</span>
+                                        <span>Save <Price value={discountSavings} currencyCode={currencyCode} /> with this offer</span>
                                         <span className="text-[10px] underline cursor-pointer">&gt;</span>
                                     </div>
                                 )}

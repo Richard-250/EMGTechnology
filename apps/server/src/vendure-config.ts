@@ -196,6 +196,20 @@ export const config: VendureConfig = {
                 description: [{ languageCode: LanguageCode.en, value: 'Auto-filled from this variant price. Override if needed.' }],
             },
         ],
+        GlobalSettings: [
+            {
+                name: 'rwfPerUsd',
+                type: 'float',
+                defaultValue: 1300,
+                min: 1,
+                public: false,
+                label: [{ languageCode: LanguageCode.en, value: 'RWF per 1 USD' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Exchange rate used to convert RWF catalog prices into USD (and vice versa)',
+                }],
+            },
+        ],
         Order: [
             {
                 name: 'deliveryDate',

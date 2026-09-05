@@ -37,10 +37,18 @@ export class EmgDiscountService implements OnModuleInit {
 
         const cf = (product.customFields ?? {}) as {
             isDiscounted?: boolean;
+            discountType?: string | null;
+            discountPercentage?: number | null;
+            discountAmount?: number | null;
             originalPrice?: number | null;
         };
 
-        if (!cf.isDiscounted || (cf.originalPrice && cf.originalPrice > 0)) {
+        const hasDiscountConfig =
+            (cf.discountPercentage != null && cf.discountPercentage > 0) ||
+            (cf.discountAmount != null && cf.discountAmount > 0) ||
+            cf.isDiscounted === true;
+
+        if (!hasDiscountConfig || (cf.originalPrice && cf.originalPrice > 0)) {
             return;
         }
 

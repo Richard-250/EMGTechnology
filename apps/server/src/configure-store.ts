@@ -15,7 +15,9 @@ import { configureShippingMethods } from './configure-shipping-methods';
 const loggerCtx = 'ConfigureStore';
 
 /** Approximate RWF → USD conversion for catalog display prices. */
-const RWF_PER_USD = 1300;
+import {DEFAULT_RWF_PER_USD, rwfMinorToUsdMinor} from './plugins/emg-product-admin/currency-convert';
+
+const RWF_PER_USD = DEFAULT_RWF_PER_USD;
 
 export async function configureChannelAndUsdPrices(app: Awaited<ReturnType<typeof bootstrap>>) {
     const requestContextService = app.get(RequestContextService);
@@ -48,8 +50,7 @@ export async function configureChannelAndUsdPrices(app: Awaited<ReturnType<typeo
         for (const variant of items) {
             const prices = await productVariantService.getProductVariantPrices(ctx, variant.id);
             const rwfPrice = prices.find(p => p.currencyCode === CurrencyCode.RWF)?.price ?? variant.price;
-            const rwfMajor = rwfPrice / 100;
-            const usdMinor = Math.max(100, Math.round((rwfMajor / RWF_PER_USD) * 100));
+            const usdMinor = rwfMinorToUsdMinor(rwfPrice, RWF_PER_USD);
 
             await productVariantService.createOrUpdateProductVariantPrice(
                 ctx,

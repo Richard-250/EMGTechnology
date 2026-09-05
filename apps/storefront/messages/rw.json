@@ -69,7 +69,11 @@
     "todaysDeals": "Amasezerano y'uyu munsi",
     "endsIn": "Arangira mu",
     "viewAll": "Reba byose",
-    "shopNow": "Gura nonaha"
+    "shopNow": "Gura nonaha",
+    "pageTitle": "Super Deals",
+    "pageDescription": "Ibicuruzwa byose bya Super Deal kuri {siteName} — igabanuka nyayo n'ibiciro byasize.",
+    "empty": "Nta Super Deal ihari ubu. Subira nyuma cyangwa urebe ububiko bwose.",
+    "browseCatalog": "Reba ibikoresho byose"
   },
   "Search": {
     "trending": "Ibyo benshi bashakisha",

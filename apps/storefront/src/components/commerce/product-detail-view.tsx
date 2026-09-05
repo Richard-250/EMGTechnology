@@ -132,12 +132,17 @@ export function ProductDetailView({
 
     const discountInfo = useMemo(() => {
         if (!selectedVariant) {
-            return {discountLabel: '', wasPrice: null as number | null, hasDiscount: false};
+            return {
+                discountLabel: '',
+                wasPrice: null as number | null,
+                hasDiscount: false,
+                isSuperDeal: product.customFields?.isDiscounted === true,
+            };
         }
         return resolveDealDiscount({
             price: selectedVariant.priceWithTax,
             customFields: product.customFields,
-        } as Parameters<typeof resolveDealDiscount>[0]);
+        });
     }, [selectedVariant, product.customFields]);
 
     const handleOptionChange = (groupId: string, optionId: string) => {
@@ -225,7 +230,7 @@ export function ProductDetailView({
                                 )}
                             </div>
                             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                                {product.customFields?.isDiscounted && (
+                                {discountInfo.isSuperDeal && (
                                     <span className="inline-flex items-center gap-1 text-electric font-bold text-[10px] bg-electric/15 px-1.5 py-0.5 rounded-sm">
                                         <Tag className="size-2.5" />
                                         Super Deal

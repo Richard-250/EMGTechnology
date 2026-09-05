@@ -4,13 +4,19 @@ import {ProductCardFragment} from '@/lib/vendure/fragments';
 import {ProductCardInteractive} from '@/components/commerce/product-card-interactive';
 import {resolveProductImage} from '@/lib/product-images';
 import {getProductPrice} from '@/lib/product-price';
+import type {ProductDiscountFields} from '@/lib/discount-display';
 
 interface ProductCardProps {
     product: FragmentOf<typeof ProductCardFragment>;
     variant?: 'default' | 'compact';
+    customFields?: ProductDiscountFields | null;
 }
 
-export function ProductCard({product: productProp, variant = 'default'}: ProductCardProps) {
+export function ProductCard({
+    product: productProp,
+    variant = 'default',
+    customFields,
+}: ProductCardProps) {
     const product = readFragment(ProductCardFragment, productProp);
     const imageSrc = resolveProductImage(product.productAsset?.preview, product.slug);
     const price = getProductPrice(product.priceWithTax);
@@ -35,6 +41,7 @@ export function ProductCard({product: productProp, variant = 'default'}: Product
                         ? product.priceWithTax.max
                         : null,
                 isPriceRange: product.priceWithTax.__typename === 'PriceRange',
+                customFields: customFields ?? null,
             }}
         />
     );

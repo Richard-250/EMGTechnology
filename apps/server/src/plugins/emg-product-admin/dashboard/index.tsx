@@ -1,10 +1,25 @@
 import {defineDashboardExtension} from '@vendure/dashboard';
+import {Calculator} from 'lucide-react';
 
 import {EmgUploadAssetsButton} from './asset-upload-panel';
 import {AutoSkuInput} from './auto-sku-input';
+import {ExchangeRateCalculatorPage} from './exchange-rate-page';
 import {VariantNameQuickEditCell, VariantQuickEditor} from './variant-quick-editor';
 
 defineDashboardExtension({
+    routes: [
+        {
+            path: '/exchange-rate',
+            component: () => <ExchangeRateCalculatorPage />,
+            navMenuItem: {
+                id: 'emg-exchange-rate',
+                title: 'Exchange rate',
+                sectionId: 'settings',
+                icon: Calculator,
+                requiresPermission: ['UpdateSettings', 'UpdateCatalog', 'UpdateProduct'],
+            },
+        },
+    ],
     detailForms: [
         {
             pageId: 'product-variant-detail',
