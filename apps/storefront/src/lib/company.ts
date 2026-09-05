@@ -1,9 +1,12 @@
 /**
  * Official EMG Technology Ltd business details for the storefront.
+ * Public contact email (footer / customer-facing): info@emgtechnologyltd.com
+ * Do not use personal addresses (e.g. iCloud) in customer-facing UI.
  */
 export const COMPANY = {
     legalName: 'EMG Technology Ltd',
     shortName: 'EMG Technology',
+    /** Customer-facing contact — shown in footer, mobile nav, privacy & terms. */
     email: 'info@emgtechnologyltd.com',
     phone: '+250796345773',
     phoneDisplay: '+250 796 345 773',
