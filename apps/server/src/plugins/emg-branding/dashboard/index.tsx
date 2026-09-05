@@ -3,6 +3,7 @@ import {defineDashboardExtension} from '@vendure/dashboard';
 
 import logoUrl from './assets/logo.png';
 import {EmgDefaultLayoutProvider} from './default-layout-provider';
+import {EmgLoadingStabilityProvider} from './emg-loading-provider';
 import {
     EmgFeaturedWidget,
     EmgHiddenWidget,
@@ -29,7 +30,7 @@ function EmgLoginWelcome() {
                 EMG Technology Ltd
             </h1>
             <p className="text-sm text-muted-foreground">
-                Admin dashboard — manage products, orders &amp; customers
+                Admin dashboard: manage products, orders and customers
             </p>
         </div>
     );
@@ -55,7 +56,7 @@ function EmgFaviconSetter({children}: {children: ReactNode}) {
         }
         link.type = 'image/png';
         link.href = logoUrl;
-        document.title = 'EMG Technology Ltd — Admin';
+        document.title = 'EMG Technology Ltd Admin';
     }, []);
 
     return <>{children}</>;
@@ -78,6 +79,12 @@ defineDashboardExtension({
             component: EmgFaviconSetter,
             location: 'app',
             order: 1,
+        },
+        {
+            id: 'emg-loading-stability',
+            component: EmgLoadingStabilityProvider,
+            location: 'app',
+            order: 50,
         },
         {
             id: 'emg-default-layout',

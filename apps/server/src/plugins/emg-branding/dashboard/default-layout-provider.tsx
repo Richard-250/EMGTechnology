@@ -1,9 +1,9 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import {useEffect, useRef, type ReactNode} from 'react';
 
 import logoUrl from './assets/logo.png';
 
 const LS_KEY = 'vendure-user-settings';
-const LAYOUT_VERSION = 27;
+const LAYOUT_VERSION = 28;
 
 /** EMG dark dashboard layout — welcome + featured at top, stats below. */
 export const EMG_DEFAULT_WIDGET_LAYOUT: Record<
@@ -59,7 +59,7 @@ function cleanVendureFromDOM() {
     sanitizeTitle();
 }
 
-function applyLayoutSettings(): boolean {
+function applyLayoutSettings(): void {
     try {
         const raw = localStorage.getItem(LS_KEY);
         const settings = raw ? JSON.parse(raw) : {};
@@ -72,6 +72,7 @@ function applyLayoutSettings(): boolean {
             currentLayout['metrics-widget']?.w > 0 ||
             currentLayout['orders-summary-widget']?.w > 0;
 
+        // Write once when needed — never trigger a hard reload.
         if (needsLayout || settings.theme !== 'dark') {
             localStorage.setItem(
                 LS_KEY,
@@ -82,20 +83,23 @@ function applyLayoutSettings(): boolean {
                     widgetLayout: EMG_DEFAULT_WIDGET_LAYOUT,
                 }),
             );
-            return true;
         }
     } catch {
         // ignore storage errors
     }
-    return false;
 }
 
-/** Applies dark theme, removes legacy platform text, and enforces EMG layout without full-page reloads. */
+/**
+ * Applies dark theme and EMG layout without full-page reloads.
+ * DOM cleanup is debounced heavily to avoid layout thrash ("gutitira").
+ */
 export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) {
     const observerRef = useRef<MutationObserver | null>(null);
+    const lastCleanAt = useRef(0);
 
     useEffect(() => {
         document.documentElement.classList.add('dark');
+        document.documentElement.classList.add('emg-dashboard-stable');
         sanitizeTitle();
 
         const icon =
@@ -110,21 +114,38 @@ export function EmgDefaultLayoutProvider({ children }: { children: ReactNode }) 
         cleanVendureFromDOM();
 
         let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-        const observer = new MutationObserver(() => {
+        const scheduleClean = () => {
+            const now = Date.now();
+            // Rate-limit: at most one clean every 400ms after the last mutation burst
             if (debounceTimer) clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(cleanVendureFromDOM, 150);
+            const wait = Math.max(200, 400 - (now - lastCleanAt.current));
+            debounceTimer = setTimeout(() => {
+                lastCleanAt.current = Date.now();
+                cleanVendureFromDOM();
+            }, wait);
+        };
+
+        const observer = new MutationObserver(mutations => {
+            // Ignore attribute-only noise (class toggles) that caused flicker loops
+            const meaningful = mutations.some(
+                m => m.type === 'childList' && (m.addedNodes.length > 0 || m.removedNodes.length > 0),
+            );
+            if (!meaningful) return;
+            scheduleClean();
         });
         observerRef.current = observer;
 
-        observer.observe(document.documentElement, {
+        observer.observe(document.body, {
             childList: true,
             subtree: true,
+            attributes: false,
         });
 
         return () => {
             observer.disconnect();
             observerRef.current = null;
             if (debounceTimer) clearTimeout(debounceTimer);
+            document.documentElement.classList.remove('emg-dashboard-stable');
         };
     }, []);
 

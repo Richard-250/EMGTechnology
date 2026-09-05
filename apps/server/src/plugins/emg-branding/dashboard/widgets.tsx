@@ -5,17 +5,18 @@ import {
     useLocalFormat,
     useWidgetFilters,
 } from '@vendure/dashboard';
-import {useQuery} from '@tanstack/react-query';
-import {useMemo} from 'react';
+import {keepPreviousData, useQuery} from '@tanstack/react-query';
+import {EmgStatsWidgetSkeleton} from './emg-loader';
 
 const orderMetricsQuery = graphql(`
     query EmgOrderMetrics(
         $types: [DashboardMetricType!]!
         $startDate: DateTime!
         $endDate: DateTime!
+        $refresh: Boolean
     ) {
         dashboardMetricSummary(
-            input: { types: $types, refresh: true, startDate: $startDate, endDate: $endDate }
+            input: { types: $types, refresh: $refresh, startDate: $startDate, endDate: $endDate }
         ) {
             type
             entries {
@@ -118,20 +119,24 @@ function MetricChart({
 }
 
 export function EmgWelcomeWidget() {
-    const {data} = useQuery({
+    const {data, isPending} = useQuery({
         queryKey: ['emg-current-admin'],
         queryFn: () => api.query(currentUserQuery, {}),
+        staleTime: 5 * 60_000,
+        placeholderData: keepPreviousData,
     });
 
     const admin = data?.activeAdministrator;
     const name = admin?.firstName
         ? `${admin.firstName}${admin.lastName ? ` ${admin.lastName}` : ''}`
-        : 'Super Admin';
+        : isPending
+          ? '…'
+          : 'Admin';
 
     return (
         <div className="emg-welcome-card">
             <div className="emg-welcome-badge">Insights Overview</div>
-            <p className="emg-welcome-title">Welcome back 👋 {name}</p>
+            <p className="emg-welcome-title">Welcome back, {name}</p>
             <p className="emg-welcome-sub">
                 Monitor store performance, revenue trends, and catalog activity from your EMG admin dashboard.
             </p>
@@ -153,7 +158,7 @@ export function EmgFeaturedWidget() {
             <div className="emg-featured-banner" aria-hidden />
             <p className="emg-featured-title">Store snapshot</p>
             <p className="emg-featured-desc">
-                Super Deals, payments, and fulfillment for EMG Technology — Kigali and nationwide delivery.
+                Super Deals, payments, and fulfillment for EMG Technology. Kigali and nationwide delivery.
             </p>
             <div className="emg-mini-stats">
                 <div className="emg-mini-stat">
@@ -175,20 +180,31 @@ export function EmgStatsWidget() {
     const {activeChannel} = useChannel();
     const currency = activeChannel?.defaultCurrencyCode ?? 'RWF';
 
-    const {data: metrics} = useQuery({
-        queryKey: ['emg-stats-metrics', dateRange.from, dateRange.to],
+    const {data: metrics, isPending: metricsPending, isFetching: metricsFetching} = useQuery({
+        queryKey: ['emg-stats-metrics', dateRange.from.toISOString(), dateRange.to.toISOString()],
         queryFn: () =>
             api.query(orderMetricsQuery, {
                 types: ['OrderTotal', 'OrderCount'],
                 startDate: dateRange.from.toISOString(),
                 endDate: dateRange.to.toISOString(),
+                // Avoid forced server refresh on every mount — preserves cached metrics
+                refresh: false,
             }),
+        staleTime: 60_000,
+        placeholderData: keepPreviousData,
     });
 
-    const {data: store} = useQuery({
+    const {data: store, isPending: storePending, isFetching: storeFetching} = useQuery({
         queryKey: ['emg-store-stats'],
         queryFn: () => api.query(storeStatsQuery, {}),
+        staleTime: 60_000,
+        placeholderData: keepPreviousData,
     });
+
+    const isInitialLoad = (metricsPending && !metrics) || (storePending && !store);
+    if (isInitialLoad) {
+        return <EmgStatsWidgetSkeleton />;
+    }
 
     const revenueEntries = metrics?.dashboardMetricSummary?.find(m => m.type === 'OrderTotal')?.entries ?? [];
     const orderEntries = metrics?.dashboardMetricSummary?.find(m => m.type === 'OrderCount')?.entries ?? [];
@@ -197,9 +213,10 @@ export function EmgStatsWidget() {
     const orders = orderEntries.reduce((sum, e) => sum + e.value, 0);
     const products = store?.products?.totalItems ?? 0;
     const customers = store?.customers?.totalItems ?? 0;
+    const refreshing = metricsFetching || storeFetching;
 
     return (
-        <div className="emg-insights-layout">
+        <div className={`emg-insights-layout${refreshing ? ' emg-insights-layout--refreshing' : ''}`}>
             <div className="emg-stats-grid emg-stats-grid--compact">
                 <div className="emg-stat-card">
                     <span className="emg-stat-label">Total orders</span>
