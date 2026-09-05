@@ -12,7 +12,7 @@ export function sortProductsNewestFirst<T extends FragmentOf<typeof ProductCardF
     });
 }
 
-/** Deterministic pseudo-random order from a numeric seed (stable per session/page). */
+/** Deterministic pseudo-random order from a numeric seed (stable per page load). */
 function seededRandom(seed: number): () => number {
     let state = seed;
     return () => {
@@ -21,21 +21,34 @@ function seededRandom(seed: number): () => number {
     };
 }
 
-export function getShuffleSeed(scope: string): number {
-    if (typeof window === 'undefined') {
-        return scope.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+function hashString(input: string): number {
+    let hash = 2166136261;
+    for (let i = 0; i < input.length; i += 1) {
+        hash ^= input.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
     }
-    const key = `emg-shuffle-seed:${scope}`;
-    const existing = sessionStorage.getItem(key);
-    if (existing) {
-        return Number(existing);
-    }
-    const seed = Math.floor(Date.now() + Math.random() * 100000);
-    sessionStorage.setItem(key, String(seed));
-    return seed;
+    return hash >>> 0;
 }
 
-/** Fisher–Yates shuffle with a session seed so order changes per visit but stays stable while browsing. */
+/**
+ * Seed for product shuffle.
+ * - New seed on every full page refresh (in-memory for this document load)
+ * - Stable during client-side navigations within the same load
+ * So users see a fresh mix after refresh without layout jumping while browsing.
+ */
+let pageLoadSeed: number | null = null;
+
+export function getShuffleSeed(scope: string): number {
+    if (typeof window === 'undefined') {
+        return hashString(scope);
+    }
+    if (pageLoadSeed === null) {
+        pageLoadSeed = Math.floor(Date.now() + Math.random() * 100000);
+    }
+    return hashString(`${scope}:${pageLoadSeed}`);
+}
+
+/** Fisher-Yates shuffle with a page-load seed. */
 export function shuffleProducts<T extends FragmentOf<typeof ProductCardFragment>>(
     products: T[],
     seed: number,

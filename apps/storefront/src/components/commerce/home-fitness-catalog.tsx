@@ -1,10 +1,17 @@
 'use client';
 
-import {useMemo} from 'react';
-import {FragmentOf} from '@/graphql';
+import {useMemo, useState} from 'react';
+import {FragmentOf, readFragment} from '@/graphql';
 import {ProductCardFragment} from '@/lib/vendure/fragments';
 import {getShuffleSeed, shuffleProducts} from '@/lib/product-sort';
+import {
+    blendProductsWithSearchHistory,
+    getSearchHistoryTerms,
+} from '@/lib/search-history';
 import {ProductCard} from '@/components/commerce/product-card';
+import {Button} from '@/components/ui/button';
+
+const PAGE_SIZE = 24;
 
 interface HomeFitnessCatalogProps {
     products: FragmentOf<typeof ProductCardFragment>[];
@@ -14,6 +21,7 @@ interface HomeFitnessCatalogProps {
         subtitle: string;
         all: string;
         showing: string;
+        loadMore: string;
     };
 }
 
@@ -22,10 +30,20 @@ export function HomeFitnessCatalog({
     totalProducts,
     labels,
 }: HomeFitnessCatalogProps) {
-    const displayProducts = useMemo(
-        () => shuffleProducts(products, getShuffleSeed('home-catalog')),
-        [products],
-    );
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+    const displayProducts = useMemo(() => {
+        const shuffled = shuffleProducts(products, getShuffleSeed('home-catalog'));
+        const historyTerms = getSearchHistoryTerms();
+        return blendProductsWithSearchHistory(
+            shuffled,
+            item => readFragment(ProductCardFragment, item).productName,
+            historyTerms,
+        );
+    }, [products]);
+
+    const visible = displayProducts.slice(0, visibleCount);
+    const hasMore = visibleCount < displayProducts.length;
 
     return (
         <section className="py-6 md:py-10">
@@ -44,7 +62,7 @@ export function HomeFitnessCatalog({
                     </div>
                     <div className="text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded-full bg-muted/80 text-foreground self-start sm:self-center border border-border/60 shadow-xs">
                         {labels.showing
-                            .replace('{count}', String(displayProducts.length))
+                            .replace('{count}', String(visible.length))
                             .replace('{total}', String(totalProducts || displayProducts.length))}
                     </div>
                 </div>
@@ -54,11 +72,33 @@ export function HomeFitnessCatalog({
                         No products available yet.
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 md:gap-3.5 overflow-visible">
-                        {displayProducts.map((product, i) => (
-                            <ProductCard key={`home-product-${i}`} product={product} variant="compact" />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 md:gap-3.5 overflow-visible">
+                            {visible.map((product, i) => (
+                                <ProductCard
+                                    key={`home-product-${readFragment(ProductCardFragment, product).productId}-${i}`}
+                                    product={product}
+                                    variant="compact"
+                                />
+                            ))}
+                        </div>
+                        {hasMore && (
+                            <div className="flex justify-center pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="min-w-[10rem] font-semibold"
+                                    onClick={() =>
+                                        setVisibleCount(count =>
+                                            Math.min(count + PAGE_SIZE, displayProducts.length),
+                                        )
+                                    }
+                                >
+                                    {labels.loadMore}
+                                </Button>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </section>

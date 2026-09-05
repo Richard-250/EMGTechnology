@@ -35,7 +35,8 @@ async function fetchAllProducts(locale: string, currencyCode: string) {
 
 async function getAllProductsCached(currencyCode: string) {
     "use cache";
-    cacheLife("hours");
+    // Short TTL so newly added catalog products appear soon after refresh
+    cacheLife("minutes");
 
     const locale = await getRouteLocale();
     cacheTag(`home-catalog-${locale}-${currencyCode}`);
@@ -81,6 +82,7 @@ export async function HomeFitnessCatalogSection() {
                 subtitle: t("fitnessCatalogSubtitle"),
                 all: t("allProducts"),
                 showing: t("showingProducts"),
+                loadMore: t("loadMore"),
             }}
         />
     );

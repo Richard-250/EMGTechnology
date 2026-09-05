@@ -98,7 +98,8 @@
     "metaCatalogDescription": "Search our product catalog at {siteName}",
     "noMatchTitle": "We do not have \"{query}\"",
     "noMatchHint": "Your search was saved. Browse similar products below, or try a different keyword.",
-    "similarProducts": "Similar products you may like"
+    "similarProducts": "Similar products you may like",
+    "clearHistory": "Clear history"
   },
   "Home": {
     "pageTitle": "Fitness Equipment Store",
@@ -131,7 +132,8 @@
         "title": "Reliable shipping",
         "description": "Tracked delivery on heavy equipment with clear timelines at checkout"
       }
-    }
+    },
+    "loadMore": "Show more products"
   },
   "Product": {
     "inStock": "In Stock",

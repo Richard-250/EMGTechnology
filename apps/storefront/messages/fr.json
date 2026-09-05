@@ -91,7 +91,8 @@
     "metaCatalogDescription": "Parcourez notre catalogue sur {siteName}",
     "noMatchTitle": "Nous n'avons pas « {query} »",
     "noMatchHint": "Votre recherche a été enregistrée. Découvrez des produits similaires ci-dessous, ou essayez un autre mot-clé.",
-    "similarProducts": "Produits similaires"
+    "similarProducts": "Produits similaires",
+    "clearHistory": "Effacer l'historique"
   },
   "Home": {
     "pageTitle": "Magasin d'équipement fitness",
@@ -124,7 +125,8 @@
         "title": "Reliable shipping",
         "description": "Tracked delivery on heavy equipment with clear timelines at checkout"
       }
-    }
+    },
+    "loadMore": "Voir plus de produits"
   },
   "Product": {
     "inStock": "In Stock",

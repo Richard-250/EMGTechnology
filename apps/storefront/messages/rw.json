@@ -91,7 +91,8 @@
     "metaCatalogDescription": "Shakisha mu bubiko bwacu kuri {siteName}",
     "noMatchTitle": "Nta \"{query}\" dufite",
     "noMatchHint": "Ishakisha ryawe ryabitswe. Reba ibisa nk'ibyo hepfo, cyangwa gerageza ijambo rindi.",
-    "similarProducts": "Ibindi bishobora kukwiriye"
+    "similarProducts": "Ibindi bishobora kukwiriye",
+    "clearHistory": "Siba amateka"
   },
   "Home": {
     "pageTitle": "Iduka ry'ibikoresho by'imyitozo",
@@ -124,7 +125,8 @@
         "title": "Reliable shipping",
         "description": "Tracked delivery on heavy equipment with clear timelines at checkout"
       }
-    }
+    },
+    "loadMore": "Erekana ibindi"
   },
   "Product": {
     "inStock": "In Stock",

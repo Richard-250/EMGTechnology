@@ -1,13 +1,18 @@
 'use client';
 
-import {ResultOf} from '@/graphql';
+import {ResultOf, readFragment} from '@/graphql';
 import {ProductCard} from './product-card';
 import {Pagination} from '@/components/shared/pagination';
 import {SortDropdown} from './sort-dropdown';
 import {SearchProductsQuery} from '@/lib/vendure/queries';
+import {ProductCardFragment} from '@/lib/vendure/fragments';
 import {getShuffleSeed, shuffleProducts, sortProductsNewestFirst} from '@/lib/product-sort';
+import {
+    addSearchHistory,
+    blendProductsWithSearchHistory,
+    getSearchHistoryTerms,
+} from '@/lib/search-history';
 import {useEffect, useMemo} from 'react';
-import {addSearchHistory} from '@/lib/search-history';
 
 interface ProductGridClientProps {
     items: ResultOf<typeof SearchProductsQuery>['search']['items'];
@@ -39,14 +44,35 @@ export function ProductGridClient({
     similarItems = [],
 }: ProductGridClientProps) {
     const products = useMemo(() => {
+        let list = items;
         if (sortKey === 'shuffle') {
-            return shuffleProducts(items, getShuffleSeed(`search-${currentPage}`));
+            list = shuffleProducts(items, getShuffleSeed(`search-${currentPage}`));
+        } else if (sortKey === 'newest') {
+            list = sortProductsNewestFirst(items);
         }
-        if (sortKey === 'newest') {
-            return sortProductsNewestFirst(items);
+
+        // Soft personalization from this visitor's history (client-only; no extra API)
+        if (sortKey === 'shuffle' && !searchTerm) {
+            const historyTerms = getSearchHistoryTerms();
+            list = blendProductsWithSearchHistory(
+                list,
+                item => readFragment(ProductCardFragment, item).productName,
+                historyTerms,
+            );
         }
-        return items;
-    }, [items, sortKey, currentPage]);
+
+        return list;
+    }, [items, sortKey, currentPage, searchTerm]);
+
+    const similarDisplay = useMemo(() => {
+        if (!similarItems.length) return similarItems;
+        const historyTerms = getSearchHistoryTerms();
+        return blendProductsWithSearchHistory(
+            similarItems,
+            item => readFragment(ProductCardFragment, item).productName,
+            historyTerms,
+        );
+    }, [similarItems]);
 
     const totalPages = Math.ceil(totalItems / take);
 
@@ -70,13 +96,13 @@ export function ProductGridClient({
                     )}
                 </div>
 
-                {similarItems.length > 0 && (
+                {similarDisplay.length > 0 && (
                     <div className="space-y-4">
                         <p className="text-sm font-semibold text-foreground">
                             {similarHeading}
                         </p>
                         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 overflow-visible">
-                            {similarItems.map((product, i) => (
+                            {similarDisplay.map((product, i) => (
                                 <ProductCard key={'similar-' + i} product={product} />
                             ))}
                         </div>

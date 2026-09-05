@@ -73,7 +73,8 @@
         "title": "Zuverlässiger Versand",
         "description": "Nachverfolgbare Lieferung schwerer Geräte mit klaren Fristen an der Kasse"
       }
-    }
+    },
+    "loadMore": "Mehr Produkte anzeigen"
   },
   "Product": {
     "inStock": "Auf Lager",
@@ -319,7 +320,8 @@
     "metaCatalogDescription": "Durchsuchen Sie unseren Produktkatalog bei {siteName}",
     "noMatchTitle": "Wir haben „{query}“ nicht",
     "noMatchHint": "Ihre Suche wurde gespeichert. Ähnliche Produkte finden Sie unten, oder versuchen Sie ein anderes Stichwort.",
-    "similarProducts": "Ähnliche Produkte"
+    "similarProducts": "Ähnliche Produkte",
+    "clearHistory": "Verlauf löschen"
   },
   "Verify": {
     "invalidLink": "Ungültiger Bestätigungslink",

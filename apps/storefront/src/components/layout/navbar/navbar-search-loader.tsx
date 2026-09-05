@@ -4,6 +4,7 @@ import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {isPrerenderAbortError} from '@/lib/prerender';
 import {getCategoryProductsMap} from '@/lib/category-products';
 import {getTopCollections} from '@/lib/vendure/cached';
+import {getActiveCustomer} from '@/lib/vendure/actions';
 import {NavbarSearchBar} from '@/components/layout/navbar/navbar-search-bar';
 
 export async function NavbarSearchBarLoader() {
@@ -12,9 +13,10 @@ export async function NavbarSearchBarLoader() {
     const locale = await getRouteLocale();
     try {
         const currencyCode = await getActiveCurrencyCode();
-        const [categoryProducts, collections] = await Promise.all([
+        const [categoryProducts, collections, customer] = await Promise.all([
             getCategoryProductsMap(locale, currencyCode),
             getTopCollections(locale),
+            getActiveCustomer().catch(() => null),
         ]);
 
         const browseCategories = collections.map(c => ({
@@ -24,12 +26,16 @@ export async function NavbarSearchBarLoader() {
         }));
 
         return (
-            <NavbarSearchBar browseCategories={browseCategories} categoryProducts={categoryProducts} />
+            <NavbarSearchBar
+                browseCategories={browseCategories}
+                categoryProducts={categoryProducts}
+                customerId={customer?.id ?? null}
+            />
         );
     } catch (error) {
         if (!isPrerenderAbortError(error)) {
             console.error('Error loading navbar search:', error);
         }
-        return <NavbarSearchBar browseCategories={[]} categoryProducts={{}} />;
+        return <NavbarSearchBar browseCategories={[]} categoryProducts={{}} customerId={null} />;
     }
 }

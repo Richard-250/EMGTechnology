@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback, useEffect, useRef, useState, useTransition} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState, useTransition} from 'react';
 import {useSearchParams} from 'next/navigation';
 import {useRouter} from '@/i18n/navigation';
 import {Camera, Clock, Search, X} from 'lucide-react';
@@ -12,8 +12,11 @@ import {resolveProductImage} from '@/lib/product-images';
 import type {SerializedProductCard} from '@/lib/product-price';
 import {
     addSearchHistory,
+    blendProductsWithSearchHistory,
+    clearSearchHistory,
     getSearchHistory,
     removeSearchHistoryItem,
+    setSearchHistoryOwner,
     type SearchHistoryEntry,
 } from '@/lib/search-history';
 import {toast} from 'sonner';
@@ -28,12 +31,15 @@ interface NavbarSearchBarProps {
     className?: string;
     browseCategories: BrowseCategory[];
     categoryProducts: Record<string, SerializedProductCard[]>;
+    /** Vendure customer id when logged in; null/undefined for guests. */
+    customerId?: string | null;
 }
 
 export function NavbarSearchBar({
     className,
     browseCategories,
     categoryProducts,
+    customerId = null,
 }: NavbarSearchBarProps) {
     const t = useTranslations('Search');
     const tNav = useTranslations('Navigation');
@@ -54,6 +60,24 @@ export function NavbarSearchBar({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const catalogPool = useMemo(() => {
+        const seen = new Set<string>();
+        const items: SerializedProductCard[] = [];
+        for (const list of Object.values(categoryProducts)) {
+            for (const item of list) {
+                if (seen.has(item.productId)) continue;
+                seen.add(item.productId);
+                items.push(item);
+            }
+        }
+        return items;
+    }, [categoryProducts]);
+
+    useEffect(() => {
+        setSearchHistoryOwner(customerId);
+        setHistoryItems(getSearchHistory());
+    }, [customerId]);
+
     useEffect(() => {
         setSearchValue(searchParams.get('q') || '');
     }, [searchParams]);
@@ -68,34 +92,55 @@ export function NavbarSearchBar({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        setHistoryItems(getSearchHistory());
-    }, []);
-
     const loadHistoryProducts = useCallback(
         async (history: SearchHistoryEntry[]) => {
             if (history.length === 0) {
                 setHistoryProducts([]);
                 return;
             }
+
+            const terms = history.map(h => h.query);
+            const fromCatalog = blendProductsWithSearchHistory(
+                catalogPool,
+                item => item.productName,
+                terms,
+            ).slice(0, 6);
+
+            if (fromCatalog.length >= 3) {
+                setHistoryProducts(fromCatalog);
+                return;
+            }
+
             setLoadingHistoryProducts(true);
             try {
-                const results = await Promise.all(
-                    history.slice(0, 3).map(async entry => {
-                        const params = new URLSearchParams({q: entry.query, locale});
-                        const res = await fetch(`/api/search/suggest?${params}`);
-                        const data = (await res.json()) as {items: SerializedProductCard[]};
-                        return data.items?.[0];
-                    }),
+                // One lightweight suggest for the latest term only (avoids slowing search UX)
+                const latest = history[0]?.query;
+                if (!latest) {
+                    setHistoryProducts(fromCatalog);
+                    return;
+                }
+                const params = new URLSearchParams({q: latest, locale});
+                const res = await fetch(`/api/search/suggest?${params}`);
+                const data = (await res.json()) as {items: SerializedProductCard[]};
+                const merged = blendProductsWithSearchHistory(
+                    [...fromCatalog, ...(data.items ?? [])],
+                    item => item.productName,
+                    terms,
                 );
-                setHistoryProducts(results.filter(Boolean) as SerializedProductCard[]);
+                const seen = new Set<string>();
+                const unique = merged.filter(item => {
+                    if (seen.has(item.productId)) return false;
+                    seen.add(item.productId);
+                    return true;
+                });
+                setHistoryProducts(unique.slice(0, 6));
             } catch {
-                setHistoryProducts([]);
+                setHistoryProducts(fromCatalog);
             } finally {
                 setLoadingHistoryProducts(false);
             }
         },
-        [locale],
+        [catalogPool, locale],
     );
 
     useEffect(() => {
@@ -117,7 +162,13 @@ export function NavbarSearchBar({
                 const params = new URLSearchParams({q: term.trim(), locale});
                 const res = await fetch(`/api/search/suggest?${params}`);
                 const data = (await res.json()) as {items: SerializedProductCard[]};
-                setSuggestions(data.items ?? []);
+                const items = data.items ?? [];
+                const historyTerms = getSearchHistory().map(h => h.query);
+                setSuggestions(
+                    historyTerms.length
+                        ? blendProductsWithSearchHistory(items, i => i.productName, historyTerms)
+                        : items,
+                );
             } catch {
                 setSuggestions([]);
             } finally {
@@ -167,13 +218,26 @@ export function NavbarSearchBar({
         setHistoryItems(getSearchHistory());
         setIsOpen(false);
         startTransition(() => {
-            router.push(`/search?q=${encodeURIComponent(query)}`);
+            router.push(`/search?q=${encodeURIComponent(query)}&sort=shuffle`);
         });
     };
 
     const removeHistoryItem = (query: string, e: React.MouseEvent) => {
         e.stopPropagation();
         setHistoryItems(removeSearchHistoryItem(query));
+        setHistoryProducts(prev =>
+            blendProductsWithSearchHistory(
+                prev,
+                item => item.productName,
+                getSearchHistory().map(h => h.query),
+            ),
+        );
+    };
+
+    const handleClearHistory = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setHistoryItems(clearSearchHistory());
+        setHistoryProducts([]);
     };
 
     const goTo = (href: string) => {
@@ -207,7 +271,7 @@ export function NavbarSearchBar({
     const activeCategoryName =
         browseCategories.find(c => c.slug === activeCategory)?.name ?? browseCategories[0]?.name;
 
-    const showPanel = isOpen && (isTyping ? true : browseCategories.length > 0);
+    const showPanel = isOpen && (isTyping ? true : browseCategories.length > 0 || historyItems.length > 0);
 
     return (
         <div
@@ -342,10 +406,20 @@ export function NavbarSearchBar({
                         <div className="max-h-[28rem] overflow-y-auto">
                             {historyItems.length > 0 && (
                                 <div className="border-b border-border">
-                                    <p className="px-4 py-2.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                                        <Clock className="size-3.5" />
-                                        {t('recentSearches')}
-                                    </p>
+                                    <div className="px-4 py-2.5 flex items-center justify-between gap-2">
+                                        <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                                            <Clock className="size-3.5" />
+                                            {t('recentSearches')}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            className="text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                                            onMouseDown={e => e.preventDefault()}
+                                            onClick={handleClearHistory}
+                                        >
+                                            {t('clearHistory')}
+                                        </button>
+                                    </div>
                                     <ul>
                                         {historyItems.map(entry => (
                                             <li key={entry.query}>
@@ -445,7 +519,12 @@ export function NavbarSearchBar({
                                         type="button"
                                         onMouseDown={e => e.preventDefault()}
                                         onClick={() =>
-                                            goTo(`/collection/${activeCategory}`)
+                                            goTo(
+                                                `/collection/${
+                                                    browseCategories.find(c => c.slug === activeCategory)
+                                                        ?.collectionSlug ?? activeCategory
+                                                }`,
+                                            )
                                         }
                                         className="text-xs text-electric hover:underline shrink-0"
                                     >
