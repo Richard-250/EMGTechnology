@@ -701,6 +701,3 @@ export function EmgStatsWidget() {
     );
 }
 
-export function EmgHiddenWidget() {
-    return <div data-emg-hidden-widget className="hidden" aria-hidden />;
-}

@@ -596,6 +596,19 @@
     "browseProducts": "Browse Products",
     "popularCollections": "Popular Collections"
   },
+  "ProductNotFound": {
+    "title": "Igicuruzwa ntabwo cyabonetse",
+    "message": "Iri gicuruzwa rashobora kuba ryakuweho, ntabwo rikiboneka, cyangwa umurongo wakurikiye si wo.",
+    "searchHeading": "Shaka mu bubiko bwacu",
+    "searchPlaceholder": "Shaka ibikoresho...",
+    "searchButton": "Shaka",
+    "backToShop": "Komeza ugure",
+    "backHome": "Subira ku rupapuro rw'ibanze",
+    "helpHint": "Reba ibikoresho byagaragajwe hepfo cyangwa ushake izina.",
+    "recommended": "Byasabwe kuri wowe",
+    "recommendedHint": "Ibikoresho by'imyitozo bikunzwe mu bubiko bwacu",
+    "browseFeatured": "Reba ibikoresho byagaragajwe"
+  },
   "Footer": {
     "description": "EMG Technology Ltd: premium fitness and gym equipment for home athletes and serious trainers in Rwanda.",
     "categories": "Shop",

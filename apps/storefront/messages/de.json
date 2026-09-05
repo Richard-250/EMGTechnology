@@ -474,6 +474,19 @@
     "browseProducts": "Produkte durchsuchen",
     "popularCollections": "Beliebte Kategorien"
   },
+  "ProductNotFound": {
+    "title": "Produkt nicht gefunden",
+    "message": "Dieses Produkt wurde möglicherweise entfernt, ist nicht mehr verfügbar oder der Link ist ungültig.",
+    "searchHeading": "Katalog durchsuchen",
+    "searchPlaceholder": "Equipment suchen...",
+    "searchButton": "Suchen",
+    "backToShop": "Weiter einkaufen",
+    "backHome": "Zurück zur Startseite",
+    "helpHint": "Entdecken Sie unten empfohlene Geräte oder suchen Sie nach Namen.",
+    "recommended": "Empfohlen für Sie",
+    "recommendedHint": "Beliebte Fitnessgeräte aus unserem Katalog",
+    "browseFeatured": "Empfohlene Geräte ansehen"
+  },
   "Footer": {
     "description": "EMG Technology Ltd: Premium-Fitness- und Gym-Equipment für Athleten und Trainer in Ruanda.",
     "categories": "Shop",

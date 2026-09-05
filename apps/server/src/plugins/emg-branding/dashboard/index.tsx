@@ -6,7 +6,6 @@ import {EmgDefaultLayoutProvider} from './default-layout-provider';
 import {EmgLoadingStabilityProvider} from './emg-loading-provider';
 import {
     EmgFeaturedWidget,
-    EmgHiddenWidget,
     EmgStatsWidget,
     EmgWelcomeWidget,
 } from './widgets';
@@ -93,9 +92,11 @@ defineDashboardExtension({
             order: 100,
         },
     ],
+    // Override built-in Insights widgets (same IDs) so the grid stays constant —
+    // no off-screen / zero-size placeholders.
     widgets: [
         {
-            id: 'emg-welcome-widget',
+            id: 'latest-orders-widget',
             name: 'EMG Welcome',
             component: EmgWelcomeWidget,
             defaultSize: { w: 12, h: 2, x: 0, y: 0 },
@@ -103,43 +104,19 @@ defineDashboardExtension({
             requiresPermissions: ['ReadOrder'],
         },
         {
-            id: 'emg-stats-widget',
+            id: 'metrics-widget',
             name: 'EMG Analytics',
             component: EmgStatsWidget,
-            defaultSize: { w: 12, h: 9, x: 0, y: 2 },
-            minSize: { w: 8, h: 6 },
-            requiresPermissions: ['ReadOrder'],
-        },
-        {
-            id: 'emg-featured-widget',
-            name: 'EMG Operations',
-            component: EmgFeaturedWidget,
-            defaultSize: { w: 12, h: 5, x: 0, y: 11 },
-            minSize: { w: 6, h: 4 },
-            requiresPermissions: ['ReadOrder'],
-        },
-        {
-            id: 'metrics-widget',
-            name: 'Hidden sales chart',
-            component: EmgHiddenWidget,
-            defaultSize: { w: 0, h: 0, x: 0, y: 99 },
-            minSize: { w: 0, h: 0 },
+            defaultSize: { w: 12, h: 10, x: 0, y: 2 },
+            minSize: { w: 6, h: 6 },
             requiresPermissions: ['ReadOrder'],
         },
         {
             id: 'orders-summary-widget',
-            name: 'Hidden orders chart',
-            component: EmgHiddenWidget,
-            defaultSize: { w: 0, h: 0, x: 0, y: 99 },
-            minSize: { w: 0, h: 0 },
-            requiresPermissions: ['ReadOrder'],
-        },
-        {
-            id: 'latest-orders-widget',
-            name: 'Hidden default overview',
-            component: EmgHiddenWidget,
-            defaultSize: { w: 0, h: 0, x: 0, y: 99 },
-            minSize: { w: 0, h: 0 },
+            name: 'EMG Operations',
+            component: EmgFeaturedWidget,
+            defaultSize: { w: 12, h: 6, x: 0, y: 12 },
+            minSize: { w: 6, h: 4 },
             requiresPermissions: ['ReadOrder'],
         },
     ],

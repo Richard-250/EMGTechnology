@@ -648,6 +648,19 @@
     "browseProducts": "Browse Products",
     "popularCollections": "Popular Collections"
   },
+  "ProductNotFound": {
+    "title": "Product not found",
+    "message": "This product may have been removed, is no longer available, or the link you followed is incorrect.",
+    "searchHeading": "Search our catalog",
+    "searchPlaceholder": "Search equipment...",
+    "searchButton": "Search",
+    "backToShop": "Continue shopping",
+    "backHome": "Back to homepage",
+    "helpHint": "Browse featured equipment below or search by name to find what you need.",
+    "recommended": "Recommended for you",
+    "recommendedHint": "Popular fitness equipment from our catalog",
+    "browseFeatured": "View featured equipment"
+  },
   "Footer": {
     "description": "EMG Technology Ltd: premium fitness and gym equipment for home athletes and serious trainers in Rwanda.",
     "categories": "Shop",

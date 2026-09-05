@@ -1,15 +1,27 @@
-/* EMG Technology — dark modern admin dashboard */
+/* EMG Technology — light-first admin dashboard (dark via html.dark) */
 
 @theme {
+  --color-emg-bg: #f4f6f8;
+  --color-emg-card: #ffffff;
+  --color-emg-card-hover: #f8fafb;
+  --color-emg-sidebar: #ffffff;
+  --color-emg-border: color-mix(in oklab, #919eab 28%, transparent);
+  --color-emg-muted: #637381;
+  --color-emg-fg: #212b36;
+  --color-emg-green: #269a2d;
+  --color-emg-green-light: #269a2d;
+  --color-emg-green-dark: #1b5e20;
+}
+
+html.dark {
   --color-emg-bg: #141a21;
   --color-emg-card: #212b36;
   --color-emg-card-hover: #28323d;
   --color-emg-sidebar: #161c24;
   --color-emg-border: color-mix(in oklab, #919eab 16%, transparent);
   --color-emg-muted: #919eab;
-  --color-emg-green: #269a2d;
+  --color-emg-fg: #ffffff;
   --color-emg-green-light: #5cbf60;
-  --color-emg-green-dark: #1b5e20;
 }
 
 /* Force dark shell */
@@ -90,22 +102,26 @@ html.dark .text-muted-foreground {
   color: var(--color-emg-muted) !important;
 }
 
-/* Collapse and remove any hidden or empty react-grid-item elements */
-.react-grid-item:has([data-emg-hidden-widget]),
-.react-grid-item:has(.hidden),
-.react-grid-item[style*="visibility: hidden"],
-.react-grid-item:empty {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  transform: none !important;
-  position: absolute !important;
-  top: -9999px !important;
-  left: -9999px !important;
-  margin: 0 !important;
-  padding: 0 !important;
+/* Light mode shell polish */
+html:not(.dark) body,
+html:not(.dark) #app {
+  background-color: var(--color-emg-bg);
+  color: var(--color-emg-fg);
+}
+
+html:not(.dark) [data-slot="sidebar-inset"] {
+  background: var(--color-emg-bg) !important;
+}
+
+html:not(.dark) .react-grid-item > .rounded-md.border.bg-card {
+  background: var(--color-emg-card) !important;
+  border-color: var(--color-emg-border) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 1px 2px rgba(33, 43, 54, 0.04), 0 8px 16px rgba(33, 43, 54, 0.04);
+}
+
+html:not(.dark) [data-page-id="insights"] {
+  margin-top: 0.25rem !important;
 }
 
 html.dark .react-grid-layout,
@@ -170,7 +186,7 @@ html.dark .react-grid-item > .rounded-md.border.bg-card,
 .emg-welcome-title {
   font-size: 1.35rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-emg-fg);
   margin-bottom: 0.35rem;
   position: relative;
   z-index: 1;
@@ -255,7 +271,7 @@ html.dark .react-grid-item > .rounded-md.border.bg-card,
 .emg-featured-title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--color-emg-fg);
   line-height: 1.4;
 }
 
@@ -292,7 +308,7 @@ html.dark .react-grid-item > .rounded-md.border.bg-card,
 .emg-stat-value {
   font-size: 1.65rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-emg-fg);
   line-height: 1.1;
 }
 
@@ -388,13 +404,6 @@ svg[aria-label*="Vendure" i],
   display: none !important;
 }
 
-.react-grid-item:has([data-emg-hidden-widget]) {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
-}
-
 /* Chart interactions */
 .recharts-bar-rectangle,
 .recharts-area-area,
@@ -432,10 +441,10 @@ svg[aria-label*="Vendure" i],
   }
 }
 
-/* Mobile Phone Optimization (<= 768px) */
+/* Mobile Phone Optimization (<= 768px) — light + dark */
 @media (max-width: 768px) {
   /* Override react-grid-layout fixed absolute layout into clean flexible stack */
-  html.dark .react-grid-layout {
+  .react-grid-layout {
     display: flex !important;
     flex-direction: column !important;
     height: auto !important;
@@ -443,7 +452,7 @@ svg[aria-label*="Vendure" i],
     gap: 0.75rem !important;
   }
 
-  html.dark .react-grid-item {
+  .react-grid-item {
     position: relative !important;
     transform: none !important;
     width: 100% !important;
@@ -454,7 +463,7 @@ svg[aria-label*="Vendure" i],
     margin: 0 !important;
   }
 
-  html.dark .react-grid-item > .rounded-md.border.bg-card {
+  .react-grid-item > .rounded-md.border.bg-card {
     margin: 0 !important;
     height: auto !important;
   }
@@ -747,12 +756,13 @@ svg[aria-label*="Vendure" i],
 }
 
 .emg-chart-card {
-  background: var(--color-emg-card, #212b36);
+  background: var(--color-emg-card);
   border: 1px solid var(--color-emg-border);
   border-radius: 1rem;
   padding: 1rem 1.1rem;
   min-height: 11rem;
   contain: layout;
+  color: var(--color-emg-fg);
 }
 
 .emg-chart-card__header {
@@ -772,7 +782,7 @@ svg[aria-label*="Vendure" i],
 .emg-chart-card__value {
   font-size: 1.35rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-emg-fg);
   margin: 0.15rem 0 0;
 }
 
@@ -823,7 +833,7 @@ svg[aria-label*="Vendure" i],
 
 .emg-mini-stat strong {
   font-size: 0.82rem;
-  color: #fff;
+  color: var(--color-emg-fg);
 }
 
 /* Kill grid animation shake on desktop + mobile */
@@ -865,7 +875,9 @@ html.emg-dashboard-stable [data-slot="sidebar-inset"] {
 
 .emg-welcome-strip {
   height: 100%;
-  background: var(--color-emg-card, #212b36) !important;
+  background: var(--color-emg-card) !important;
+  border-color: var(--color-emg-border) !important;
+  color: var(--color-emg-fg);
 }
 
 .emg-kpi-grid {
@@ -875,17 +887,21 @@ html.emg-dashboard-stable [data-slot="sidebar-inset"] {
 }
 
 .emg-kpi-card {
-  background: var(--color-emg-card, #212b36) !important;
+  background: var(--color-emg-card) !important;
+  border-color: var(--color-emg-border) !important;
+  color: var(--color-emg-fg);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .emg-kpi-link:hover .emg-kpi-card {
   border-color: color-mix(in oklab, var(--color-emg-green) 45%, transparent) !important;
-  background: var(--color-emg-card-hover, #28323d) !important;
+  background: var(--color-emg-card-hover) !important;
 }
 
 .emg-analytics-card {
-  background: var(--color-emg-card, #212b36) !important;
+  background: var(--color-emg-card) !important;
+  border-color: var(--color-emg-border) !important;
+  color: var(--color-emg-fg);
   height: 100%;
 }
 
@@ -913,7 +929,7 @@ html.emg-dashboard-stable [data-slot="sidebar-inset"] {
 }
 
 .emg-status-row__meta strong {
-  color: #fff;
+  color: var(--color-emg-fg);
   font-weight: 600;
 }
 
@@ -1012,7 +1028,7 @@ html.emg-dashboard-stable [data-slot="sidebar-inset"] {
 }
 
 .emg-state-badge--neutral {
-  color: #c4cdd5 !important;
+  color: var(--color-emg-muted) !important;
 }
 
 @media (max-width: 1200px) {
@@ -1022,9 +1038,27 @@ html.emg-dashboard-stable [data-slot="sidebar-inset"] {
 }
 
 @media (max-width: 900px) {
-  .emg-kpi-grid,
+  .emg-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .emg-ops-grid,
-  .emg-deal-metrics {
+  .emg-deal-metrics,
+  .emg-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .emg-chart-card__svg {
+    height: 140px;
+  }
+
+  .emg-orders-table {
+    min-width: 480px;
+  }
+}
+
+@media (max-width: 520px) {
+  .emg-kpi-grid {
     grid-template-columns: 1fr;
   }
 }
