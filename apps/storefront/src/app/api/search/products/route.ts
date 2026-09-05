@@ -4,8 +4,6 @@ import {SearchProductsQuery} from '@/lib/vendure/queries';
 import {serializeProductCard} from '@/lib/product-price';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
     const {searchParams} = request.nextUrl;
     const locale = searchParams.get('locale') || 'en';

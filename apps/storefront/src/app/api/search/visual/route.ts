@@ -5,9 +5,6 @@ import {serializeProductCard} from '@/lib/product-price';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {buildImageSignature, signatureSimilarity} from '@/lib/visual-similarity';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const CATALOG_TAKE = 80;
 const RESULT_TAKE = 24;
