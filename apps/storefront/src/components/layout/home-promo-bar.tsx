@@ -6,7 +6,7 @@ export function HomePromoBar() {
         <div className="bg-electric text-electric-foreground text-sm">
             <div className="container mx-auto px-4 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <p className="font-medium tracking-wide">
-                    Premium fitness equipment — delivery across Rwanda
+                    Premium fitness equipment, delivery across Rwanda
                 </p>
                 <a
                     href={`tel:${COMPANY.phone}`}

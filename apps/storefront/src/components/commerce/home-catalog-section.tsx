@@ -66,7 +66,7 @@ export async function HomeCatalogSection() {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5 overflow-visible">
                     {products.map((product, i) => (
                         <ProductCard key={`home-catalog-${i}`} product={product} />
                     ))}

@@ -170,7 +170,7 @@ function MobileMoneyCheckoutPanel({
         </p>
         <p className="text-foreground">
           {t('momoNumberLabel')}{' '}
-          <strong className="text-electric">{fields?.merchantPhone ?? '—'}</strong>
+          <strong className="text-electric">{fields?.merchantPhone ?? 'N/A'}</strong>
         </p>
 
         {steps.length > 0 && (

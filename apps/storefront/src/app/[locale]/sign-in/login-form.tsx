@@ -30,9 +30,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 interface LoginFormProps {
     redirectTo?: string;
     embedded?: boolean;
+    onSwitchToRegister?: () => void;
 }
 
-export function LoginForm({redirectTo, embedded = false}: LoginFormProps) {
+export function LoginForm({redirectTo, embedded = false, onSwitchToRegister}: LoginFormProps) {
     const t = useTranslations('Auth');
     const [isPending, startTransition] = useTransition();
     const [serverError, setServerError] = useState<string | null>(null);
@@ -127,6 +128,18 @@ export function LoginForm({redirectTo, embedded = false}: LoginFormProps) {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     {fields}
+                    {onSwitchToRegister && (
+                        <p className="text-muted-foreground text-sm text-center">
+                            {t('noAccount')}{' '}
+                            <button
+                                type="button"
+                                onClick={onSwitchToRegister}
+                                className="hover:text-primary underline font-medium"
+                            >
+                                {t('register')}
+                            </button>
+                        </p>
+                    )}
                 </form>
             </Form>
         );

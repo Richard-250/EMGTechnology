@@ -8,13 +8,11 @@ import {CurrencyPickerWrapper} from '@/components/layout/navbar/currency-picker-
 import {MobileNavWrapper} from '@/components/layout/navbar/mobile-nav-wrapper';
 import {NavbarSearchBarLoader} from '@/components/layout/navbar/navbar-search-loader';
 import {NavbarSubnav} from '@/components/layout/navbar/navbar-subnav';
-import {GlobalPromoBar} from '@/components/layout/global-promo-bar';
 import {Suspense} from 'react';
 import {NavbarUserSkeleton} from '@/components/shared/skeletons/navbar-user-skeleton';
 import {SearchInputSkeleton} from '@/components/shared/skeletons/search-input-skeleton';
 import {SITE_NAME, SITE_LOGO} from '@/lib/metadata';
 import {COMPANY} from '@/lib/company';
-import {WhatsAppIcon} from '@/components/shared/whatsapp-icon';
 
 function RwandaFlag() {
     return (
@@ -34,7 +32,6 @@ export function Navbar() {
             <div className="fixed top-0 left-0 right-0 z-50 bg-background shadow-sm">
                 <header className="border-b border-border">
                     <div className="container mx-auto px-4">
-                        {/* Top row — logo, search, utilities */}
                         <div className="flex items-center gap-3 md:gap-4 h-16">
                             <div className="flex items-center gap-2 md:gap-3 shrink-0">
                                 <Suspense>
@@ -59,15 +56,6 @@ export function Navbar() {
                             </div>
 
                             <div className="flex items-center gap-1 md:gap-2 ml-auto shrink-0">
-                                <a
-                                    href={COMPANY.whatsappUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex size-9 items-center justify-center rounded-full text-[#25D366] hover:bg-[#25D366]/10 transition-colors"
-                                    aria-label="Chat on WhatsApp"
-                                >
-                                    <WhatsAppIcon className="size-5" />
-                                </a>
                                 <Suspense fallback={null}>
                                     <ThemeSwitcher />
                                 </Suspense>
@@ -89,17 +77,11 @@ export function Navbar() {
                             </div>
                         </div>
 
-                        {/* Mobile search */}
                         <div className="sm:hidden pb-3">
                             <Suspense fallback={<SearchInputSkeleton />}>
                                 <NavbarSearchBarLoader />
                             </Suspense>
                         </div>
-
-                        {/* Promo — below logo & search, above subnav */}
-                        <Suspense fallback={null}>
-                            <GlobalPromoBar />
-                        </Suspense>
 
                         <Suspense fallback={null}>
                             <NavbarSubnav />
@@ -107,8 +89,8 @@ export function Navbar() {
                     </div>
                 </header>
             </div>
-            {/* Spacer for fixed header */}
-            <div className="h-[9.5rem] sm:h-[8.75rem] md:h-[9.25rem]" aria-hidden />
+            {/* Spacer for fixed header (no promo bar) */}
+            <div className="h-[7.75rem] sm:h-[6.5rem] md:h-[7rem]" aria-hidden />
         </>
     );
 }

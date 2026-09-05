@@ -16,6 +16,7 @@ import {WhatsAppFab} from "@/components/layout/whatsapp-fab";
 import {CartConfirmationProvider} from "@/components/commerce/cart-confirmation-provider";
 import {CartConfirmationDrawer} from "@/components/commerce/cart-confirmation-drawer";
 import {ThemeProvider} from "@/components/providers/theme-provider";
+import {AuthModalProvider} from "@/components/auth/auth-modal-provider";
 import {SITE_NAME, SITE_URL} from "@/lib/metadata";
 import "./globals.css";
 
@@ -112,6 +113,8 @@ export default async function LocaleLayout({children}: {children: React.ReactNod
             >
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider>
+                        <Suspense fallback={null}>
+                        <AuthModalProvider>
                         <CartConfirmationProvider>
                         <Navbar />
                         <main className="flex-1 pb-14 md:pb-0">{children}</main>
@@ -125,6 +128,8 @@ export default async function LocaleLayout({children}: {children: React.ReactNod
                         <WhatsAppFab />
                         <Toaster/>
                         </CartConfirmationProvider>
+                        </AuthModalProvider>
+                        </Suspense>
                     </ThemeProvider>
                 </NextIntlClientProvider>
             </body>

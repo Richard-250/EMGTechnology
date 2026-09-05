@@ -6,7 +6,8 @@ import {Pagination} from '@/components/shared/pagination';
 import {SortDropdown} from './sort-dropdown';
 import {SearchProductsQuery} from '@/lib/vendure/queries';
 import {getShuffleSeed, shuffleProducts, sortProductsNewestFirst} from '@/lib/product-sort';
-import {useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
+import {addSearchHistory} from '@/lib/search-history';
 
 interface ProductGridClientProps {
     items: ResultOf<typeof SearchProductsQuery>['search']['items'];
@@ -16,6 +17,11 @@ interface ProductGridClientProps {
     sortKey: string;
     productCountLabel: string;
     noProductsLabel: string;
+    searchTerm?: string;
+    noMatchTitle?: string;
+    noMatchHint?: string;
+    similarHeading?: string;
+    similarItems?: ResultOf<typeof SearchProductsQuery>['search']['items'];
 }
 
 export function ProductGridClient({
@@ -26,6 +32,11 @@ export function ProductGridClient({
     sortKey,
     productCountLabel,
     noProductsLabel,
+    searchTerm,
+    noMatchTitle,
+    noMatchHint,
+    similarHeading,
+    similarItems = [],
 }: ProductGridClientProps) {
     const products = useMemo(() => {
         if (sortKey === 'shuffle') {
@@ -39,10 +50,38 @@ export function ProductGridClient({
 
     const totalPages = Math.ceil(totalItems / take);
 
+    useEffect(() => {
+        if (searchTerm?.trim()) {
+            addSearchHistory(searchTerm.trim());
+        }
+    }, [searchTerm]);
+
     if (!products.length) {
         return (
-            <div className="text-center py-12">
-                <p className="text-muted-foreground">{noProductsLabel}</p>
+            <div className="space-y-8">
+                <div className="rounded-xl border border-border/70 bg-muted/20 px-6 py-10 text-center">
+                    <p className="text-base font-semibold text-foreground">
+                        {noMatchTitle || noProductsLabel}
+                    </p>
+                    {noMatchHint && (
+                        <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+                            {noMatchHint}
+                        </p>
+                    )}
+                </div>
+
+                {similarItems.length > 0 && (
+                    <div className="space-y-4">
+                        <p className="text-sm font-semibold text-foreground">
+                            {similarHeading}
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 overflow-visible">
+                            {similarItems.map((product, i) => (
+                                <ProductCard key={'similar-' + i} product={product} />
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
@@ -54,7 +93,7 @@ export function ProductGridClient({
                 <SortDropdown />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 overflow-visible">
                 {products.map((product, i) => (
                     <ProductCard key={'product-grid-item' + i} product={product} />
                 ))}

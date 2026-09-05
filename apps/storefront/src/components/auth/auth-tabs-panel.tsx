@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {LoginForm} from '@/app/[locale]/sign-in/login-form';
 import {RegistrationForm} from '@/app/[locale]/register/registration-form';
 import {GoogleSignInButton} from '@/components/auth/google-sign-in-button';
@@ -14,18 +14,42 @@ interface AuthTabsPanelProps {
     defaultTab?: AuthTab;
     redirectTo?: string;
     message?: string;
+    variant?: 'page' | 'modal';
+    onTabChange?: (tab: AuthTab) => void;
 }
 
-export function AuthTabsPanel({defaultTab = 'sign-in', redirectTo, message}: AuthTabsPanelProps) {
+export function AuthTabsPanel({
+    defaultTab = 'sign-in',
+    redirectTo,
+    message,
+    variant = 'page',
+    onTabChange,
+}: AuthTabsPanelProps) {
     const t = useTranslations('Auth');
     const [activeTab, setActiveTab] = useState<AuthTab>(defaultTab);
 
+    useEffect(() => {
+        setActiveTab(defaultTab);
+    }, [defaultTab]);
+
+    const switchTab = (tab: AuthTab) => {
+        setActiveTab(tab);
+        onTabChange?.(tab);
+    };
+
+    const isModal = variant === 'modal';
+
     return (
-        <Card className="shadow-xl border-border/70 overflow-hidden">
+        <Card
+            className={cn(
+                'overflow-hidden border-border/70',
+                isModal ? 'border-0 shadow-none rounded-none bg-transparent' : 'shadow-xl',
+            )}
+        >
             <div className="flex border-b border-border bg-muted/20">
                 <button
                     type="button"
-                    onClick={() => setActiveTab('sign-in')}
+                    onClick={() => switchTab('sign-in')}
                     className={cn(
                         'flex-1 py-3.5 text-sm font-semibold transition-colors',
                         activeTab === 'sign-in'
@@ -37,7 +61,7 @@ export function AuthTabsPanel({defaultTab = 'sign-in', redirectTo, message}: Aut
                 </button>
                 <button
                     type="button"
-                    onClick={() => setActiveTab('register')}
+                    onClick={() => switchTab('register')}
                     className={cn(
                         'flex-1 py-3.5 text-sm font-semibold transition-colors',
                         activeTab === 'register'
@@ -49,7 +73,7 @@ export function AuthTabsPanel({defaultTab = 'sign-in', redirectTo, message}: Aut
                 </button>
             </div>
 
-            <CardContent className="space-y-6 pt-6 pb-7">
+            <CardContent className={cn('space-y-5', isModal ? 'pt-5 pb-6 px-5' : 'pt-6 pb-7')}>
                 {message && (
                     <div
                         role="alert"
@@ -59,11 +83,7 @@ export function AuthTabsPanel({defaultTab = 'sign-in', redirectTo, message}: Aut
                     </div>
                 )}
 
-                <div className="rounded-xl border border-border/70 bg-gradient-to-b from-muted/30 to-background p-4 space-y-3">
-                    <div className="text-center space-y-1">
-                        <p className="text-sm font-semibold text-foreground">{t('quickSignIn')}</p>
-                        <p className="text-xs text-muted-foreground">{t('googleSignUpHint')}</p>
-                    </div>
+                <div className="flex justify-center py-1">
                     <GoogleSignInButton redirectTo={redirectTo} />
                 </div>
 
@@ -72,12 +92,18 @@ export function AuthTabsPanel({defaultTab = 'sign-in', redirectTo, message}: Aut
                         <span className="w-full border-t border-border" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase tracking-wide">
-                        <span className="bg-card px-3 text-muted-foreground">{t('orWithEmail')}</span>
+                        <span className={cn('px-3 text-muted-foreground', isModal ? 'bg-background' : 'bg-card')}>
+                            {t('orWithEmail')}
+                        </span>
                     </div>
                 </div>
 
                 {activeTab === 'sign-in' ? (
-                    <LoginForm redirectTo={redirectTo} embedded />
+                    <LoginForm
+                        redirectTo={redirectTo}
+                        embedded
+                        onSwitchToRegister={() => switchTab('register')}
+                    />
                 ) : (
                     <RegistrationForm redirectTo={redirectTo} embedded />
                 )}

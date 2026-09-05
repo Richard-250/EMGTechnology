@@ -18,7 +18,8 @@ export function buildSearchInput({ searchParams, collectionSlug }: BuildSearchIn
     const take = 12;
     const skip = (page - 1) * take;
     const sort = (searchParams.sort as string) || 'shuffle';
-    const searchTerm = searchParams.q as string;
+    const rawTerm = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q;
+    const searchTerm = typeof rawTerm === 'string' ? rawTerm.trim() : '';
 
     // Extract facet value IDs from search params
     const facetValueIds = searchParams.facets
@@ -30,6 +31,7 @@ export function buildSearchInput({ searchParams, collectionSlug }: BuildSearchIn
     // Map sort parameter to Vendure SearchResultSortParameter
     const sortMapping: Record<string, { name?: 'ASC' | 'DESC'; price?: 'ASC' | 'DESC' }> = {
         newest: {},
+        shuffle: {},
         'name-asc': { name: 'ASC' },
         'name-desc': { name: 'DESC' },
         'price-asc': { price: 'ASC' },
@@ -42,11 +44,21 @@ export function buildSearchInput({ searchParams, collectionSlug }: BuildSearchIn
         take,
         skip,
         groupByProduct: true,
-        sort: sortMapping[sort] || sortMapping.newest,
+        sort: sortMapping[sort] || {},
         ...(facetValueIds.length > 0 && {
             facetValueFilters: facetValueIds.map(id => ({ and: id }))
         })
     };
+}
+
+/** First meaningful word / shortened term for "similar products" when exact search is empty. */
+export function buildSimilarSearchTerm(term: string): string | undefined {
+    const cleaned = term.trim().replace(/[^\p{L}\p{N}\s-]/gu, ' ').replace(/\s+/g, ' ');
+    if (!cleaned) return undefined;
+    const words = cleaned.split(' ').filter(w => w.length > 1);
+    if (words.length === 0) return cleaned.slice(0, 3) || undefined;
+    if (words.length === 1) return words[0].slice(0, Math.max(3, Math.ceil(words[0].length * 0.7)));
+    return words[0];
 }
 
 export function getCurrentPage(searchParams: { [key: string]: string | string[] | undefined }): number {

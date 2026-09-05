@@ -31,7 +31,7 @@
     "themeSystem": "System"
   },
   "Hero": {
-    "banner": "Premium-Fitnessgeräte — Lieferung in ganz Ruanda",
+    "banner": "Premium-Fitnessgeräte, Lieferung in ganz Ruanda",
     "eyebrow": "EMG Technology Ltd",
     "title": "Fitness",
     "titleHighlight": "",
@@ -49,7 +49,7 @@
     "shopByCategory": "Nach Kategorie shoppen",
     "shopByCategorySubtitle": "Finden Sie das Equipment, das zu Ihrem Training passt.",
     "fitnessCatalog": "Alle Produkte",
-    "fitnessCatalogSubtitle": "Vollständiger Fitness-Katalog — Preise in rwandischen Francs (RWF).",
+    "fitnessCatalogSubtitle": "Vollständiger Fitness-Katalog. Preise in rwandischen Francs (RWF).",
     "viewFullCatalog": "Alle Produkte ansehen",
     "allProducts": "Alle",
     "showingProducts": "{count} von {total} Produkten",
@@ -109,7 +109,7 @@
       "title": "Häufig gestellte Fragen",
       "shipping": {
         "question": "Welche Versandoptionen bieten Sie an?",
-        "answer": "Wir bieten Standardversand (5–7 Werktage), Expressversand (2–3 Werktage) und Lieferung am nächsten Tag für ausgewählte Gebiete an. Kostenloser Standardversand ist ab einem Bestellwert von 50 € verfügbar."
+        "answer": "Wir bieten Standardversand (5-7 Werktage), Expressversand (2-3 Werktage) und Lieferung am nächsten Tag für ausgewählte Gebiete an. Kostenloser Standardversand ist ab einem Bestellwert von 50 € verfügbar."
       },
       "returns": {
         "question": "Wie ist Ihre Rückgaberichtlinie?",
@@ -316,7 +316,10 @@
     "resultsFor": "Suchergebnisse für \"{query}\"",
     "resultsTitle": "Suchergebnisse für \"{query}\"",
     "metaDescription": "Produkte für \"{query}\" bei {siteName} finden",
-    "metaCatalogDescription": "Durchsuchen Sie unseren Produktkatalog bei {siteName}"
+    "metaCatalogDescription": "Durchsuchen Sie unseren Produktkatalog bei {siteName}",
+    "noMatchTitle": "Wir haben „{query}“ nicht",
+    "noMatchHint": "Ihre Suche wurde gespeichert. Ähnliche Produkte finden Sie unten, oder versuchen Sie ein anderes Stichwort.",
+    "similarProducts": "Ähnliche Produkte"
   },
   "Verify": {
     "invalidLink": "Ungültiger Bestätigungslink",
@@ -469,7 +472,7 @@
     "popularCollections": "Beliebte Kategorien"
   },
   "Footer": {
-    "description": "EMG Technology Ltd — Premium-Fitness- und Gym-Equipment für Athleten und Trainer in Ruanda.",
+    "description": "EMG Technology Ltd: Premium-Fitness- und Gym-Equipment für Athleten und Trainer in Ruanda.",
     "categories": "Shop",
     "customer": "Konto",
     "contact": "Kontakt",

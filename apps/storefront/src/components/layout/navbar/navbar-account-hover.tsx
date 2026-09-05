@@ -5,6 +5,7 @@ import {Link} from '@/i18n/navigation';
 import {Button} from '@/components/ui/button';
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {LoginButton} from '@/components/layout/navbar/login-button';
+import {useAuthModalOptional} from '@/components/auth/auth-modal-provider';
 import {useHoverOpen} from '@/lib/use-hover-open';
 import {useTranslations} from 'next-intl';
 import {cn} from '@/lib/utils';
@@ -67,6 +68,10 @@ export function NavbarAccountHover({customer}: NavbarAccountHoverProps) {
 
 function GuestPanel() {
     const t = useTranslations('Navigation');
+    const authModal = useAuthModalOptional();
+
+    const openSignIn = () => authModal?.openAuth({tab: 'sign-in'});
+    const openRegister = () => authModal?.openAuth({tab: 'register'});
 
     return (
         <div>
@@ -81,22 +86,46 @@ function GuestPanel() {
             </div>
             <div className="p-4 space-y-3">
                 <Button
-                    render={<Link href="/sign-in" />}
-                    nativeButton={false}
+                    type="button"
+                    onClick={openSignIn}
                     className="w-full bg-electric hover:bg-electric/90 text-electric-foreground font-semibold"
                 >
                     {t('signIn')}
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">
                     {t('newCustomer')}{' '}
-                    <Link href="/register" className="font-semibold text-electric hover:underline">
+                    <button
+                        type="button"
+                        onClick={openRegister}
+                        className="font-semibold text-electric hover:underline"
+                    >
                         {t('register')}
-                    </Link>
+                    </button>
                 </p>
             </div>
             <div className="border-t border-border/60 py-1">
-                <AccountQuickLink href="/sign-in" icon={Package} label={t('orders')} />
-                <AccountQuickLink href="/sign-in" icon={User} label={t('account')} />
+                <button
+                    type="button"
+                    onClick={openSignIn}
+                    className={cn(
+                        'flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-foreground',
+                        'hover:bg-muted/60 transition-colors',
+                    )}
+                >
+                    <Package className="size-4 text-muted-foreground" />
+                    {t('orders')}
+                </button>
+                <button
+                    type="button"
+                    onClick={openSignIn}
+                    className={cn(
+                        'flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-foreground',
+                        'hover:bg-muted/60 transition-colors',
+                    )}
+                >
+                    <User className="size-4 text-muted-foreground" />
+                    {t('account')}
+                </button>
             </div>
         </div>
     );

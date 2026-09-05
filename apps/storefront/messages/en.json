@@ -37,7 +37,7 @@
     "themeSystem": "System"
   },
   "Hero": {
-    "banner": "Premium fitness equipment — delivered across Rwanda",
+    "banner": "Premium fitness equipment, delivered across Rwanda",
     "eyebrow": "EMG Technology Ltd",
     "title": "Fitness",
     "titleHighlight": "",
@@ -48,12 +48,12 @@
     "statCategories": "4 categories",
     "statDelivery": "Rwanda delivery",
     "cardioTitle": "Cardio machines",
-    "cardioSubtitle": "Ellipticals, bikes, rowers and more — shop cardio equipment.",
+    "cardioSubtitle": "Ellipticals, bikes, rowers and more. Shop cardio equipment.",
     "strengthTitle": "Strength training",
     "strengthSubtitle": "Racks, barbells, dumbbells and kettlebells for serious lifts."
   },
   "Promo": {
-    "freeDelivery": "Free delivery on orders across Rwanda — call us for heavy equipment quotes"
+    "freeDelivery": "Free delivery on orders across Rwanda. Call us for heavy equipment quotes"
   },
   "MobileNav": {
     "label": "Mobile navigation",
@@ -82,10 +82,10 @@
     "searchByImage": "Search by image",
     "imageSearchInvalid": "Please select an image file",
     "imageSearchComingSoon": "Visual search coming soon",
-    "imageSearchComingSoonHint": "Upload a product photo to find similar items — we're setting this up.",
+    "imageSearchComingSoonHint": "Upload a product photo to find similar items. We're setting this up.",
     "imageSearchReady": "Image selected for visual search",
     "imageSearchReadyHint": "Press the search button to find similar products.",
-    "imageSearchPlaceholder": "Image search active — press search",
+    "imageSearchPlaceholder": "Image search active. Press search",
     "visualSearchResults": "Showing products similar to your uploaded image",
     "recentSearches": "Recent searches",
     "basedOnYourSearches": "Based on your searches",
@@ -95,7 +95,10 @@
     "resultsFor": "Search results for \"{query}\"",
     "resultsTitle": "Search results for \"{query}\"",
     "metaDescription": "Find products matching \"{query}\" at {siteName}",
-    "metaCatalogDescription": "Search our product catalog at {siteName}"
+    "metaCatalogDescription": "Search our product catalog at {siteName}",
+    "noMatchTitle": "We do not have \"{query}\"",
+    "noMatchHint": "Your search was saved. Browse similar products below, or try a different keyword.",
+    "similarProducts": "Similar products you may like"
   },
   "Home": {
     "pageTitle": "Fitness Equipment Store",
@@ -104,7 +107,7 @@
     "shopByCategory": "Shop by category",
     "shopByCategorySubtitle": "Find the gear that matches how you train.",
     "fitnessCatalog": "All products",
-    "fitnessCatalogSubtitle": "Browse our full fitness catalog — switch currency in the header (RWF or USD).",
+    "fitnessCatalogSubtitle": "Browse our full fitness catalog. Switch currency in the header (RWF or USD).",
     "viewFullCatalog": "View all products",
     "allProducts": "All",
     "showingProducts": "{count} of {total} products",
@@ -243,7 +246,6 @@
     "estimatedTotal": "Estimated Total",
     "vatLine": "VAT ({rate}%)",
     "promoPlaceholder": "Promo code...",
-    "proceedToCheckout": "Proceed to Checkout",
     "clear": "Clear",
     "saveForLater": "Save for later",
     "saveForLaterSoon": "Save for later coming soon",
@@ -406,7 +408,7 @@
     "chooseAnotherDate": "Choose another date",
     "chooseAnotherDateHint": "We will confirm a later slot after you place the order.",
     "estimatedDelivery": "Estimated delivery",
-    "deliveryTomorrowLabel": "Tomorrow — {date}",
+    "deliveryTomorrowLabel": "Tomorrow, {date}",
     "deliveryFee": "Delivery fee",
     "contactSignedInHint": "Your account details are used for this order. Update them if needed, then continue.",
     "deliveryDateLabel": "Delivery date",
@@ -645,7 +647,7 @@
     "popularCollections": "Popular Collections"
   },
   "Footer": {
-    "description": "EMG Technology Ltd — premium fitness and gym equipment for home athletes and serious trainers in Rwanda.",
+    "description": "EMG Technology Ltd: premium fitness and gym equipment for home athletes and serious trainers in Rwanda.",
     "categories": "Shop",
     "customer": "Account",
     "contact": "Contact",

@@ -37,7 +37,7 @@
     "themeSystem": "Sisitemu"
   },
   "Hero": {
-    "banner": "Ibikoresho by'imyitozo byiza — gutanga mu Rwanda",
+    "banner": "Ibikoresho by'imyitozo byiza, gutanga mu Rwanda",
     "eyebrow": "EMG Technology Ltd",
     "title": "Imyitozo",
     "titleHighlight": "",
@@ -48,12 +48,12 @@
     "statCategories": "Ibyiciro 4",
     "statDelivery": "Gutanga mu Rwanda",
     "cardioTitle": "Imashini za cardio",
-    "cardioSubtitle": "Ellipticals, amapikipiki, rowers n'ibindi — gura ibikoresho bya cardio.",
+    "cardioSubtitle": "Ellipticals, amapikipiki, rowers n'ibindi. Gura ibikoresho bya cardio.",
     "strengthTitle": "Imbaraga",
     "strengthSubtitle": "Racks, dumbbells, barbells na kettlebells ku myitozo ikomeye."
   },
   "Promo": {
-    "freeDelivery": "Gutanga ku buntu mu Rwanda — hamagara ku bikoresho bikomeye"
+    "freeDelivery": "Gutanga ku buntu mu Rwanda. Hamagara ku bikoresho bikomeye"
   },
   "MobileNav": {
     "label": "Kugenda kuri telefone",
@@ -88,7 +88,10 @@
     "resultsFor": "Ibisubizo bya \"{query}\"",
     "resultsTitle": "Ibisubizo bya \"{query}\"",
     "metaDescription": "Shaka ibicuruzwa bihuye na \"{query}\" kuri {siteName}",
-    "metaCatalogDescription": "Shakisha mu bubiko bwacu kuri {siteName}"
+    "metaCatalogDescription": "Shakisha mu bubiko bwacu kuri {siteName}",
+    "noMatchTitle": "Nta \"{query}\" dufite",
+    "noMatchHint": "Ishakisha ryawe ryabitswe. Reba ibisa nk'ibyo hepfo, cyangwa gerageza ijambo rindi.",
+    "similarProducts": "Ibindi bishobora kukwiriye"
   },
   "Home": {
     "pageTitle": "Iduka ry'ibikoresho by'imyitozo",
@@ -97,7 +100,7 @@
     "shopByCategory": "Gura ukurikije icyiciro",
     "shopByCategorySubtitle": "Shaka ibikoresho bihuye n'imyitozo yawe.",
     "fitnessCatalog": "Ibicuruzwa byose",
-    "fitnessCatalogSubtitle": "Reba catalog yacu yose — hindura ifaranga hejuru (RWF cyangwa USD).",
+    "fitnessCatalogSubtitle": "Reba catalog yacu yose. Hindura ifaranga hejuru (RWF cyangwa USD).",
     "viewFullCatalog": "Reba ibicuruzwa byose",
     "allProducts": "Byose",
     "showingProducts": "{count} kuri {total} ibicuruzwa",
@@ -353,7 +356,7 @@
     "chooseAnotherDate": "Hitamo indi tariki",
     "chooseAnotherDateHint": "Tuzemeza igihe nyuma yo gutanga ikomande.",
     "estimatedDelivery": "Igihe cyitezwe",
-    "deliveryTomorrowLabel": "Ejo — {date}",
+    "deliveryTomorrowLabel": "Ejo, {date}",
     "deliveryFee": "Amafaranga yo kugeza",
     "contactSignedInHint": "Amakuru y'konti yawe akoreshwa kuri iyi komande.",
     "deliveryDateLabel": "Itariki yo kugezwa",
@@ -591,7 +594,7 @@
     "popularCollections": "Popular Collections"
   },
   "Footer": {
-    "description": "EMG Technology Ltd — premium fitness and gym equipment for home athletes and serious trainers in Rwanda.",
+    "description": "EMG Technology Ltd: premium fitness and gym equipment for home athletes and serious trainers in Rwanda.",
     "categories": "Shop",
     "customer": "Account",
     "contact": "Contact",

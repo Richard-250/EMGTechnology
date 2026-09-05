@@ -54,7 +54,7 @@ export function HomeFitnessCatalog({
                         No products available yet.
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 md:gap-3.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 md:gap-3.5 overflow-visible">
                         {displayProducts.map((product, i) => (
                             <ProductCard key={`home-product-${i}`} product={product} variant="compact" />
                         ))}

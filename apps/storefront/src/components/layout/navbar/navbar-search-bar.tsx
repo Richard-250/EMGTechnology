@@ -271,9 +271,23 @@ export function NavbarSearchBar({
                                     : t('suggestionsFor', {query: trimmed})}
                             </p>
                             {suggestions.length === 0 && !loadingSuggestions ? (
-                                <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-                                    {t('noSuggestions')}
-                                </p>
+                                <div className="px-4 py-6 text-center space-y-3">
+                                    <p className="text-sm text-muted-foreground">
+                                        {t('noSuggestions')}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        className="text-sm font-semibold text-electric hover:underline"
+                                        onMouseDown={e => e.preventDefault()}
+                                        onClick={() => {
+                                            addSearchHistory(trimmed);
+                                            setHistoryItems(getSearchHistory());
+                                            goTo(`/search?q=${encodeURIComponent(trimmed)}&sort=shuffle`);
+                                        }}
+                                    >
+                                        {t('viewAllResults', {query: trimmed})}
+                                    </button>
+                                </div>
                             ) : (
                                 <ul>
                                     {suggestions.map(item => (
@@ -315,9 +329,11 @@ export function NavbarSearchBar({
                                 type="button"
                                 className="w-full border-t border-border px-4 py-3 text-sm font-medium text-electric hover:bg-muted/40 transition-colors"
                                 onMouseDown={e => e.preventDefault()}
-                                onClick={() =>
-                                    goTo(`/search?q=${encodeURIComponent(trimmed)}`)
-                                }
+                                onClick={() => {
+                                    addSearchHistory(trimmed);
+                                    setHistoryItems(getSearchHistory());
+                                    goTo(`/search?q=${encodeURIComponent(trimmed)}&sort=shuffle`);
+                                }}
                             >
                                 {t('viewAllResults', {query: trimmed})}
                             </button>

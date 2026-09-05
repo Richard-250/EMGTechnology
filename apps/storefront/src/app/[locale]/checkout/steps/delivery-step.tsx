@@ -58,7 +58,7 @@ function isPickupMethod(name: string, code: string): boolean {
 function resolveDescription(name: string, code: string, apiDescription?: string | null): string {
     if (apiDescription?.trim()) return apiDescription.trim();
     if (isPickupMethod(name, code)) {
-        return `${COMPANY.legalName} — ${formatCompanyAddress()}`;
+        return `${COMPANY.legalName}, ${formatCompanyAddress()}`;
     }
     return name;
 }
@@ -124,7 +124,7 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
     const estimatedDateLabel = useMemo(() => {
         if (isPickup) return 'Ready for pickup in 1-2 hours';
         if (deliveryDateMode === 'ship-today') {
-            return `Today — ${todayLabel}`;
+            return `Today, ${todayLabel}`;
         }
         if (deliveryDateMode === 'next-day') {
             const d = new Date();
@@ -137,7 +137,7 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
             });
         }
         if (selectedDate) {
-            return `Scheduled — ${selectedDate.toLocaleDateString('en-GB', {
+            return `Scheduled, ${selectedDate.toLocaleDateString('en-GB', {
                 weekday: 'short',
                 day: 'numeric',
                 month: 'short',
@@ -252,7 +252,7 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
                 <div className="rounded-2xl border border-border/80 bg-muted/30 p-4 md:p-5 space-y-3">
                     <div className="flex items-center gap-2 text-foreground font-bold text-base">
                         <Building2 className="size-5 text-electric" />
-                        <h4>{COMPANY.legalName} — Store Pickup Location</h4>
+                        <h4>{COMPANY.legalName} Store Pickup Location</h4>
                     </div>
                     <div className="text-xs md:text-sm text-muted-foreground space-y-1.5 pl-7">
                         <p className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
                         </p>
                         <p className="flex items-center gap-2">
                             <Clock className="size-4 text-electric shrink-0" />
-                            <span>Open Monday – Saturday: 8:00 AM – 6:00 PM</span>
+                            <span>Open Monday to Saturday: 8:00 AM to 6:00 PM</span>
                         </p>
                         <p className="flex items-center gap-2">
                             <Phone className="size-4 text-electric shrink-0" />
@@ -281,7 +281,7 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
                         <p className="font-bold text-sm md:text-base text-foreground">{t('deliveryDate')}</p>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        Recommended: <strong>Today — {todayLabel}</strong> — you can choose another date if needed.
+                        Recommended: <strong>Today, {todayLabel}</strong>. You can choose another date if needed.
                     </p>
 
                     <RadioGroup

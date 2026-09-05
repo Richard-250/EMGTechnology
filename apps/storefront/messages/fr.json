@@ -37,7 +37,7 @@
     "themeSystem": "Système"
   },
   "Hero": {
-    "banner": "Équipement fitness premium — livraison au Rwanda",
+    "banner": "Équipement fitness premium, livraison au Rwanda",
     "eyebrow": "EMG Technology Ltd",
     "title": "Fitness",
     "titleHighlight": "",
@@ -48,12 +48,12 @@
     "statCategories": "4 catégories",
     "statDelivery": "Livraison Rwanda",
     "cardioTitle": "Machines cardio",
-    "cardioSubtitle": "Vélos, elliptiques, rameurs et plus — équipement cardio.",
+    "cardioSubtitle": "Vélos, elliptiques, rameurs et plus. Équipement cardio.",
     "strengthTitle": "Musculation",
     "strengthSubtitle": "Racks, haltères, barres et kettlebells pour vos entraînements."
   },
   "Promo": {
-    "freeDelivery": "Livraison gratuite au Rwanda — appelez-nous pour les gros équipements"
+    "freeDelivery": "Livraison gratuite au Rwanda. Appelez-nous pour les gros équipements"
   },
   "MobileNav": {
     "label": "Navigation mobile",
@@ -88,7 +88,10 @@
     "resultsFor": "Résultats pour \"{query}\"",
     "resultsTitle": "Résultats pour \"{query}\"",
     "metaDescription": "Trouvez des produits correspondant à \"{query}\" sur {siteName}",
-    "metaCatalogDescription": "Parcourez notre catalogue sur {siteName}"
+    "metaCatalogDescription": "Parcourez notre catalogue sur {siteName}",
+    "noMatchTitle": "Nous n'avons pas « {query} »",
+    "noMatchHint": "Votre recherche a été enregistrée. Découvrez des produits similaires ci-dessous, ou essayez un autre mot-clé.",
+    "similarProducts": "Produits similaires"
   },
   "Home": {
     "pageTitle": "Magasin d'équipement fitness",
@@ -97,7 +100,7 @@
     "shopByCategory": "Acheter par catégorie",
     "shopByCategorySubtitle": "Trouvez le matériel adapté à votre entraînement.",
     "fitnessCatalog": "Tous les produits",
-    "fitnessCatalogSubtitle": "Parcourez notre catalogue — changez la devise dans l'en-tête (RWF ou USD).",
+    "fitnessCatalogSubtitle": "Parcourez notre catalogue. Changez la devise dans l'en-tête (RWF ou USD).",
     "viewFullCatalog": "Voir tous les produits",
     "allProducts": "Tout",
     "showingProducts": "{count} sur {total} produits",
@@ -353,7 +356,7 @@
     "chooseAnotherDate": "Choisir une autre date",
     "chooseAnotherDateHint": "Nous confirmerons un créneau après la commande.",
     "estimatedDelivery": "Livraison estimée",
-    "deliveryTomorrowLabel": "Demain — {date}",
+    "deliveryTomorrowLabel": "Demain, {date}",
     "deliveryFee": "Frais de livraison",
     "contactSignedInHint": "Les informations de votre compte sont utilisées pour cette commande.",
     "deliveryDateLabel": "Date de livraison",
@@ -591,7 +594,7 @@
     "popularCollections": "Collections populaires"
   },
   "Footer": {
-    "description": "EMG Technology Ltd — premium fitness and gym equipment for home athletes and serious trainers in Rwanda.",
+    "description": "EMG Technology Ltd: premium fitness and gym equipment for home athletes and serious trainers in Rwanda.",
     "categories": "Shop",
     "customer": "Account",
     "contact": "Contact",

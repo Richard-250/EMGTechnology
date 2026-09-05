@@ -95,15 +95,17 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
         <>
             <div
                 className={cn(
-                    'group relative block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none',
+                    'group relative z-0 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none',
+                    'hover:z-30',
                     compact
-                        ? 'bg-white dark:bg-card rounded-xl overflow-hidden border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-200'
-                        : 'overflow-hidden rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-300 bg-card',
+                        ? 'bg-white dark:bg-card rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-200'
+                        : 'rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-300 bg-card',
+                    'overflow-visible',
                 )}
             >
                 {/* Clicking on the product card takes user directly to full dedicated product page */}
                 <Link href={`/product/${data.slug}`} className="block">
-                    <div className="relative bg-muted overflow-hidden aspect-square">
+                    <div className="relative bg-muted overflow-hidden aspect-square rounded-t-xl">
                         {discount != null && (
                             <span className="absolute top-2 left-2 z-10 rounded-md bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5 shadow-xs pointer-events-none">
                                 -{discount}%
@@ -192,10 +194,12 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                     </div>
                 </Link>
 
-                {/* Desktop hover actions */}
+                {/* Desktop hover actions: overlay so grid siblings do not reflow */}
                 <div
                     className={cn(
-                        'hidden lg:group-hover:flex flex-col gap-1.5 px-2 pb-2 pt-1 border-t border-border/50 bg-card',
+                        'pointer-events-none absolute left-0 right-0 top-full z-40 hidden flex-col gap-1.5',
+                        'rounded-b-xl border border-t-0 border-border/80 bg-card px-2 pb-2 pt-1 shadow-lg',
+                        'lg:group-hover:pointer-events-auto lg:group-hover:flex',
                     )}
                 >
                     <Button

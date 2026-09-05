@@ -39,7 +39,7 @@ export default function ReviewStep({onEditStep, onPayNow}: ReviewStepProps) {
             label: t('contact'),
             value: order.customer
                 ? `${order.customer.firstName} ${order.customer.lastName} · ${order.customer.emailAddress}`
-                : '—',
+                : 'N/A',
             onEdit: () => onEditStep('contact'),
         },
         {
@@ -61,7 +61,7 @@ export default function ReviewStep({onEditStep, onPayNow}: ReviewStepProps) {
         {
             key: 'date',
             label: t('deliveryDateLabel'),
-            value: orderDeliveryDate || '—',
+            value: orderDeliveryDate || 'N/A',
             onEdit: () => onEditStep('delivery'),
         },
     ];
