@@ -197,7 +197,7 @@
     }
   },
   "Sort": {
-    "shuffle": "Featured mix",
+    "shuffle": "Recommended",
     "newest": "Newest first",
     "nameAsc": "Name: A to Z",
     "nameDesc": "Name: Z to A",

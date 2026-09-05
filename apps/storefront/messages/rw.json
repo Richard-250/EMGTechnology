@@ -193,7 +193,8 @@
     "nameDesc": "Name: Z to A",
     "priceAsc": "Price: Low to High",
     "priceDesc": "Price: High to Low",
-    "placeholder": "Sort by"
+    "placeholder": "Sort by",
+    "shuffle": "Byasabwa"
   },
   "Filters": {
     "title": "Filters",

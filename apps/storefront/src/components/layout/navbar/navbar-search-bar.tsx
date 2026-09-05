@@ -12,13 +12,14 @@ import {resolveProductImage} from '@/lib/product-images';
 import type {SerializedProductCard} from '@/lib/product-price';
 import {
     addSearchHistory,
-    blendProductsWithSearchHistory,
     clearSearchHistory,
     getSearchHistory,
     removeSearchHistoryItem,
     setSearchHistoryOwner,
     type SearchHistoryEntry,
 } from '@/lib/search-history';
+import {setProductInteractionOwner} from '@/lib/product-interactions';
+import {rankPlainProductsForDisplay} from '@/lib/product-ranking';
 import {toast} from 'sonner';
 
 interface BrowseCategory {
@@ -75,6 +76,7 @@ export function NavbarSearchBar({
 
     useEffect(() => {
         setSearchHistoryOwner(customerId);
+        setProductInteractionOwner(customerId);
         setHistoryItems(getSearchHistory());
     }, [customerId]);
 
@@ -100,11 +102,10 @@ export function NavbarSearchBar({
             }
 
             const terms = history.map(h => h.query);
-            const fromCatalog = blendProductsWithSearchHistory(
-                catalogPool,
-                item => item.productName,
-                terms,
-            ).slice(0, 6);
+            const fromCatalog = rankPlainProductsForDisplay(catalogPool, {
+                scope: 'search-dropdown-history',
+                historyTerms: terms,
+            }).slice(0, 6);
 
             if (fromCatalog.length >= 3) {
                 setHistoryProducts(fromCatalog);
@@ -122,10 +123,13 @@ export function NavbarSearchBar({
                 const params = new URLSearchParams({q: latest, locale});
                 const res = await fetch(`/api/search/suggest?${params}`);
                 const data = (await res.json()) as {items: SerializedProductCard[]};
-                const merged = blendProductsWithSearchHistory(
+                const merged = rankPlainProductsForDisplay(
                     [...fromCatalog, ...(data.items ?? [])],
-                    item => item.productName,
-                    terms,
+                    {
+                        scope: 'search-dropdown-history',
+                        historyTerms: terms,
+                        searchTerm: latest,
+                    },
                 );
                 const seen = new Set<string>();
                 const unique = merged.filter(item => {
@@ -165,9 +169,11 @@ export function NavbarSearchBar({
                 const items = data.items ?? [];
                 const historyTerms = getSearchHistory().map(h => h.query);
                 setSuggestions(
-                    historyTerms.length
-                        ? blendProductsWithSearchHistory(items, i => i.productName, historyTerms)
-                        : items,
+                    rankPlainProductsForDisplay(items, {
+                        scope: 'search-suggest',
+                        searchTerm: term.trim(),
+                        historyTerms,
+                    }),
                 );
             } catch {
                 setSuggestions([]);
@@ -226,11 +232,10 @@ export function NavbarSearchBar({
         e.stopPropagation();
         setHistoryItems(removeSearchHistoryItem(query));
         setHistoryProducts(prev =>
-            blendProductsWithSearchHistory(
-                prev,
-                item => item.productName,
-                getSearchHistory().map(h => h.query),
-            ),
+            rankPlainProductsForDisplay(prev, {
+                scope: 'search-dropdown-history',
+                historyTerms: getSearchHistory().map(h => h.query),
+            }),
         );
     };
 

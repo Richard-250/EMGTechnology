@@ -18,3 +18,9 @@ cd apps/storefront && npm run serve:only
 ```
 
 Open http://localhost:3002/en/search
+
+## Product ranking
+
+Default product order uses a controlled multi-signal ranking algorithm
+(not random shuffle on every refresh). See
+[`docs/PRODUCT_RANKING.md`](./docs/PRODUCT_RANKING.md).

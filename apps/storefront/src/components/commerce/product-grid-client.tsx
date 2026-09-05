@@ -6,13 +6,15 @@ import {Pagination} from '@/components/shared/pagination';
 import {SortDropdown} from './sort-dropdown';
 import {SearchProductsQuery} from '@/lib/vendure/queries';
 import {ProductCardFragment} from '@/lib/vendure/fragments';
-import {getShuffleSeed, shuffleProducts, sortProductsNewestFirst} from '@/lib/product-sort';
+import {orderProductsForDisplay, sortProductsNewestFirst} from '@/lib/product-sort';
+import {addSearchHistory, getSearchHistoryTerms} from '@/lib/search-history';
 import {
-    addSearchHistory,
-    blendProductsWithSearchHistory,
-    getSearchHistoryTerms,
-} from '@/lib/search-history';
-import {useEffect, useMemo} from 'react';
+    getProductInteractions,
+    type ProductInteractionMap,
+} from '@/lib/product-interactions';
+import {useEffect, useMemo, useState} from 'react';
+
+const EMPTY_INTERACTIONS: ProductInteractionMap = {views: {}, clicks: {}};
 
 interface ProductGridClientProps {
     items: ResultOf<typeof SearchProductsQuery>['search']['items'];
@@ -43,36 +45,38 @@ export function ProductGridClient({
     similarHeading,
     similarItems = [],
 }: ProductGridClientProps) {
+    const [historyTerms, setHistoryTerms] = useState<string[]>([]);
+    const [interactions, setInteractions] = useState<ProductInteractionMap>(EMPTY_INTERACTIONS);
+
+    useEffect(() => {
+        setHistoryTerms(getSearchHistoryTerms());
+        setInteractions(getProductInteractions());
+    }, []);
+
     const products = useMemo(() => {
-        let list = items;
+        if (sortKey === 'newest') {
+            return sortProductsNewestFirst(items);
+        }
         if (sortKey === 'shuffle') {
-            list = shuffleProducts(items, getShuffleSeed(`search-${currentPage}`));
-        } else if (sortKey === 'newest') {
-            list = sortProductsNewestFirst(items);
-        }
-
-        // Soft personalization from this visitor's history (client-only; no extra API)
-        if (sortKey === 'shuffle' && !searchTerm) {
-            const historyTerms = getSearchHistoryTerms();
-            list = blendProductsWithSearchHistory(
-                list,
-                item => readFragment(ProductCardFragment, item).productName,
+            return orderProductsForDisplay(items, {
+                scope: `search-page-${currentPage}`,
+                searchTerm,
                 historyTerms,
-            );
+                interactions,
+            });
         }
-
-        return list;
-    }, [items, sortKey, currentPage, searchTerm]);
+        return items;
+    }, [items, sortKey, currentPage, searchTerm, historyTerms, interactions]);
 
     const similarDisplay = useMemo(() => {
         if (!similarItems.length) return similarItems;
-        const historyTerms = getSearchHistoryTerms();
-        return blendProductsWithSearchHistory(
-            similarItems,
-            item => readFragment(ProductCardFragment, item).productName,
+        return orderProductsForDisplay(similarItems, {
+            scope: 'search-similar',
+            searchTerm,
             historyTerms,
-        );
-    }, [similarItems]);
+            interactions,
+        });
+    }, [similarItems, searchTerm, historyTerms, interactions]);
 
     const totalPages = Math.ceil(totalItems / take);
 
@@ -103,7 +107,15 @@ export function ProductGridClient({
                         </p>
                         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 overflow-visible">
                             {similarDisplay.map((product, i) => (
-                                <ProductCard key={'similar-' + i} product={product} />
+                                <ProductCard
+                                    key={
+                                        'similar-' +
+                                        readFragment(ProductCardFragment, product).productId +
+                                        '-' +
+                                        i
+                                    }
+                                    product={product}
+                                />
                             ))}
                         </div>
                     </div>
@@ -121,7 +133,15 @@ export function ProductGridClient({
 
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 overflow-visible">
                 {products.map((product, i) => (
-                    <ProductCard key={'product-grid-item' + i} product={product} />
+                    <ProductCard
+                        key={
+                            'product-grid-item-' +
+                            readFragment(ProductCardFragment, product).productId +
+                            '-' +
+                            i
+                        }
+                        product={product}
+                    />
                 ))}
             </div>
 

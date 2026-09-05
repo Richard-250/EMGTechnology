@@ -1,17 +1,19 @@
 'use client';
 
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {FragmentOf, readFragment} from '@/graphql';
 import {ProductCardFragment} from '@/lib/vendure/fragments';
-import {getShuffleSeed, shuffleProducts} from '@/lib/product-sort';
+import {orderProductsForDisplay} from '@/lib/product-sort';
+import {getSearchHistoryTerms} from '@/lib/search-history';
 import {
-    blendProductsWithSearchHistory,
-    getSearchHistoryTerms,
-} from '@/lib/search-history';
+    getProductInteractions,
+    type ProductInteractionMap,
+} from '@/lib/product-interactions';
 import {ProductCard} from '@/components/commerce/product-card';
 import {Button} from '@/components/ui/button';
 
 const PAGE_SIZE = 24;
+const EMPTY_INTERACTIONS: ProductInteractionMap = {views: {}, clicks: {}};
 
 interface HomeFitnessCatalogProps {
     products: FragmentOf<typeof ProductCardFragment>[];
@@ -31,16 +33,22 @@ export function HomeFitnessCatalog({
     labels,
 }: HomeFitnessCatalogProps) {
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    // Apply visitor signals after mount to keep SSR/client hydration stable
+    const [historyTerms, setHistoryTerms] = useState<string[]>([]);
+    const [interactions, setInteractions] = useState<ProductInteractionMap>(EMPTY_INTERACTIONS);
+
+    useEffect(() => {
+        setHistoryTerms(getSearchHistoryTerms());
+        setInteractions(getProductInteractions());
+    }, []);
 
     const displayProducts = useMemo(() => {
-        const shuffled = shuffleProducts(products, getShuffleSeed('home-catalog'));
-        const historyTerms = getSearchHistoryTerms();
-        return blendProductsWithSearchHistory(
-            shuffled,
-            item => readFragment(ProductCardFragment, item).productName,
+        return orderProductsForDisplay(products, {
+            scope: 'home-catalog',
             historyTerms,
-        );
-    }, [products]);
+            interactions,
+        });
+    }, [products, historyTerms, interactions]);
 
     const visible = displayProducts.slice(0, visibleCount);
     const hasMore = visibleCount < displayProducts.length;

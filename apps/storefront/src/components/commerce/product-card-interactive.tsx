@@ -20,6 +20,7 @@ import {useCartConfirmation} from '@/components/commerce/cart-confirmation-provi
 import {toast} from 'sonner';
 import {Button} from '@/components/ui/button';
 import {ProductPreviewModal} from '@/components/commerce/product-preview-modal';
+import {recordProductClick} from '@/lib/product-interactions';
 
 export interface ProductCardData {
     productId: string;
@@ -104,7 +105,11 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                 )}
             >
                 {/* Clicking on the product card takes user directly to full dedicated product page */}
-                <Link href={`/product/${data.slug}`} className="block">
+                <Link
+                    href={`/product/${data.slug}`}
+                    className="block"
+                    onClick={() => recordProductClick(data.productId)}
+                >
                     <div className="relative bg-muted overflow-hidden aspect-square rounded-t-xl">
                         {discount != null && (
                             <span className="absolute top-2 left-2 z-10 rounded-md bg-electric text-electric-foreground text-[10px] font-bold px-1.5 py-0.5 shadow-xs pointer-events-none">
