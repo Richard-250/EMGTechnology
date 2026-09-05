@@ -105,7 +105,7 @@ export class EmgExchangeRateService {
             if (skip >= totalItems) break;
         }
 
-        this.logger.info(
+        Logger.info(
             `Recalculated ${updated} variant price(s) at rate ${rate} RWF/USD (${direction})`,
             'EmgExchangeRateService',
         );

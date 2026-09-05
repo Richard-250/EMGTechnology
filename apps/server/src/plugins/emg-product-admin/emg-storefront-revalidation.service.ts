@@ -44,6 +44,7 @@ export class EmgStorefrontRevalidationService implements OnModuleInit {
         isDeleted = false,
     ) {
         try {
+            // Broad listing tags cover home, deals, search, and category caches.
             const tags = new Set<string>([
                 'products',
                 'featured',
@@ -51,32 +52,15 @@ export class EmgStorefrontRevalidationService implements OnModuleInit {
                 'home-catalog',
                 'category-products',
                 'search',
+                'collections',
             ]);
 
             if (!isDeleted) {
-                const product = await this.productService.findOne(ctx, productId, [
-                    'translations',
-                    'collections',
-                    'collections.translations',
-                ]);
-                if (product) {
-                    const slug = product.translations?.[0]?.slug;
-                    if (slug) {
-                        tags.add(`product-${slug}`);
-                    }
-                    for (const collection of product.collections ?? []) {
-                        const collectionSlug =
-                            (collection as {translations?: Array<{slug?: string}>}).translations?.[0]
-                                ?.slug || (collection as {slug?: string}).slug;
-                        if (collectionSlug) {
-                            tags.add(`collection-${collectionSlug}`);
-                            tags.add(`related-products-${collectionSlug}`);
-                        }
-                    }
+                const product = await this.productService.findOne(ctx, productId, ['translations']);
+                const slug = product?.translations?.[0]?.slug;
+                if (slug) {
+                    tags.add(`product-${slug}`);
                 }
-            } else {
-                // Broad bust so deleted products disappear from listings quickly
-                tags.add('collections');
             }
 
             this.queueRevalidation([...tags]);
@@ -109,6 +93,7 @@ export class EmgStorefrontRevalidationService implements OnModuleInit {
                     'home-catalog',
                     'category-products',
                     'search',
+                    'collections',
                 ]);
             }
         } catch (err) {
