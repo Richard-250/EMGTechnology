@@ -2,10 +2,10 @@ import type {Metadata} from 'next';
 import {Suspense} from 'react';
 import {getTranslations} from 'next-intl/server';
 import {getRouteLocale} from '@/i18n/server';
-import {SearchResults} from "@/app/[locale]/search/search-results";
-import {SearchTerm, SearchTermSkeleton} from "@/app/[locale]/search/search-term";
-import {SearchResultsSkeleton} from "@/components/shared/skeletons/search-results-skeleton";
-import {VisualSearchBanner} from '@/components/commerce/visual-search-banner';
+import {SearchResults} from '@/app/[locale]/search/search-results';
+import {SearchTerm, SearchTermSkeleton} from '@/app/[locale]/search/search-term';
+import {SearchResultsSkeleton} from '@/components/shared/skeletons/search-results-skeleton';
+import {VisualSearchResults} from '@/components/commerce/visual-search-results';
 import {SITE_NAME, noIndexRobots} from '@/lib/metadata';
 
 export async function generateMetadata({
@@ -15,10 +15,13 @@ export async function generateMetadata({
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'Search'});
     const searchQuery = resolvedParams.q as string | undefined;
+    const isVisual = resolvedParams.visual === '1';
 
-    const title = searchQuery
-        ? t('resultsTitle', {query: searchQuery})
-        : t('pageTitle');
+    const title = isVisual
+        ? t('visualSearchPageTitle')
+        : searchQuery
+          ? t('resultsTitle', {query: searchQuery})
+          : t('pageTitle');
 
     return {
         title,
@@ -32,16 +35,23 @@ export async function generateMetadata({
 export default async function SearchPage({searchParams}: PageProps<'/[locale]/search'>) {
     const resolvedParams = await searchParams;
     const isVisualSearch = resolvedParams.visual === '1';
+    const visualKey = String(resolvedParams.t ?? resolvedParams.visual ?? '1');
 
     return (
         <div className="container mx-auto px-4 py-4 md:py-8">
-            {isVisualSearch && <VisualSearchBanner />}
-            <Suspense fallback={<SearchTermSkeleton/>}>
-                <SearchTerm searchParams={searchParams}/>
+            <Suspense fallback={<SearchTermSkeleton />}>
+                <SearchTerm searchParams={searchParams} />
             </Suspense>
-            <Suspense fallback={<SearchResultsSkeleton />}>
-                <SearchResults searchParams={searchParams}/>
-            </Suspense>
+
+            {isVisualSearch ? (
+                <Suspense fallback={<SearchResultsSkeleton />}>
+                    <VisualSearchResults searchKey={visualKey} />
+                </Suspense>
+            ) : (
+                <Suspense fallback={<SearchResultsSkeleton />}>
+                    <SearchResults searchParams={searchParams} />
+                </Suspense>
+            )}
         </div>
     );
 }

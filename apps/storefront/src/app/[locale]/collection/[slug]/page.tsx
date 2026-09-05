@@ -181,7 +181,13 @@ export default async function CollectionPage({params, searchParams}: PageProps<'
                 {/* Product Grid */}
                 <div className="lg:col-span-3">
                     <Suspense fallback={<ProductGridSkeleton />}>
-                        <ProductGrid productDataPromise={productDataPromise} currentPage={page} take={12} sortKey={sortKey} />
+                        <ProductGrid
+                            productDataPromise={productDataPromise}
+                            currentPage={page}
+                            take={12}
+                            sortKey={sortKey}
+                            collectionSlug={slug}
+                        />
                     </Suspense>
                 </div>
             </div>

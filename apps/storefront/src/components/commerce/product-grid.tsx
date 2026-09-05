@@ -12,6 +12,7 @@ interface ProductGridProps {
     take: number;
     sortKey?: string;
     searchTerm?: string;
+    collectionSlug?: string;
     similarItems?: ResultOf<typeof SearchProductsQuery>['search']['items'];
 }
 
@@ -21,11 +22,13 @@ export async function ProductGrid({
     take,
     sortKey = 'shuffle',
     searchTerm,
+    collectionSlug,
     similarItems = [],
 }: ProductGridProps) {
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'Product'});
     const tSearch = await getTranslations({locale, namespace: 'Search'});
+    const tHome = await getTranslations({locale, namespace: 'Home'});
     const result = await productDataPromise;
     const searchResult = result.data.search;
 
@@ -36,9 +39,10 @@ export async function ProductGrid({
             currentPage={currentPage}
             take={take}
             sortKey={sortKey}
-            productCountLabel={t('productCount', {count: searchResult.totalItems})}
+            loadMoreLabel={tHome('loadMore')}
             noProductsLabel={t('noProductsFound')}
             searchTerm={searchTerm}
+            collectionSlug={collectionSlug}
             noMatchTitle={
                 searchTerm
                     ? tSearch('noMatchTitle', {query: searchTerm})

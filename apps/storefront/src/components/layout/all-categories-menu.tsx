@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from 'react';
 import Image from 'next/image';
-import {Link} from '@/i18n/navigation';
+import {Link, useRouter} from '@/i18n/navigation';
 import {
     ChevronRight,
     Dumbbell,
@@ -22,8 +22,6 @@ import {Price} from '@/components/commerce/price';
 import {resolveProductImage} from '@/lib/product-images';
 import {CATEGORY_SUB_LINKS} from '@/lib/search-catalog';
 import type {SerializedProductCard} from '@/lib/product-price';
-
-import {ProductPreviewModal} from '@/components/commerce/product-preview-modal';
 
 export interface CategoryMenuItem {
     id: string;
@@ -61,61 +59,39 @@ function CategoryIcon({slug}: {slug: string}) {
 
 function MegaMenuProductCard({
     product,
-    onNavigate,
+    onProductNavigate,
 }: {
     product: SerializedProductCard;
-    onNavigate?: () => void;
+    onProductNavigate: (href: string) => void;
 }) {
-    const [previewOpen, setPreviewOpen] = useState(false);
-
-    const modalData = {
-        productId: product.productId,
-        productVariantId: product.productVariantId,
-        productName: product.productName,
-        slug: product.slug,
-        imageSrc: resolveProductImage(product.image, product.slug),
-        currencyCode: product.currencyCode,
-        price: product.price,
-        priceMin: product.priceMin,
-        priceMax: product.priceMax,
-        isPriceRange: false,
-    };
-
     return (
-        <>
-            <button
-                type="button"
-                onClick={() => {
-                    setPreviewOpen(true);
-                    onNavigate?.();
-                }}
-                className="group shrink-0 w-[5.5rem] text-left cursor-pointer focus-visible:outline-none"
-            >
-                <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-1 border border-border/50 group-hover:border-electric/50 transition-colors">
-                    <Image
-                        src={modalData.imageSrc}
-                        alt=""
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-200"
-                        sizes="88px"
-                    />
-                </div>
-                <p className="text-[10px] leading-tight line-clamp-2 text-muted-foreground group-hover:text-foreground transition-colors">
-                    {product.productName}
+        <button
+            type="button"
+            onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                onProductNavigate(`/product/${product.slug}`);
+            }}
+            className="group shrink-0 w-[5.5rem] text-left cursor-pointer focus-visible:outline-none"
+        >
+            <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-1 border border-border/50 group-hover:border-electric/50 transition-colors">
+                <Image
+                    src={resolveProductImage(product.image, product.slug)}
+                    alt={product.productName}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-200"
+                    sizes="88px"
+                />
+            </div>
+            <p className="text-[10px] leading-tight line-clamp-2 text-muted-foreground group-hover:text-foreground transition-colors">
+                {product.productName}
+            </p>
+            {product.price != null && (
+                <p className="text-[10px] font-semibold text-electric mt-0.5">
+                    <Price value={product.price} currencyCode={product.currencyCode} />
                 </p>
-                {product.price != null && (
-                    <p className="text-[10px] font-semibold text-electric mt-0.5">
-                        <Price value={product.price} currencyCode={product.currencyCode} />
-                    </p>
-                )}
-            </button>
-
-            <ProductPreviewModal
-                open={previewOpen}
-                onOpenChange={setPreviewOpen}
-                initialData={modalData}
-            />
-        </>
+            )}
+        </button>
     );
 }
 
@@ -125,12 +101,14 @@ function CategoryMegaPanel({
     viewAllLabel,
     recommendedLabel,
     onNavigate,
+    onProductNavigate,
 }: {
     category: CategoryMenuItem;
     products: SerializedProductCard[];
     viewAllLabel: string;
     recommendedLabel: string;
     onNavigate?: () => void;
+    onProductNavigate: (href: string) => void;
 }) {
     const subLinks = CATEGORY_SUB_LINKS[category.slug] ?? [];
 
@@ -155,7 +133,7 @@ function CategoryMegaPanel({
                             <MegaMenuProductCard
                                 key={product.productId}
                                 product={product}
-                                onNavigate={onNavigate}
+                                onProductNavigate={onProductNavigate}
                             />
                         ))}
                     </div>
@@ -243,7 +221,8 @@ export function AllCategoriesMenu({
     className,
     variant = 'bar',
 }: AllCategoriesMenuProps) {
-    const {open, setOpen, onEnter, onLeave} = useHoverOpen();
+    const router = useRouter();
+    const {open, setOpen, onEnter, onLeave, beginNavigation} = useHoverOpen();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [activeSlug, setActiveSlug] = useState(categories[0]?.slug ?? '');
 
@@ -261,6 +240,13 @@ export function AllCategoriesMenu({
     }
 
     const isSubnav = variant === 'subnav';
+
+    const navigateToProduct = (href: string) => {
+        // Close menus without racing the soft navigation (was causing flash then bounce-back).
+        beginNavigation();
+        setMobileOpen(false);
+        router.push(href);
+    };
 
     const triggerClassName = cn(
         'inline-flex shrink-0 items-center gap-2 font-medium transition-all duration-200',
@@ -292,6 +278,7 @@ export function AllCategoriesMenu({
                         viewAllLabel={labels.viewAll}
                         recommendedLabel={labels.recommended}
                         onNavigate={() => setOpen(false)}
+                        onProductNavigate={navigateToProduct}
                     />
                 </div>
             )}
@@ -300,7 +287,10 @@ export function AllCategoriesMenu({
 
     return (
         <>
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={open} onOpenChange={next => {
+                // Ignore external close while a product navigation is in flight
+                setOpen(next);
+            }}>
                 <div
                     className="hidden md:block"
                     onMouseEnter={onEnter}
@@ -363,6 +353,7 @@ export function AllCategoriesMenu({
                                 viewAllLabel={labels.viewAll}
                                 recommendedLabel={labels.recommended}
                                 onNavigate={() => setMobileOpen(false)}
+                                onProductNavigate={navigateToProduct}
                             />
                         </div>
                     )}

@@ -37,3 +37,9 @@ export function generateProductSku(params: {
 
     return `EMG-${productPart}-${variantPart}-${suffix}`.replace(/--+/g, '-');
 }
+
+export function shouldAutoGenerateSku(sku?: string | null): boolean {
+    const normalized = (sku ?? '').trim();
+    return !normalized || normalized === 'AUTO' || normalized.startsWith('TEMP-');
+}
+

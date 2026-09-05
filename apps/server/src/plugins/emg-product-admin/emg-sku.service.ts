@@ -32,12 +32,13 @@ export class EmgSkuService implements OnModuleInit {
 
     private async assignSkusOnCreate(ctx: RequestContext, variants: ProductVariant[]) {
         for (const variant of variants) {
+            // Never overwrite a real existing SKU
             if (!shouldAutoGenerateSku(variant.sku)) {
                 continue;
             }
 
             try {
-                const sku = await this.buildSkuForVariant(ctx, variant.id);
+                const sku = await this.buildUniqueSkuForVariant(ctx, variant.id);
                 if (!sku) {
                     continue;
                 }
@@ -53,7 +54,7 @@ export class EmgSkuService implements OnModuleInit {
         }
     }
 
-    async buildSkuForVariant(ctx: RequestContext, variantId: string | number): Promise<string | null> {
+    async buildUniqueSkuForVariant(ctx: RequestContext, variantId: string | number): Promise<string | null> {
         const variant = await this.connection.getRepository(ctx, ProductVariant).findOne({
             where: {id: variantId as never},
             relations: ['product', 'product.translations', 'options', 'translations'],
@@ -67,12 +68,55 @@ export class EmgSkuService implements OnModuleInit {
         const productTranslation = product?.translations?.[0];
         const variantTranslation = variant.translations?.[0];
 
-        return generateProductSku({
+        const baseSku = generateProductSku({
             productName: productTranslation?.name ?? product?.name,
             productSlug: productTranslation?.slug,
             variantName: variantTranslation?.name ?? variant.name,
             optionCodes: variant.options?.map(option => option.code),
             variantId: variant.id,
         });
+
+        return this.ensureUniqueSku(ctx, baseSku, String(variant.id));
+    }
+
+    /** Kept for dashboard compatibility */
+    async buildSkuForVariant(ctx: RequestContext, variantId: string | number): Promise<string | null> {
+        return this.buildUniqueSkuForVariant(ctx, variantId);
+    }
+
+    private async ensureUniqueSku(
+        ctx: RequestContext,
+        baseSku: string,
+        excludeVariantId: string,
+    ): Promise<string> {
+        let candidate = baseSku;
+        let attempt = 2;
+
+        while (await this.skuTakenByOtherVariant(ctx, candidate, excludeVariantId)) {
+            candidate = `${baseSku}-${attempt}`;
+            attempt += 1;
+            if (attempt > 200) {
+                candidate = `${baseSku}-${Date.now().toString(36).toUpperCase()}`;
+                break;
+            }
+        }
+
+        return candidate;
+    }
+
+    private async skuTakenByOtherVariant(
+        ctx: RequestContext,
+        sku: string,
+        excludeVariantId: string,
+    ): Promise<boolean> {
+        const existing = await this.connection
+            .getRepository(ctx, ProductVariant)
+            .createQueryBuilder('variant')
+            .select(['variant.id', 'variant.sku'])
+            .where('variant.sku = :sku', {sku})
+            .andWhere('variant.id != :excludeVariantId', {excludeVariantId})
+            .andWhere('variant.deletedAt IS NULL')
+            .getOne();
+        return Boolean(existing);
     }
 }

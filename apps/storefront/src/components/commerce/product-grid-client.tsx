@@ -2,7 +2,7 @@
 
 import {ResultOf, readFragment} from '@/graphql';
 import {ProductCard} from './product-card';
-import {Pagination} from '@/components/shared/pagination';
+import {ProductCardInteractive} from './product-card-interactive';
 import {SortDropdown} from './sort-dropdown';
 import {SearchProductsQuery} from '@/lib/vendure/queries';
 import {ProductCardFragment} from '@/lib/vendure/fragments';
@@ -12,7 +12,13 @@ import {
     getProductInteractions,
     type ProductInteractionMap,
 } from '@/lib/product-interactions';
-import {useEffect, useMemo, useState} from 'react';
+import {resolveProductImage} from '@/lib/product-images';
+import type {SerializedProductCard} from '@/lib/product-price';
+import {Button} from '@/components/ui/button';
+import {Loader2} from 'lucide-react';
+import {useLocale} from 'next-intl';
+import {useSearchParams} from 'next/navigation';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 const EMPTY_INTERACTIONS: ProductInteractionMap = {views: {}, clicks: {}};
 
@@ -22,9 +28,10 @@ interface ProductGridClientProps {
     currentPage: number;
     take: number;
     sortKey: string;
-    productCountLabel: string;
+    loadMoreLabel: string;
     noProductsLabel: string;
     searchTerm?: string;
+    collectionSlug?: string;
     noMatchTitle?: string;
     noMatchHint?: string;
     similarHeading?: string;
@@ -37,21 +44,33 @@ export function ProductGridClient({
     currentPage,
     take,
     sortKey,
-    productCountLabel,
+    loadMoreLabel,
     noProductsLabel,
     searchTerm,
+    collectionSlug,
     noMatchTitle,
     noMatchHint,
     similarHeading,
     similarItems = [],
 }: ProductGridClientProps) {
+    const locale = useLocale();
+    const searchParams = useSearchParams();
     const [historyTerms, setHistoryTerms] = useState<string[]>([]);
     const [interactions, setInteractions] = useState<ProductInteractionMap>(EMPTY_INTERACTIONS);
+    const [extraItems, setExtraItems] = useState<SerializedProductCard[]>([]);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [loadedCount, setLoadedCount] = useState(items.length);
 
     useEffect(() => {
         setHistoryTerms(getSearchHistoryTerms());
         setInteractions(getProductInteractions());
     }, []);
+
+    // Reset appended pages when the server result set changes (new search/filter/page)
+    useEffect(() => {
+        setExtraItems([]);
+        setLoadedCount(items.length);
+    }, [items]);
 
     const products = useMemo(() => {
         if (sortKey === 'newest') {
@@ -78,15 +97,52 @@ export function ProductGridClient({
         });
     }, [similarItems, searchTerm, historyTerms, interactions]);
 
-    const totalPages = Math.ceil(totalItems / take);
-
     useEffect(() => {
         if (searchTerm?.trim()) {
             addSearchHistory(searchTerm.trim());
         }
     }, [searchTerm]);
 
-    if (!products.length) {
+    const hasMore = loadedCount < totalItems;
+
+    const handleLoadMore = useCallback(async () => {
+        if (loadingMore || !hasMore) return;
+        setLoadingMore(true);
+        try {
+            const params = new URLSearchParams();
+            params.set('locale', locale);
+            params.set('skip', String(loadedCount));
+            params.set('take', String(take));
+            params.set('sort', sortKey);
+            if (searchTerm) params.set('q', searchTerm);
+            if (collectionSlug) params.set('collection', collectionSlug);
+            for (const facet of searchParams.getAll('facets')) {
+                params.append('facets', facet);
+            }
+
+            const res = await fetch(`/api/search/products?${params.toString()}`);
+            const data = (await res.json()) as {items?: SerializedProductCard[]};
+            const next = data.items ?? [];
+            setExtraItems(prev => [...prev, ...next]);
+            setLoadedCount(count => count + next.length);
+        } catch {
+            // Keep current list; user can retry
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [
+        loadingMore,
+        hasMore,
+        locale,
+        loadedCount,
+        take,
+        sortKey,
+        searchTerm,
+        collectionSlug,
+        searchParams,
+    ]);
+
+    if (!products.length && extraItems.length === 0) {
         return (
             <div className="space-y-8">
                 <div className="rounded-xl border border-border/70 bg-muted/20 px-6 py-10 text-center">
@@ -126,8 +182,7 @@ export function ProductGridClient({
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">{productCountLabel}</p>
+            <div className="flex items-center justify-end">
                 <SortDropdown />
             </div>
 
@@ -143,9 +198,49 @@ export function ProductGridClient({
                         product={product}
                     />
                 ))}
+                {extraItems.map((product, i) => (
+                    <ProductCardInteractive
+                        key={`product-grid-extra-${product.productId}-${i}`}
+                        data={{
+                            productId: product.productId,
+                            productVariantId: product.productVariantId,
+                            productName: product.productName,
+                            slug: product.slug,
+                            imageSrc: resolveProductImage(product.image, product.slug),
+                            currencyCode: product.currencyCode,
+                            price: product.price,
+                            priceMin: product.priceMin,
+                            priceMax: product.priceMax,
+                            isPriceRange: Boolean(
+                                product.priceMin != null &&
+                                    product.priceMax != null &&
+                                    product.priceMin !== product.priceMax,
+                            ),
+                        }}
+                    />
+                ))}
             </div>
 
-            {totalPages > 1 && <Pagination currentPage={currentPage} totalPages={totalPages} />}
+            {hasMore && (
+                <div className="flex justify-center pt-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="min-w-[10rem] font-semibold"
+                        disabled={loadingMore}
+                        onClick={() => void handleLoadMore()}
+                    >
+                        {loadingMore ? (
+                            <>
+                                <Loader2 className="size-4 mr-2 animate-spin" />
+                                {loadMoreLabel}
+                            </>
+                        ) : (
+                            loadMoreLabel
+                        )}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

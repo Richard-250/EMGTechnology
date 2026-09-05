@@ -4,9 +4,10 @@ import {Loader2, Upload} from 'lucide-react';
 import {useRef, useState} from 'react';
 import {toast} from 'sonner';
 
-/** Target max encoded size before upload (keeps most phone photos under common nginx 1–2MB limits). */
-const TARGET_MAX_BYTES = 1.5 * 1024 * 1024;
-const MAX_EDGE = 1920;
+/** Soft target for compression; Vendure/nginx allow up to 50MB. */
+const TARGET_MAX_BYTES = 20 * 1024 * 1024;
+const MAX_EDGE = 4096;
+const SKIP_COMPRESS_BELOW = 15 * 1024 * 1024;
 
 const createAssetsDocument = graphql(`
     mutation EmgCreateAssets($input: [CreateAssetInput!]!) {
@@ -69,12 +70,19 @@ async function prepareFileForUpload(file: File): Promise<File> {
     if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
         return file;
     }
-    if (file.size <= TARGET_MAX_BYTES) {
+    // Allow large images through when they already fit the soft target.
+    if (file.size <= SKIP_COMPRESS_BELOW) {
         return file;
     }
 
     try {
         const bitmap = await createImageBitmap(file);
+        const needsResize = Math.max(bitmap.width, bitmap.height) > MAX_EDGE;
+        if (!needsResize && file.size <= TARGET_MAX_BYTES) {
+            bitmap.close();
+            return file;
+        }
+
         const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
         const width = Math.max(1, Math.round(bitmap.width * scale));
         const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -89,16 +97,16 @@ async function prepareFileForUpload(file: File): Promise<File> {
         ctx.drawImage(bitmap, 0, 0, width, height);
         bitmap.close();
 
-        let quality = 0.85;
+        let quality = 0.9;
         let blob: Blob | null = null;
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 8; i++) {
             blob = await new Promise<Blob | null>(resolve =>
                 canvas.toBlob(resolve, 'image/jpeg', quality),
             );
             if (!blob || blob.size <= TARGET_MAX_BYTES) {
                 break;
             }
-            quality -= 0.1;
+            quality -= 0.08;
         }
         if (!blob) {
             return file;

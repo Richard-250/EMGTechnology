@@ -8,7 +8,7 @@ import {Sparkles} from 'lucide-react';
 import {useEffect, useRef} from 'react';
 import {useWatch} from 'react-hook-form';
 
-import {generateProductSku, slugifyForSku} from './generate-sku';
+import {generateProductSku, shouldAutoGenerateSku} from './generate-sku';
 
 export const AutoSkuInput: DashboardFormComponent = props => {
     const {entity, form} = usePage();
@@ -32,15 +32,20 @@ export const AutoSkuInput: DashboardFormComponent = props => {
         });
 
     useEffect(() => {
-        if (hasAutoFilled.current || props.value?.trim()) {
+        // Only auto-fill empty / placeholder SKUs — never overwrite an existing real SKU
+        if (hasAutoFilled.current) {
             return;
         }
-        if (!variantName.trim()) {
+        if (!shouldAutoGenerateSku(props.value)) {
+            hasAutoFilled.current = true;
+            return;
+        }
+        if (!variantName.trim() && !productName.trim()) {
             return;
         }
         hasAutoFilled.current = true;
         props.onChange(buildSku());
-    }, [variantName, props.value]);
+    }, [variantName, productName, props.value]);
 
     return (
         <div className="space-y-2">
@@ -51,15 +56,22 @@ export const AutoSkuInput: DashboardFormComponent = props => {
                     onBlur={props.onBlur}
                     name={props.name}
                     ref={props.ref}
-                    placeholder="Auto-generated from product data"
+                    placeholder="Auto-generated (manual override allowed)"
                 />
-                <Button type="button" variant="outline" onClick={() => props.onChange(buildSku())}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => props.onChange(buildSku())}
+                    title="Regenerate from product data"
+                >
                     <Sparkles className="mr-1.5 size-4" />
                     Generate
                 </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-                Preview: {slugifyForSku(variantName || productName || 'PRODUCT').slice(0, 24) || '—'}
+                SKU is generated automatically from product and variant data. Leave blank or click
+                Generate — only change it if you need a manual override. The server also assigns a
+                unique SKU when variants are created.
             </p>
         </div>
     );

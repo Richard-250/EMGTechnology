@@ -17,19 +17,18 @@ const EMPTY_INTERACTIONS: ProductInteractionMap = {views: {}, clicks: {}};
 
 interface HomeFitnessCatalogProps {
     products: FragmentOf<typeof ProductCardFragment>[];
-    totalProducts: number;
+    totalProducts?: number;
     labels: {
         title: string;
         subtitle: string;
         all: string;
-        showing: string;
+        showing?: string;
         loadMore: string;
     };
 }
 
 export function HomeFitnessCatalog({
     products,
-    totalProducts,
     labels,
 }: HomeFitnessCatalogProps) {
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -67,11 +66,6 @@ export function HomeFitnessCatalog({
                                 {labels.subtitle}
                             </p>
                         </div>
-                    </div>
-                    <div className="text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded-full bg-muted/80 text-foreground self-start sm:self-center border border-border/60 shadow-xs">
-                        {labels.showing
-                            .replace('{count}', String(visible.length))
-                            .replace('{total}', String(totalProducts || displayProducts.length))}
                     </div>
                 </div>
 

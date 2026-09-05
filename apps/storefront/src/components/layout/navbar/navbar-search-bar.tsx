@@ -21,6 +21,10 @@ import {
 import {setProductInteractionOwner} from '@/lib/product-interactions';
 import {rankPlainProductsForDisplay} from '@/lib/product-ranking';
 import {toast} from 'sonner';
+import {
+    setPendingVisualSearchImage,
+    clearPendingVisualSearch,
+} from '@/lib/visual-search-store';
 
 interface BrowseCategory {
     slug: string;
@@ -203,9 +207,8 @@ export function NavbarSearchBar({
         setIsOpen(false);
 
         if (visualSearchActive) {
-            sessionStorage.setItem('emg-visual-search', String(Date.now()));
             startTransition(() => {
-                router.push(`/search?visual=1&sort=shuffle&t=${Date.now()}`);
+                router.push(`/search?visual=1&t=${Date.now()}`);
             });
             return;
         }
@@ -262,11 +265,30 @@ export function NavbarSearchBar({
             toast.error(t('imageSearchInvalid'));
             return;
         }
-        setVisualSearchActive(true);
-        setSearchValue('');
-        toast.success(t('imageSearchReady'), {
-            description: t('imageSearchReadyHint'),
-        });
+        if (file.size > 25 * 1024 * 1024) {
+            toast.error(t('imageSearchTooLarge'));
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const dataUrl = typeof reader.result === 'string' ? reader.result : undefined;
+            setPendingVisualSearchImage(file, dataUrl);
+            setVisualSearchActive(true);
+            setSearchValue('');
+            toast.success(t('imageSearchReady'), {
+                description: t('imageSearchReadyHint'),
+            });
+        };
+        reader.onerror = () => {
+            setPendingVisualSearchImage(file);
+            setVisualSearchActive(true);
+            setSearchValue('');
+            toast.success(t('imageSearchReady'), {
+                description: t('imageSearchReadyHint'),
+            });
+        };
+        reader.readAsDataURL(file);
     };
 
     const trimmed = searchValue.trim();
@@ -297,21 +319,36 @@ export function NavbarSearchBar({
                         visualSearchActive && 'text-electric font-medium',
                     )}
                     value={searchValue}
-                    onChange={e => setSearchValue(e.target.value)}
+                    onChange={e => {
+                        const next = e.target.value;
+                        setSearchValue(next);
+                        if (next.trim() && visualSearchActive) {
+                            setVisualSearchActive(false);
+                            clearPendingVisualSearch();
+                        }
+                    }}
                     onFocus={() => setIsOpen(true)}
                     disabled={isPending}
                     autoComplete="off"
                 />
                 <button
                     type="button"
-                    onClick={handleImageSearch}
+                    onClick={() => {
+                        if (visualSearchActive) {
+                            setVisualSearchActive(false);
+                            clearPendingVisualSearch();
+                            return;
+                        }
+                        handleImageSearch();
+                    }}
                     className={cn(
                         'flex size-9 shrink-0 items-center justify-center transition-colors',
                         visualSearchActive ? 'text-electric' : 'text-muted-foreground hover:text-foreground',
                     )}
-                    aria-label={t('searchByImage')}
+                    aria-label={visualSearchActive ? t('visualSearchClear') : t('searchByImage')}
+                    title={visualSearchActive ? t('visualSearchClear') : t('searchByImage')}
                 >
-                    <Camera className="size-4" />
+                    {visualSearchActive ? <X className="size-4" /> : <Camera className="size-4" />}
                 </button>
                 <input
                     ref={fileInputRef}

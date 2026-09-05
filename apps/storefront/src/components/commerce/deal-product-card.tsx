@@ -48,20 +48,12 @@ export function DealProductCard({product, className}: DealProductCardProps) {
                     className,
                 )}
             >
-                <Link href={`/product/${product.slug}`} className="block">
-                    <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-2">
-                        <button
-                            type="button"
-                            onClick={handleOpenPreview}
-                            className={cn(
-                                'absolute top-1.5 right-1.5 z-20 flex items-center justify-center size-6.5 rounded-full bg-black/75 hover:bg-black text-white text-[10px] shadow-md transition-all duration-200 cursor-pointer active:scale-95 lg:hidden',
-                                'opacity-90',
-                            )}
-                            aria-label="Preview"
-                        >
-                            <Eye className="size-3.5" />
-                        </button>
-
+                <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-2">
+                    <Link
+                        href={`/product/${product.slug}`}
+                        className="absolute inset-0 z-0"
+                        aria-label={product.productName}
+                    >
                         <Image
                             src={modalData.imageSrc}
                             alt={product.productName}
@@ -69,7 +61,20 @@ export function DealProductCard({product, className}: DealProductCardProps) {
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                             sizes="(max-width: 640px) 120px, 160px"
                         />
-                    </div>
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={handleOpenPreview}
+                        className={cn(
+                            'absolute top-1.5 right-1.5 z-20 flex items-center justify-center size-6.5 rounded-full bg-black/75 hover:bg-black text-white text-[10px] shadow-md transition-all duration-200 cursor-pointer active:scale-95 lg:hidden',
+                            'opacity-90',
+                        )}
+                        aria-label="Preview"
+                    >
+                        <Eye className="size-3.5" />
+                    </button>
+                </div>
+                <Link href={`/product/${product.slug}`} className="block">
                     <p className="text-[11px] leading-snug line-clamp-2 text-foreground/90 group-hover:text-electric transition-colors min-h-[2.25rem] mb-1.5">
                         {product.productName}
                     </p>

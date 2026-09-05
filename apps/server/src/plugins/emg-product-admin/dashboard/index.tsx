@@ -44,7 +44,7 @@ defineDashboardExtension({
     ],
     pageBlocks: [
         {
-            // One Upload button on product Assets sidebar.
+            // Upload below Assets — only on saved products (not while creating a new one).
             id: 'emg-asset-upload-product',
             title: 'Upload',
             location: {
@@ -52,6 +52,7 @@ defineDashboardExtension({
                 column: 'side',
                 position: {blockId: 'assets', order: 'after'},
             },
+            shouldRender: context => Boolean(context.entity?.id),
             component: ({context}) => (
                 <EmgUploadAssetsButton
                     label="Upload"
