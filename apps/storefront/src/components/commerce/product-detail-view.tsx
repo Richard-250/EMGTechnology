@@ -246,13 +246,21 @@ export function ProductDetailView({
                                     </>
                                 )}
                             </div>
-                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground flex-wrap">
                                 {discountInfo.isSuperDeal && (
                                     <span className="inline-flex items-center gap-1 text-electric font-bold text-[10px] bg-electric/15 px-1.5 py-0.5 rounded-sm">
                                         <Tag className="size-2.5" />
                                         Super Deal
                                     </span>
                                 )}
+                                {isInStock ? (
+                                    <span className="font-semibold text-electric">{t('inStock')}</span>
+                                ) : (
+                                    <span className="font-semibold text-destructive">{t('outOfStock')}</span>
+                                )}
+                                <span>·</span>
+                                <span>{t('priceIncludesTax')}</span>
+                                <span>·</span>
                                 <span>{t('freeShipping')}</span>
                             </div>
                         </div>
