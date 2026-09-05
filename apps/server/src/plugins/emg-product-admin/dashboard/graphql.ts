@@ -57,11 +57,24 @@ export const emgVariantDetailDocument = graphql(`
                 }
             }
             options {
+                id
                 code
+                name
+                groupId
+                group {
+                    id
+                    code
+                    name
+                }
             }
             translations {
                 languageCode
                 name
+            }
+            customFields {
+                variantDiscountPercentage
+                variantDiscountAmount
+                variantOriginalPrice
             }
         }
     }
