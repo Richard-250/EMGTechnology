@@ -29,7 +29,8 @@ async function fetchFeaturedProducts(locale: string, currencyCode: string) {
 
 async function getFeaturedCollectionProductsCached(currencyCode: string) {
     'use cache'
-    cacheLife('days')
+    // Short TTL so price edits show on home without waiting for a full day cache.
+    cacheLife('minutes')
 
     const locale = await getRouteLocale();
     cacheTag(`featured-${locale}-${currencyCode}`);

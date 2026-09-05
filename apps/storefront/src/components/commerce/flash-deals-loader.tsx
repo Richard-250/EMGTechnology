@@ -30,7 +30,7 @@ export async function FlashDealsLoader() {
         products = await withLiveFallback(
             () => getDealProductsCached(currencyCode),
             () => fetchDealProducts(locale, currencyCode, {superDealOnly: true, take: 100}),
-            () => false,
+            products => products.length === 0,
         );
     } catch (error) {
         if (!isPrerenderAbortError(error)) {

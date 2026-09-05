@@ -54,6 +54,7 @@ async function getCollectionProductsCached(
 
     const locale = await getRouteLocale();
     cacheTag(`collection-${slug}-${locale}-${currencyCode}`);
+    cacheTag(`products-${locale}-${currencyCode}`);
     cacheTag('collection');
 
     return fetchCollectionProducts(slug, searchParams, locale, currencyCode);
