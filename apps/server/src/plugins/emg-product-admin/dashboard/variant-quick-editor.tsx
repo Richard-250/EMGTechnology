@@ -10,14 +10,14 @@ import {
     SelectTrigger,
     SelectValue,
     Switch,
-    useChannel,
 } from '@vendure/dashboard';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {Pencil} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {toast} from 'sonner';
 
 import {generateProductSku} from './generate-sku';
+import {rwfMinorToUsdMinor, usdMinorToRwfMinor} from './currency-convert';
 import {
     fetchProductVariants,
     fetchTaxCategories,
@@ -37,19 +37,23 @@ type VariantListItem = {
     currencyCode: string;
 };
 
+type PriceEntry = {currencyCode: string; price: number};
+
 export function VariantQuickEditor({context}: {context: {entity?: {id?: string; name?: string}}}) {
     const productId = context.entity?.id;
     const queryClient = useQueryClient();
-    const {activeChannel} = useChannel();
     const [selectedVariantId, setSelectedVariantId] = useState<string>('');
     const [name, setName] = useState('');
     const [sku, setSku] = useState('');
     const [enabled, setEnabled] = useState(true);
-    const [price, setPrice] = useState(0);
+    const [priceRwf, setPriceRwf] = useState(0);
+    const [priceUsd, setPriceUsd] = useState(0);
+    const [linkConversion, setLinkConversion] = useState(true);
     const [taxCategoryId, setTaxCategoryId] = useState('');
-    const [stockLevels, setStockLevels] = useState<Array<{stockLocationId: string; stockOnHand: number; label: string}>>([]);
-
-    const currencyCode = activeChannel?.defaultCurrencyCode ?? 'USD';
+    const [stockLevels, setStockLevels] = useState<
+        Array<{stockLocationId: string; stockOnHand: number; label: string}>
+    >([]);
+    const hydrating = useRef(false);
 
     const variantsQuery = useQuery({
         queryKey: ['emg-product-variants', productId],
@@ -100,25 +104,52 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
             return;
         }
 
+        hydrating.current = true;
         setName(variant.name ?? '');
         setSku(variant.sku ?? '');
         setEnabled(variant.enabled ?? true);
         setTaxCategoryId(variant.taxCategory?.id ?? '');
 
-        const channelPrice =
-            variant.prices?.find((entry: {currencyCode: string}) => entry.currencyCode === currencyCode)?.price ??
-            variant.price ??
+        const prices = (variant.prices ?? []) as PriceEntry[];
+        const rwf =
+            prices.find(entry => entry.currencyCode === 'RWF')?.price ??
+            (variant.currencyCode === 'RWF' ? variant.price : 0) ??
             0;
-        setPrice(channelPrice);
+        const usd =
+            prices.find(entry => entry.currencyCode === 'USD')?.price ??
+            (variant.currencyCode === 'USD' ? variant.price : 0) ??
+            0;
+
+        setPriceRwf(rwf);
+        setPriceUsd(usd > 0 ? usd : rwfMinorToUsdMinor(rwf));
 
         setStockLevels(
-            (variant.stockLevels ?? []).map((level: {stockOnHand: number; stockLocation: {id: string; name: string}}) => ({
-                stockLocationId: level.stockLocation.id,
-                stockOnHand: level.stockOnHand,
-                label: level.stockLocation.name,
-            })),
+            (variant.stockLevels ?? []).map(
+                (level: {stockOnHand: number; stockLocation: {id: string; name: string}}) => ({
+                    stockLocationId: level.stockLocation.id,
+                    stockOnHand: level.stockOnHand,
+                    label: level.stockLocation.name,
+                }),
+            ),
         );
-    }, [variantDetailQuery.data, currencyCode]);
+        queueMicrotask(() => {
+            hydrating.current = false;
+        });
+    }, [variantDetailQuery.data]);
+
+    const handleRwfChange = (next: number) => {
+        setPriceRwf(next);
+        if (!hydrating.current && linkConversion) {
+            setPriceUsd(rwfMinorToUsdMinor(next));
+        }
+    };
+
+    const handleUsdChange = (next: number) => {
+        setPriceUsd(next);
+        if (!hydrating.current && linkConversion) {
+            setPriceRwf(usdMinorToRwfMinor(next));
+        }
+    };
 
     if (!productId) {
         return null;
@@ -147,14 +178,15 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
         }
 
         const variant = variantDetailQuery.data?.productVariant;
-        const prices = (variant?.prices ?? []).map((entry: {currencyCode: string; price: number}) => ({
-            currencyCode: entry.currencyCode,
-            price: entry.currencyCode === currencyCode ? price : entry.price,
-        }));
+        const existing = (variant?.prices ?? []) as PriceEntry[];
+        const byCurrency = new Map(existing.map(entry => [entry.currencyCode, entry.price]));
+        byCurrency.set('RWF', priceRwf);
+        byCurrency.set('USD', priceUsd);
 
-        if (!prices.some((entry: {currencyCode: string}) => entry.currencyCode === currencyCode)) {
-            prices.push({currencyCode, price});
-        }
+        const prices = Array.from(byCurrency.entries()).map(([currencyCode, price]) => ({
+            currencyCode,
+            price,
+        }));
 
         await saveMutation.mutateAsync({
             id: selectedVariantId,
@@ -162,10 +194,15 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
             sku,
             taxCategoryId,
             prices,
-            translations: (variant?.translations ?? []).map((translation: {languageCode: string; name: string}) => ({
-                languageCode: translation.languageCode,
-                name: translation.languageCode === variant?.translations?.[0]?.languageCode ? name : translation.name,
-            })),
+            translations: (variant?.translations ?? []).map(
+                (translation: {languageCode: string; name: string}) => ({
+                    languageCode: translation.languageCode,
+                    name:
+                        translation.languageCode === variant?.translations?.[0]?.languageCode
+                            ? name
+                            : translation.name,
+                }),
+            ),
             stockLevels: stockLevels.map(level => ({
                 stockLocationId: level.stockLocationId,
                 stockOnHand: level.stockOnHand,
@@ -178,7 +215,8 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
     return (
         <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-                Edit price, tax, stock, SKU, and name here without leaving the product page. Click a variant name in the table above to load it.
+                Edit RWF and USD prices (with optional auto-conversion), tax, stock, SKU, and name
+                without leaving the product page. Click a variant name in the table above to load it.
             </p>
 
             <div className="grid gap-2">
@@ -201,13 +239,21 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
                 <div className="grid gap-4 rounded-lg border border-border p-4">
                     <div className="grid gap-2">
                         <Label htmlFor="emg-variant-name">Variant name</Label>
-                        <Input id="emg-variant-name" value={name} onChange={event => setName(event.target.value)} />
+                        <Input
+                            id="emg-variant-name"
+                            value={name}
+                            onChange={event => setName(event.target.value)}
+                        />
                     </div>
 
                     <div className="grid gap-2">
                         <Label htmlFor="emg-variant-sku">SKU</Label>
                         <div className="flex gap-2">
-                            <Input id="emg-variant-sku" value={sku} onChange={event => setSku(event.target.value)} />
+                            <Input
+                                id="emg-variant-sku"
+                                value={sku}
+                                onChange={event => setSku(event.target.value)}
+                            />
                             <Button type="button" variant="outline" onClick={handleGenerateSku}>
                                 Generate
                             </Button>
@@ -216,17 +262,47 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
 
                     <div className="flex items-center justify-between gap-3">
                         <Label htmlFor="emg-variant-enabled">Enabled</Label>
-                        <Switch id="emg-variant-enabled" checked={enabled} onCheckedChange={setEnabled} />
+                        <Switch
+                            id="emg-variant-enabled"
+                            checked={enabled}
+                            onCheckedChange={setEnabled}
+                        />
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="emg-variant-price">Price ({currencyCode})</Label>
-                        <MoneyInput
-                            id="emg-variant-price"
-                            value={price}
-                            currency={currencyCode}
-                            onChange={setPrice}
+                    <div className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/40 px-3 py-2">
+                        <div className="min-w-0">
+                            <Label htmlFor="emg-link-conversion">Auto-convert RWF ↔ USD</Label>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                When on, editing one currency updates the other (~1 USD = 1,300 RWF).
+                                Turn off to set each amount independently.
+                            </p>
+                        </div>
+                        <Switch
+                            id="emg-link-conversion"
+                            checked={linkConversion}
+                            onCheckedChange={setLinkConversion}
                         />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label htmlFor="emg-variant-price-rwf">Price (RWF)</Label>
+                            <MoneyInput
+                                id="emg-variant-price-rwf"
+                                value={priceRwf}
+                                currency="RWF"
+                                onChange={handleRwfChange}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="emg-variant-price-usd">Price (USD)</Label>
+                            <MoneyInput
+                                id="emg-variant-price-usd"
+                                value={priceUsd}
+                                currency="USD"
+                                onChange={handleUsdChange}
+                            />
+                        </div>
                     </div>
 
                     <div className="grid gap-2">
@@ -250,7 +326,9 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
                             <Label>Stock</Label>
                             {stockLevels.map((level, index) => (
                                 <div key={level.stockLocationId} className="grid gap-1">
-                                    <Label htmlFor={`emg-stock-${level.stockLocationId}`}>{level.label}</Label>
+                                    <Label htmlFor={`emg-stock-${level.stockLocationId}`}>
+                                        {level.label}
+                                    </Label>
                                     <Input
                                         id={`emg-stock-${level.stockLocationId}`}
                                         type="number"
@@ -285,8 +363,12 @@ export function VariantNameQuickEditCell({row}: CellContext<VariantListItem, unk
             type="button"
             className="text-left font-medium text-primary hover:underline"
             onClick={() => {
-                window.dispatchEvent(new CustomEvent(EMG_SELECT_VARIANT_EVENT, {detail: row.original.id}));
-                document.getElementById('emg-variant-quick-editor')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+                window.dispatchEvent(
+                    new CustomEvent(EMG_SELECT_VARIANT_EVENT, {detail: row.original.id}),
+                );
+                document
+                    .getElementById('emg-variant-quick-editor')
+                    ?.scrollIntoView({behavior: 'smooth', block: 'start'});
             }}
         >
             {row.original.name}

@@ -36,7 +36,8 @@ async function fetchProductData(slug: string, locale: string, currencyCode: stri
 
 async function getProductDataCached(slug: string, currencyCode: string) {
     'use cache';
-    cacheLife('hours');
+    // Short TTL so admin price edits show on the PDP quickly even if revalidation lags.
+    cacheLife({stale: 30, revalidate: 60, expire: 300});
 
     const locale = await getRouteLocale();
     cacheTag(`product-${slug}-${locale}-${currencyCode}`);
@@ -46,6 +47,16 @@ async function getProductDataCached(slug: string, currencyCode: string) {
 }
 
 async function loadProductData(slug: string, locale: string, currencyCode: string) {
+    // Prefer live product data for accurate prices; fall back to short-lived cache on failure.
+    try {
+        const live = await fetchProductData(slug, locale, currencyCode);
+        if (live.data.product) {
+            return live;
+        }
+    } catch {
+        // fall through to cached
+    }
+
     return withLiveFallback(
         () => getProductDataCached(slug, currencyCode),
         () => fetchProductData(slug, locale, currencyCode),

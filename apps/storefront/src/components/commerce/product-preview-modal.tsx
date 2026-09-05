@@ -365,10 +365,10 @@ export function ProductPreviewModal({
                                 </div>
                             </div>
 
-                            {/* Price Block (AliExpress Style Big Red/Orange Price) */}
-                            <div className="rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/40 p-3 space-y-1">
+                            {/* Price Block */}
+                            <div className="rounded-xl bg-electric/10 dark:bg-electric/15 border border-electric/25 p-3 space-y-1">
                                 <div className="flex items-baseline gap-2 flex-wrap">
-                                    <span className="text-2xl sm:text-3xl font-black tracking-tight text-red-600 dark:text-red-400">
+                                    <span className="text-2xl sm:text-3xl font-black tracking-tight text-electric">
                                         <Price
                                             value={currentPrice}
                                             currencyCode={currencyCode}
@@ -376,7 +376,7 @@ export function ProductPreviewModal({
                                     </span>
                                     {activeDiscount != null && wasPrice != null && (
                                         <>
-                                            <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/60 px-1.5 py-0.5 rounded">
+                                            <span className="text-xs font-bold text-electric bg-electric/15 px-1.5 py-0.5 rounded">
                                                 {activeDiscount}% off
                                             </span>
                                             <span className="text-xs text-muted-foreground line-through">
@@ -390,7 +390,7 @@ export function ProductPreviewModal({
                                 </div>
 
                                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-0.5">
-                                    <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-bold text-[10px] bg-red-100 dark:bg-red-900/60 px-1.5 py-0.5 rounded-sm">
+                                    <span className="inline-flex items-center gap-1 text-electric font-bold text-[10px] bg-electric/15 px-1.5 py-0.5 rounded-sm">
                                         <Tag className="size-2.5" />
                                         Super Deal
                                     </span>
@@ -399,7 +399,7 @@ export function ProductPreviewModal({
 
                                 {/* Instant coupon banner */}
                                 {discountSavings != null && (
-                                    <div className="mt-1 flex items-center justify-between text-[11px] font-semibold text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-900/40 px-2 py-1 rounded-md">
+                                    <div className="mt-1 flex items-center justify-between text-[11px] font-semibold text-electric bg-electric/10 px-2 py-1 rounded-md">
                                         <span>% Save <Price value={discountSavings} currencyCode={currencyCode} /> with Instant discount</span>
                                         <span className="text-[10px] underline cursor-pointer">&gt;</span>
                                     </div>
@@ -585,7 +585,7 @@ export function ProductPreviewModal({
                                     type="button"
                                     onClick={handleBuyNow}
                                     disabled={isBuyNowPending || isPending}
-                                    className="w-full h-10 font-bold text-sm bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-md cursor-pointer transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                    className="w-full h-10 font-bold text-sm bg-electric hover:bg-electric/90 text-electric-foreground rounded-xl shadow-md cursor-pointer transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                                 >
                                     {isBuyNowPending ? (
                                         <>
@@ -594,7 +594,7 @@ export function ProductPreviewModal({
                                         </>
                                     ) : (
                                         <>
-                                            <Zap className="size-4 fill-white" />
+                                            <Zap className="size-4 fill-current" />
                                             <span>Buy Now</span>
                                         </>
                                     )}
@@ -605,7 +605,7 @@ export function ProductPreviewModal({
                                     variant="outline"
                                     onClick={handleAddToCart}
                                     disabled={isPending || isBuyNowPending}
-                                    className="w-full h-10 font-bold text-sm bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-950/70 border-red-300 dark:border-red-900 rounded-xl cursor-pointer transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                    className="w-full h-10 font-bold text-sm border-2 border-electric/40 text-electric hover:bg-electric/10 rounded-xl cursor-pointer transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                                 >
                                     {isPending ? (
                                         <>

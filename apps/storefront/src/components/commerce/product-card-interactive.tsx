@@ -97,7 +97,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
             <div
                 className={cn(
                     'group relative z-0 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none',
-                    'hover:z-30',
+                    'hover:z-50',
                     compact
                         ? 'bg-white dark:bg-card rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-200'
                         : 'rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-300 bg-card',
@@ -202,7 +202,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                 {/* Desktop hover actions: overlay so grid siblings do not reflow */}
                 <div
                     className={cn(
-                        'pointer-events-none absolute left-0 right-0 top-full z-40 hidden flex-col gap-1.5',
+                        'pointer-events-none absolute left-0 right-0 top-full z-50 hidden flex-col gap-1.5',
                         'rounded-b-xl border border-t-0 border-border/80 bg-card px-2 pb-2 pt-1 shadow-lg',
                         'lg:group-hover:pointer-events-auto lg:group-hover:flex',
                     )}

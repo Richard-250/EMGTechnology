@@ -28,8 +28,10 @@ import {getProductRating, getSoldCount} from '@/lib/product-badges';
 import {resolveDealDiscount, type ProductDiscountFields} from '@/lib/discount-display';
 import {COMPANY} from '@/lib/company';
 import {WhatsAppIcon} from '@/components/shared/whatsapp-icon';
+import {buildProductWhatsAppUrl} from '@/lib/whatsapp';
 import {cn} from '@/lib/utils';
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
+import {toIntlLocale} from '@/i18n/locale-utils';
 
 interface ProductDetailViewProps {
     product: {
@@ -71,6 +73,7 @@ export function ProductDetailView({
     carouselImages,
 }: ProductDetailViewProps) {
     const t = useTranslations('Product');
+    const locale = useLocale();
     const pathname = usePathname();
     const router = useRouter();
     const {showConfirmation} = useCartConfirmation();
@@ -102,6 +105,30 @@ export function ProductDetailView({
             return Object.values(selectedOptions).every(optId => variantOptionIds.includes(optId));
         });
     }, [selectedOptions, product.variants, product.optionGroups]);
+
+    const formatPriceLabel = (value: number) =>
+        new Intl.NumberFormat(toIntlLocale(locale), {
+            style: 'currency',
+            currency: currencyCode,
+            maximumFractionDigits: currencyCode === 'RWF' ? 0 : 2,
+        }).format(value / 100);
+
+    const whatsappHref = useMemo(() => {
+        if (!selectedVariant) {
+            return buildProductWhatsAppUrl({
+                productName: product.name,
+                productSlug: product.slug,
+            });
+        }
+        return buildProductWhatsAppUrl({
+            productName: product.name,
+            productSlug: product.slug,
+            sku: selectedVariant.sku,
+            priceLabel: formatPriceLabel(selectedVariant.priceWithTax),
+            currencyCode,
+            quantity,
+        });
+    }, [product.name, product.slug, selectedVariant, currencyCode, quantity, locale]);
 
     const discountInfo = useMemo(() => {
         if (!selectedVariant) {
@@ -181,14 +208,14 @@ export function ProductDetailView({
                     </div>
 
                     {selectedVariant && (
-                        <div className="rounded-xl bg-red-50/70 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/40 p-4 space-y-2">
+                        <div className="rounded-xl bg-electric/10 dark:bg-electric/15 border border-electric/25 p-4 space-y-2">
                             <div className="flex items-baseline gap-2 flex-wrap">
-                                <span className="text-2xl sm:text-3xl font-black tracking-tight text-red-600 dark:text-red-400">
+                                <span className="text-2xl sm:text-3xl font-black tracking-tight text-electric">
                                     <Price value={selectedVariant.priceWithTax} currencyCode={currencyCode} />
                                 </span>
                                 {discountInfo.hasDiscount && discountInfo.wasPrice != null && (
                                     <>
-                                        <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/60 px-1.5 py-0.5 rounded">
+                                        <span className="text-xs font-bold text-electric bg-electric/15 px-1.5 py-0.5 rounded">
                                             {discountInfo.discountLabel}
                                         </span>
                                         <span className="text-sm text-muted-foreground line-through">
@@ -199,7 +226,7 @@ export function ProductDetailView({
                             </div>
                             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                                 {product.customFields?.isDiscounted && (
-                                    <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-bold text-[10px] bg-red-100 dark:bg-red-900/60 px-1.5 py-0.5 rounded-sm">
+                                    <span className="inline-flex items-center gap-1 text-electric font-bold text-[10px] bg-electric/15 px-1.5 py-0.5 rounded-sm">
                                         <Tag className="size-2.5" />
                                         Super Deal
                                     </span>
@@ -296,7 +323,7 @@ export function ProductDetailView({
                                 <p className="text-sm font-bold">{COMPANY.legalName}</p>
                             </div>
                             <a
-                                href={COMPANY.whatsappUrl}
+                                href={whatsappHref}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#25D366] hover:underline"
@@ -345,7 +372,7 @@ export function ProductDetailView({
                                         </Button>
                                     </div>
                                     {selectedVariant.stockLevel === 'LOW_STOCK' && (
-                                        <span className="text-[11px] text-red-600 font-semibold">Only a few left</span>
+                                        <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">Only a few left</span>
                                     )}
                                 </div>
                             </div>
@@ -361,9 +388,9 @@ export function ProductDetailView({
                             type="button"
                             onClick={() => handleAddToCart('buyNow')}
                             disabled={!canPurchase || isPending}
-                            className="w-full h-11 font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                            className="w-full h-11 font-bold bg-electric hover:bg-electric/90 text-electric-foreground rounded-xl"
                         >
-                            <Zap className="mr-2 size-4 fill-white" />
+                            <Zap className="mr-2 size-4 fill-current" />
                             {t('buyNow')}
                         </Button>
                         <Button
@@ -371,7 +398,7 @@ export function ProductDetailView({
                             variant="outline"
                             onClick={() => handleAddToCart('cart')}
                             disabled={!canPurchase || isPending}
-                            className="w-full h-11 font-bold border-2 border-red-300 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 rounded-xl"
+                            className="w-full h-11 font-bold border-2 border-electric/40 text-electric hover:bg-electric/10 rounded-xl"
                         >
                             {isAdded ? (
                                 <>
@@ -387,13 +414,13 @@ export function ProductDetailView({
                         </Button>
 
                         <a
-                            href={COMPANY.whatsappUrl}
+                            href={whatsappHref}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex w-full h-10 items-center justify-center gap-2 rounded-xl border border-[#25D366]/40 text-[#128C7E] dark:text-[#25D366] font-semibold text-sm hover:bg-[#25D366]/10 transition-colors"
                         >
                             <WhatsAppIcon className="size-4" />
-                            Order via WhatsApp
+                            {t('orderViaWhatsApp')}
                         </a>
                     </div>
                 </div>

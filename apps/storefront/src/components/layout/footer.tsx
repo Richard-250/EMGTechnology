@@ -55,7 +55,7 @@ export async function Footer() {
     const addressLine = formatCompanyAddress();
 
     return (
-        <footer className="border-t border-border mt-auto bg-foreground text-background dark:bg-card dark:text-card-foreground">
+        <footer className="relative z-0 border-t border-border mt-auto bg-foreground text-background dark:bg-card dark:text-card-foreground">
             <div className="container mx-auto px-4 py-14 md:py-16">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12">
                     <div className="sm:col-span-2 lg:col-span-1">
