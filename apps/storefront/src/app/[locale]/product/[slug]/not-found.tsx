@@ -62,7 +62,7 @@ export default async function ProductNotFound() {
 
     return (
         <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-muted/40 via-background to-background">
-            <section className="border-b border-border/60 bg-[#0C1210] text-white">
+            <section className="border-b border-border/60 bg-foreground text-background">
                 <div className="container mx-auto px-4 py-12 md:py-16">
                     <div className="mx-auto max-w-2xl text-center space-y-5">
                         <Image

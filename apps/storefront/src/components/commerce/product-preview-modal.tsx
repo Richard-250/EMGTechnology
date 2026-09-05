@@ -244,7 +244,7 @@ export function ProductPreviewModal({
             aria-label={initialData.productName}
         >
             <div 
-                className="relative w-full max-w-[1240px] rounded-2xl md:rounded-3xl p-0 bg-white dark:bg-card border border-border/80 shadow-2xl overflow-hidden flex flex-col my-1 sm:my-2 animate-in fade-in-0 zoom-in-95 duration-200"
+                className="relative w-full max-w-[1240px] rounded-2xl md:rounded-3xl p-0 bg-card border border-border/80 shadow-2xl overflow-hidden flex flex-col my-1 sm:my-2 animate-in fade-in-0 zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Floating Black Circle Close Button (AliExpress Style) */}

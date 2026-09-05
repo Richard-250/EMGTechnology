@@ -22,7 +22,7 @@ export default async function NotFound() {
             <div className="container mx-auto px-4 py-16 md:py-24">
                 <div className="mx-auto max-w-3xl rounded-3xl border border-border/70 bg-card shadow-xl overflow-hidden">
                     <div className="grid md:grid-cols-2">
-                        <div className="bg-[#0C1210] text-white p-8 md:p-10 flex flex-col justify-between gap-8">
+                        <div className="bg-foreground text-background p-8 md:p-10 flex flex-col justify-between gap-8">
                             <div className="space-y-6">
                                 <Image
                                     src={SITE_LOGO_LIGHT}

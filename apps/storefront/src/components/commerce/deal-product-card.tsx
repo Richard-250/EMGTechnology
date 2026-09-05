@@ -45,7 +45,7 @@ export function DealProductCard({product, className}: DealProductCardProps) {
         <>
             <div
                 className={cn(
-                    'group relative flex flex-col shrink-0 w-[9.5rem] sm:w-[11rem] bg-white dark:bg-card rounded-lg p-2.5 hover:shadow-md transition-shadow select-none border border-border/60',
+                    'group relative flex flex-col shrink-0 w-[9.5rem] sm:w-[11rem] bg-card rounded-lg p-2.5 hover:shadow-md transition-shadow select-none border border-border/60',
                     className,
                 )}
             >

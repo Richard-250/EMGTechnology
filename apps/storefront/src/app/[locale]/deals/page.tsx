@@ -56,7 +56,7 @@ export default async function DealsPage() {
 
     return (
         <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-muted/30 via-background to-background">
-            <section className="border-b border-border bg-[#0C1210] text-white">
+            <section className="border-b border-border bg-foreground text-background">
                 <div className="container mx-auto px-4 py-10 md:py-14">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-electric mb-3">
                         {t('superDeals')}

@@ -356,7 +356,7 @@ export function ProductDetailView({
                                 href={whatsappHref}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#25D366] hover:underline"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-whatsapp hover:underline"
                             >
                                 <WhatsAppIcon className="size-3.5" />
                                 Message
@@ -447,7 +447,7 @@ export function ProductDetailView({
                             href={whatsappHref}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex w-full h-10 items-center justify-center gap-2 rounded-xl border border-[#25D366]/40 text-[#128C7E] dark:text-[#25D366] font-semibold text-sm hover:bg-[#25D366]/10 transition-colors"
+                            className="flex w-full h-10 items-center justify-center gap-2 rounded-xl border border-whatsapp/40 text-whatsapp font-semibold text-sm hover:bg-whatsapp/10 transition-colors"
                         >
                             <WhatsAppIcon className="size-4" />
                             {t('orderViaWhatsApp')}

@@ -17,7 +17,7 @@ export async function GlobalPromoBar() {
                     href={COMPANY.whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 font-semibold text-[#128C7E] dark:text-[#25D366] hover:opacity-80 shrink-0 transition-opacity"
+                    className="inline-flex items-center gap-1.5 font-semibold text-whatsapp hover:opacity-80 shrink-0 transition-opacity"
                 >
                     <WhatsAppIcon className="size-3.5 sm:size-4" />
                     <span className="hidden sm:inline">WhatsApp</span>

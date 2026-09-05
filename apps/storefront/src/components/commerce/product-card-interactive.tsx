@@ -101,7 +101,7 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                 className={cn(
                     'group relative z-0 hover:z-30 focus-within:z-30',
                     compact
-                        ? 'bg-white dark:bg-card rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-200'
+                        ? 'bg-card rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-200'
                         : 'rounded-xl border border-border/80 hover:border-electric/50 hover:shadow-md transition-all duration-300 bg-card',
                 )}
             >
