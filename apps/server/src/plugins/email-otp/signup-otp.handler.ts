@@ -5,7 +5,7 @@ export const signupOtpHandler = new EmailEventListener('signup-otp')
     .on(SignupOtpEvent)
     .setRecipient(event => event.email)
     .setFrom('{{ fromAddress }}')
-    .setSubject('Your EMG Technology verification code')
+    .setSubject('Your EMG Technology OTP code')
     .setTemplateVars(event => ({
         otp: event.otp,
         firstName: event.firstName,

@@ -5,7 +5,7 @@ import { ArrowLeft, Home, Search, ShoppingBag } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getTopCollections } from '@/lib/vendure/cached';
-import { SITE_LOGO, SITE_NAME } from '@/lib/metadata';
+import { SITE_LOGO_LIGHT, SITE_NAME } from '@/lib/metadata';
 
 export default async function NotFound() {
     const locale = await getRouteLocale();
@@ -25,7 +25,7 @@ export default async function NotFound() {
                         <div className="bg-[#0C1210] text-white p-8 md:p-10 flex flex-col justify-between gap-8">
                             <div className="space-y-6">
                                 <Image
-                                    src={SITE_LOGO}
+                                    src={SITE_LOGO_LIGHT}
                                     alt={SITE_NAME}
                                     width={180}
                                     height={64}

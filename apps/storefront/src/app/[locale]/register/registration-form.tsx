@@ -12,6 +12,7 @@ import {
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {PasswordInput} from '@/components/ui/password-input';
+import {InputOTP, InputOTPGroup, InputOTPSlot} from '@/components/ui/input-otp';
 import {Card, CardContent} from '@/components/ui/card';
 import {
     Form,
@@ -234,14 +235,31 @@ export function RegistrationForm({redirectTo, embedded = false}: RegistrationFor
                                 <FormItem>
                                     <FormLabel>{t('otpLabel')}</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            inputMode="numeric"
+                                        <InputOTP
                                             maxLength={6}
+                                            inputMode="numeric"
                                             autoComplete="one-time-code"
-                                            className="tracking-[0.3em] text-center text-lg font-semibold"
                                             disabled={isPending}
-                                            {...field}
-                                        />
+                                            value={field.value}
+                                            onChange={value => {
+                                                const digits = value.replace(/\D/g, '').slice(0, 6);
+                                                field.onChange(digits);
+                                                if (digits.length === 6 && !isPending) {
+                                                    void otpForm.handleSubmit(confirmOtp)();
+                                                }
+                                            }}
+                                            containerClassName="justify-center gap-2"
+                                        >
+                                            <InputOTPGroup className="gap-2 border-0 shadow-none">
+                                                {Array.from({length: 6}).map((_, index) => (
+                                                    <InputOTPSlot
+                                                        key={index}
+                                                        index={index}
+                                                        className="size-11 rounded-lg border border-input text-base font-semibold shadow-none first:rounded-lg first:border-l last:rounded-lg data-[active=true]:border-electric data-[active=true]:ring-electric/30"
+                                                    />
+                                                ))}
+                                            </InputOTPGroup>
+                                        </InputOTP>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

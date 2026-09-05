@@ -6,7 +6,7 @@ import {getRouteLocale} from '@/i18n/server';
 import {getTranslations} from 'next-intl/server';
 import {AuthTabsPanel} from '@/components/auth/auth-tabs-panel';
 import {Skeleton} from '@/components/ui/skeleton';
-import {SITE_NAME, SITE_LOGO} from '@/lib/metadata';
+import {SITE_NAME, SITE_LOGO, SITE_LOGO_LIGHT} from '@/lib/metadata';
 import {COMPANY} from '@/lib/company';
 import {getActiveCustomer} from '@/lib/vendure/actions';
 
@@ -75,7 +75,7 @@ async function SignInPageContent({searchParams}: PageProps<'/[locale]/sign-in'>)
             <div className="hidden lg:flex lg:w-1/2 bg-[#0C1210] items-center justify-center p-12 rounded-br-3xl">
                 <div className="max-w-md text-white space-y-6">
                     <Image
-                        src={SITE_LOGO}
+                        src={SITE_LOGO_LIGHT}
                         alt={SITE_NAME}
                         width={240}
                         height={86}

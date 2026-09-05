@@ -16,7 +16,7 @@ function EmgLoginLogo() {
             <img
                 src={logoUrl}
                 alt="EMG Technology Ltd"
-                className="h-20 w-auto max-w-[300px] object-contain rounded-lg bg-white/10 p-2"
+                className="h-20 w-auto max-w-[300px] object-contain"
             />
         </div>
     );
