@@ -112,8 +112,10 @@ export function EmgChartSkeleton() {
 
 export function EmgStatsWidgetSkeleton() {
     return (
-        <div className="emg-insights-layout" aria-busy="true">
-            <div className="emg-stats-grid emg-stats-grid--compact">
+        <div className="emg-insights-layout emg-insights-layout--analytics" aria-busy="true">
+            <div className="emg-kpi-grid">
+                <EmgStatCardSkeleton />
+                <EmgStatCardSkeleton />
                 <EmgStatCardSkeleton />
                 <EmgStatCardSkeleton />
                 <EmgStatCardSkeleton />
@@ -123,6 +125,7 @@ export function EmgStatsWidgetSkeleton() {
                 <EmgChartSkeleton />
                 <EmgChartSkeleton />
             </div>
+            <div className="emg-skeleton-card emg-analytics-card min-h-[10rem] rounded-xl border border-border/60" />
         </div>
     );
 }

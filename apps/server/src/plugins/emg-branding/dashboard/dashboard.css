@@ -853,3 +853,178 @@ html.emg-dashboard-stable [data-slot="sidebar-inset"] {
   }
 }
 
+
+/* ========================================================
+   Task 8 — Analytics overview (real-data KPI layout)
+   ======================================================== */
+
+.emg-insights-layout--analytics {
+  gap: 1.1rem;
+  min-height: 28rem;
+}
+
+.emg-welcome-strip {
+  height: 100%;
+  background: var(--color-emg-card, #212b36) !important;
+}
+
+.emg-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.emg-kpi-card {
+  background: var(--color-emg-card, #212b36) !important;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.emg-kpi-link:hover .emg-kpi-card {
+  border-color: color-mix(in oklab, var(--color-emg-green) 45%, transparent) !important;
+  background: var(--color-emg-card-hover, #28323d) !important;
+}
+
+.emg-analytics-card {
+  background: var(--color-emg-card, #212b36) !important;
+  height: 100%;
+}
+
+.emg-ops-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  height: 100%;
+  min-height: 14rem;
+}
+
+.emg-status-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.emg-status-row__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--color-emg-muted);
+}
+
+.emg-status-row__meta strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.emg-status-row__track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, #919eab 16%, transparent);
+  overflow: hidden;
+}
+
+.emg-status-row__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  min-width: 0;
+  transition: width 0.25s ease;
+}
+
+.emg-status-row__fill--neutral {
+  background: #637381;
+}
+
+.emg-status-row__fill--ok {
+  background: var(--color-emg-green, #269a2d);
+}
+
+.emg-status-row__fill--warn {
+  background: #f59e0b;
+}
+
+.emg-status-row__fill--danger {
+  background: #ff5630;
+}
+
+.emg-deal-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.emg-orders-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.emg-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  min-width: 560px;
+}
+
+.emg-orders-table th {
+  text-align: left;
+  font-weight: 550;
+  color: var(--color-emg-muted);
+  padding: 0.55rem 0.4rem;
+  border-bottom: 1px solid var(--color-emg-border);
+  white-space: nowrap;
+}
+
+.emg-orders-table td {
+  padding: 0.7rem 0.4rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-emg-border) 70%, transparent);
+  vertical-align: middle;
+}
+
+.emg-orders-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.emg-orders-table th.text-right,
+.emg-orders-table td.text-right {
+  text-align: right;
+}
+
+.emg-state-badge {
+  font-weight: 500 !important;
+  font-size: 0.68rem !important;
+}
+
+.emg-state-badge--ok {
+  color: #5cbf60 !important;
+  background: color-mix(in oklab, #5cbf60 16%, transparent) !important;
+}
+
+.emg-state-badge--warn {
+  color: #f59e0b !important;
+  background: color-mix(in oklab, #f59e0b 16%, transparent) !important;
+}
+
+.emg-state-badge--danger {
+  color: #ff5630 !important;
+  background: color-mix(in oklab, #ff5630 16%, transparent) !important;
+}
+
+.emg-state-badge--neutral {
+  color: #c4cdd5 !important;
+}
+
+@media (max-width: 1200px) {
+  .emg-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .emg-kpi-grid,
+  .emg-ops-grid,
+  .emg-deal-metrics {
+    grid-template-columns: 1fr;
+  }
+}

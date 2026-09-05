@@ -3,16 +3,16 @@ import {useEffect, useRef, type ReactNode} from 'react';
 import logoUrl from './assets/logo.png';
 
 const LS_KEY = 'vendure-user-settings';
-const LAYOUT_VERSION = 28;
+const LAYOUT_VERSION = 29;
 
-/** EMG dark dashboard layout — welcome + featured at top, stats below. */
+/** EMG analytics layout — header, full-width insights, operations row. */
 export const EMG_DEFAULT_WIDGET_LAYOUT: Record<
     string,
     { x: number; y: number; w: number; h: number }
 > = {
-    'emg-welcome-widget': { x: 0, y: 0, w: 7, h: 3 },
-    'emg-featured-widget': { x: 7, y: 0, w: 5, h: 3 },
-    'emg-stats-widget': { x: 0, y: 3, w: 12, h: 4 },
+    'emg-welcome-widget': { x: 0, y: 0, w: 12, h: 2 },
+    'emg-stats-widget': { x: 0, y: 2, w: 12, h: 9 },
+    'emg-featured-widget': { x: 0, y: 11, w: 12, h: 5 },
 };
 
 function sanitizeTitle() {
