@@ -59,7 +59,7 @@ export function MobileNav({collections}: MobileNavProps) {
                             alt=""
                             width={120}
                             height={43}
-                            className="h-8 w-auto object-contain"
+                            className="h-8 w-auto object-contain bg-transparent"
                         />
                         <span className="sr-only">{t('menu')}</span>
                     </SheetTitle>

@@ -44,7 +44,7 @@ export function Navbar() {
                                         width={180}
                                         height={64}
                                         priority
-                                        className="h-9 md:h-11 w-auto object-contain"
+                                        className="h-9 md:h-11 w-auto object-contain bg-transparent"
                                     />
                                 </NavigationLink>
                             </div>
