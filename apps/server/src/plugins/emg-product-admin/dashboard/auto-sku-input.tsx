@@ -70,7 +70,7 @@ export const AutoSkuInput: DashboardFormComponent = props => {
             </div>
             <p className="text-xs text-muted-foreground">
                 SKU is generated automatically from product and variant data. Leave blank or click
-                Generate — only change it if you need a manual override. The server also assigns a
+                Generate only if you need a manual override. The server also assigns a
                 unique SKU when variants are created.
             </p>
         </div>

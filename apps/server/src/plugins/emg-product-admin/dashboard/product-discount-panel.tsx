@@ -143,7 +143,7 @@ export function ProductDiscountPanel({context}: {context: {entity?: {id?: string
         onSuccess: async () => {
             toast.success(
                 isDiscounted
-                    ? 'Super Deal saved — other Super Deals were left unchanged'
+                    ? 'Super Deal saved. Other Super Deals were left unchanged.'
                     : 'Discount settings saved',
             );
             await queryClient.invalidateQueries({queryKey: ['emg-product-discount', productId]});
@@ -164,14 +164,16 @@ export function ProductDiscountPanel({context}: {context: {entity?: {id?: string
         ...variants.map((v: {priceWithTax?: number; price?: number}) => v.priceWithTax ?? v.price ?? 0),
     );
     const fetchedPriceLabel =
-        maxMinor > 0 ? `${Math.round(maxMinor / 100).toLocaleString()} (from variants)` : '—';
+        maxMinor > 0
+            ? `${Math.round(maxMinor / 100).toLocaleString()} (from variants)`
+            : 'Not set yet';
 
     return (
         <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-                Choose percentage or fixed discount. Original price is filled automatically from the
-                current variant price — you do not need to type it. Enabling Super Deal adds this
-                product to the deals list without removing existing Super Deal products.
+                This is the only place to set Super Deals for this product. Choose percentage or
+                fixed discount. Original price fills in from the variant price automatically.
+                Enabling Super Deal adds this product to the deals list without removing others.
             </p>
 
             <div className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/40 px-3 py-2">

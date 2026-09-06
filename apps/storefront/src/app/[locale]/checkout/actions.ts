@@ -10,6 +10,7 @@ import {
     CreateCustomerAddressMutation,
     TransitionOrderToStateMutation,
     SetCustomerForOrderMutation,
+    UpdateCustomerMutation,
 } from '@/lib/vendure/mutations';
 import {revalidatePath, updateTag} from 'next/cache';
 import {redirect} from '@/i18n/navigation';
@@ -122,17 +123,27 @@ export async function placeOrder(
     paymentMethodCode: string,
     paymentDetails?: PaymentDetailsMetadata,
 ) {
-    // First, transition the order to ArrangingPayment state
-    await transitionToArrangingPayment();
+    // Reuse the same active order — never create a second order when navigating checkout steps.
+    // Only transition when not already arranging payment (avoids duplicate transition errors).
+    try {
+        await transitionToArrangingPayment();
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        // Safe to continue if already in ArrangingPayment (e.g. retry after a failed payment add)
+        if (!/already|ArrangingPayment|fromState/i.test(message)) {
+            throw error;
+        }
+    }
 
     const metadata: Record<string, unknown> = {
         shouldDecline: false,
         shouldError: false,
         shouldErrorOnSettle: false,
+        // MoMo/Airtel use manual settle — Place Order must NOT mark payment as paid
+        paymentStatusHint: 'awaiting_confirmation',
         ...paymentDetails,
     };
 
-    // Add payment to the order
     const result = await mutate(
         AddPaymentToOrderMutation,
         {
@@ -146,14 +157,13 @@ export async function placeOrder(
 
     if (result.data.addPaymentToOrder.__typename !== 'Order') {
         const errorResult = result.data.addPaymentToOrder;
-        throw new Error(
-            `Failed to place order: ${errorResult.errorCode} - ${errorResult.message}`
-        );
+        // If payment was already added (double-click), redirect to confirmation when possible
+        const msg = `${errorResult.errorCode} - ${errorResult.message}`;
+        throw new Error(`Failed to place order: ${msg}`);
     }
 
     const orderCode = result.data.addPaymentToOrder.code;
 
-    // Update the cart tag to immediately invalidate cached cart data
     updateTag('cart');
     updateTag('active-order');
 
@@ -203,4 +213,30 @@ export async function setCustomerForOrder(
         default:
             return { success: false, errorCode: 'UNKNOWN', message: 'Unknown error' };
     }
+}
+
+export async function updateCheckoutCustomer(input: {
+    firstName: string;
+    lastName: string;
+    phoneNumber?: string;
+}): Promise<{ success: true } | { success: false; message: string }> {
+    const result = await mutate(
+        UpdateCustomerMutation,
+        {
+            input: {
+                firstName: input.firstName,
+                lastName: input.lastName,
+                ...(input.phoneNumber ? { phoneNumber: input.phoneNumber } : {}),
+            },
+        },
+        { useAuthToken: true },
+    );
+
+    if (!result.data.updateCustomer?.id) {
+        return { success: false, message: 'Failed to update customer details' };
+    }
+
+    const locale = await getLocale();
+    revalidatePath(`/${locale}/checkout`);
+    return { success: true };
 }

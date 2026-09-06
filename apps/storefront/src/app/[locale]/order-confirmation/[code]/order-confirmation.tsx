@@ -46,6 +46,14 @@ const GetOrderByCodeQuery = graphql(`
                 postalCode
                 country
             }
+            payments {
+                id
+                method
+                state
+                amount
+                transactionId
+                metadata
+            }
         }
     }
 `);
@@ -54,10 +62,31 @@ interface OrderConfirmationProps {
     paramsPromise: Promise<{ locale: string; code: string }>;
 }
 
+function mapPaymentStateLabel(
+    orderState: string,
+    paymentState: string | undefined,
+    tStatus: (key: string) => string,
+): string {
+    if (paymentState === 'Settled' || orderState === 'PaymentSettled') {
+        return tStatus('paymentPaid');
+    }
+    if (paymentState === 'Authorized' || orderState === 'PaymentAuthorized') {
+        return tStatus('paymentAwaitingConfirmation');
+    }
+    if (paymentState === 'Declined' || paymentState === 'Error') {
+        return tStatus('paymentFailed');
+    }
+    if (paymentState === 'Cancelled' || orderState === 'Cancelled') {
+        return tStatus('paymentCancelled');
+    }
+    return tStatus('paymentPending');
+}
+
 export async function OrderConfirmation({paramsPromise}: OrderConfirmationProps) {
     const {code} = await paramsPromise;
     const locale = await getRouteLocale();
     const t = await getTranslations({locale, namespace: 'OrderConfirmation'});
+    const tStatus = await getTranslations({locale, namespace: 'OrderStatus'});
 
     const {data} = await query(GetOrderByCodeQuery, {code}, {useAuthToken: true});
     const order = data.orderByCode;
@@ -65,6 +94,11 @@ export async function OrderConfirmation({paramsPromise}: OrderConfirmationProps)
     if (!order) {
         notFound();
     }
+
+    const latestPayment = order.payments?.[order.payments.length - 1];
+    const paymentLabel = mapPaymentStateLabel(order.state, latestPayment?.state, key => tStatus(key));
+    const awaitingConfirmation =
+        order.state === 'PaymentAuthorized' || latestPayment?.state === 'Authorized';
 
     return (
         <div className="container mx-auto px-4 py-16">
@@ -83,6 +117,15 @@ export async function OrderConfirmation({paramsPromise}: OrderConfirmationProps)
                     <p className="text-sm text-muted-foreground mt-1">
                         {t('emailConfirmation')}
                     </p>
+                    <p className="text-sm mt-3">
+                        <span className="text-muted-foreground">{t('paymentStatus')}: </span>
+                        <span className="font-semibold text-foreground">{paymentLabel}</span>
+                    </p>
+                    {awaitingConfirmation && (
+                        <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+                            {t('awaitingConfirmationHint')}
+                        </p>
+                    )}
                 </div>
 
                 <Card className="mb-6">

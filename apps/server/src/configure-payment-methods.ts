@@ -18,6 +18,9 @@ const MANUAL_SETTLE_HANDLER = {
     arguments: [{ name: 'automaticSettle', value: 'false' }],
 };
 
+/** Known leftover method codes from older seeds — never disable admin-created methods. */
+const LEGACY_PAYMENT_CODES = new Set(['standard-payment', 'dummy-payment-method']);
+
 export const EMG_PAYMENT_METHODS = [
     {
         code: 'card',
@@ -36,7 +39,7 @@ export const EMG_PAYMENT_METHODS = [
             merchantPhone: '+250796345773',
             merchantMomoCode: '*182*8*1*0796345773#',
             paymentSteps:
-                'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nFill in your account name and transaction ID below, then place your order',
+                'Dial the USSD code or pay to the merchant number shown\nEnter the exact order total\nUse your payment reference as the reason / message\nReturn here and place your order — payment stays awaiting confirmation until admin verifies',
         },
     },
     {
@@ -49,11 +52,16 @@ export const EMG_PAYMENT_METHODS = [
             merchantPhone: '+250796345773',
             merchantMomoCode: '*185*1*0796345773#',
             paymentSteps:
-                'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nFill in your account name and transaction ID below, then place your order',
+                'Dial the USSD code or pay to the merchant number shown\nEnter the exact order total\nUse your payment reference as the reason / message\nReturn here and place your order — payment stays awaiting confirmation until admin verifies',
         },
     },
 ] as const;
 
+/**
+ * Ensures default payment methods exist.
+ * Admin configures merchant phone / MoMo code / name / instructions / enabled in the dashboard.
+ * Boot must NOT overwrite those custom fields.
+ */
 export async function configurePaymentMethods(app: Awaited<ReturnType<typeof bootstrap>>) {
     const requestContextService = app.get(RequestContextService);
     const paymentMethodService = app.get(PaymentMethodService);
@@ -61,55 +69,45 @@ export async function configurePaymentMethods(app: Awaited<ReturnType<typeof boo
     const ctx = await requestContextService.create({ apiType: 'admin' });
 
     const { items: existing } = await paymentMethodService.findAll(ctx, { take: 100 });
-    const targetIds: string[] = [];
 
     for (const target of EMG_PAYMENT_METHODS) {
-        let method = existing.find(m => m.code === target.code);
+        const method = existing.find(m => m.code === target.code);
 
-        if (!method) {
-            method = await paymentMethodService.create(ctx, {
-                code: target.code,
-                enabled: true,
-                handler: target.handler,
-                customFields: target.customFields,
-                translations: [
-                    {
-                        languageCode: LanguageCode.en,
-                        name: target.name,
-                        description: target.description,
-                    },
-                ],
-            });
-            Logger.info(`Created payment method: ${target.name} (${target.code})`, loggerCtx);
-        } else {
-            await paymentMethodService.update(ctx, {
-                id: method.id,
-                enabled: true,
-                handler: target.handler,
-                customFields: {
-                    ...(method.customFields ?? {}),
-                    ...target.customFields,
-                },
-                translations: [
-                    {
-                        languageCode: LanguageCode.en,
-                        name: target.name,
-                        description: target.description,
-                    },
-                ],
-            });
-            Logger.info(`Updated payment method: ${target.name} (${target.code})`, loggerCtx);
+        if (method) {
+            // Preserve admin merchant config, name, description, and enabled flag
+            Logger.info(
+                `Payment method already present: ${method.code} — merchant settings left unchanged`,
+                loggerCtx,
+            );
+            continue;
         }
 
-        targetIds.push(String(method.id));
+        await paymentMethodService.create(ctx, {
+            code: target.code,
+            enabled: true,
+            handler: target.handler,
+            customFields: target.customFields,
+            translations: [
+                {
+                    languageCode: LanguageCode.en,
+                    name: target.name,
+                    description: target.description,
+                },
+            ],
+        });
+        Logger.info(`Created payment method: ${target.name} (${target.code})`, loggerCtx);
     }
 
     for (const method of existing) {
-        if (!targetIds.includes(String(method.id)) && method.enabled) {
-            await paymentMethodService.update(ctx, { id: method.id, enabled: false });
-            Logger.info(`Disabled legacy payment method: ${method.code}`, loggerCtx);
+        if (!LEGACY_PAYMENT_CODES.has(method.code) || !method.enabled) {
+            continue;
         }
+        await paymentMethodService.update(ctx, { id: method.id, enabled: false });
+        Logger.info(`Disabled legacy payment method: ${method.code}`, loggerCtx);
     }
 
-    Logger.info(`Payment methods ready: ${EMG_PAYMENT_METHODS.map(m => m.name).join(', ')}`, loggerCtx);
+    Logger.info(
+        'Payment methods ready (admin merchant phone/MoMo/name/instructions are preserved)',
+        loggerCtx,
+    );
 }

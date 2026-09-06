@@ -47,10 +47,6 @@ type VariantOption = {
     group?: {id: string; code: string; name?: string} | null;
 };
 
-function majorFromMinor(minor: number): number {
-    return Math.round(minor / 100);
-}
-
 export function VariantQuickEditor({context}: {context: {entity?: {id?: string; name?: string}}}) {
     const productId = context.entity?.id;
     const queryClient = useQueryClient();
@@ -66,9 +62,6 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
         Array<{stockLocationId: string; stockOnHand: number; label: string}>
     >([]);
     const [options, setOptions] = useState<VariantOption[]>([]);
-    const [discountPercentage, setDiscountPercentage] = useState<string>('');
-    const [discountAmount, setDiscountAmount] = useState<string>('');
-    const [originalPrice, setOriginalPrice] = useState<string>('');
     const hydrating = useRef(false);
 
     const variantsQuery = useQuery({
@@ -162,31 +155,6 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
             ),
         );
 
-        const cf = (variant.customFields ?? {}) as {
-            variantDiscountPercentage?: number | null;
-            variantDiscountAmount?: number | null;
-            variantOriginalPrice?: number | null;
-        };
-        setDiscountPercentage(
-            cf.variantDiscountPercentage != null && cf.variantDiscountPercentage > 0
-                ? String(cf.variantDiscountPercentage)
-                : '',
-        );
-        setDiscountAmount(
-            cf.variantDiscountAmount != null && cf.variantDiscountAmount > 0
-                ? String(cf.variantDiscountAmount)
-                : '',
-        );
-        // Prefer stored original; otherwise default to current RWF price (major units)
-        const autoOriginal = majorFromMinor(rwf);
-        setOriginalPrice(
-            cf.variantOriginalPrice != null && cf.variantOriginalPrice > 0
-                ? String(cf.variantOriginalPrice)
-                : autoOriginal > 0
-                  ? String(autoOriginal)
-                  : '',
-        );
-
         queueMicrotask(() => {
             hydrating.current = false;
         });
@@ -196,13 +164,6 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
         setPriceRwf(next);
         if (!hydrating.current && linkConversion) {
             setPriceUsd(rwfMinorToUsdMinor(next, rwfPerUsd));
-        }
-        // Keep original price in sync when admin hasn't set a custom override yet
-        if (!hydrating.current && !discountPercentage && !discountAmount) {
-            const major = majorFromMinor(next);
-            if (major > 0) {
-                setOriginalPrice(String(major));
-            }
         }
     };
 
@@ -250,15 +211,6 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
             price,
         }));
 
-        const pct = discountPercentage.trim() === '' ? null : Number(discountPercentage);
-        const amt = discountAmount.trim() === '' ? null : Number(discountAmount);
-        let orig = originalPrice.trim() === '' ? null : Number(originalPrice);
-        if ((pct != null && pct > 0) || (amt != null && amt > 0)) {
-            if (orig == null || orig <= 0) {
-                orig = majorFromMinor(priceRwf);
-            }
-        }
-
         await saveMutation.mutateAsync({
             id: selectedVariantId,
             enabled,
@@ -278,11 +230,6 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
                 stockLocationId: level.stockLocationId,
                 stockOnHand: level.stockOnHand,
             })),
-            customFields: {
-                variantDiscountPercentage: pct != null && !Number.isNaN(pct) ? pct : null,
-                variantDiscountAmount: amt != null && !Number.isNaN(amt) ? amt : null,
-                variantOriginalPrice: orig != null && !Number.isNaN(orig) ? orig : null,
-            },
         });
     };
 
@@ -291,9 +238,8 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
     return (
         <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-                Select a variant below (or click its name in the table) to edit name, price, tax,
-                stock, options, and discount without leaving this product page. Changes save to the
-                database immediately.
+                Edit name, prices, tax, and stock here. For Super Deals, use the Discount / Super Deal
+                panel on the right.
             </p>
 
             <div className="grid gap-2">
@@ -351,11 +297,6 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
                                     </span>
                                 ))}
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                Option values are set when the variant is created. To change option
-                                definitions, use Product options above; then recreate or adjust
-                                variants as needed.
-                            </p>
                         </div>
                     )}
 
@@ -446,52 +387,6 @@ export function VariantQuickEditor({context}: {context: {entity?: {id?: string; 
                             ))}
                         </div>
                     )}
-
-                    <div className="grid gap-3 rounded-md border border-dashed border-border p-3">
-                        <div>
-                            <Label>Variant discount (optional)</Label>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                                Overrides the product-level Super Deal for this variant only.
-                                Original price is filled from the current RWF price automatically —
-                                you do not need to type it unless you want a custom was-price.
-                            </p>
-                        </div>
-                        <div className="grid gap-4 sm:grid-cols-3">
-                            <div className="grid gap-2">
-                                <Label htmlFor="emg-variant-discount-pct">Percentage (%)</Label>
-                                <Input
-                                    id="emg-variant-discount-pct"
-                                    type="number"
-                                    min={0}
-                                    max={99}
-                                    placeholder="e.g. 20"
-                                    value={discountPercentage}
-                                    onChange={event => setDiscountPercentage(event.target.value)}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="emg-variant-discount-amt">Fixed amount</Label>
-                                <Input
-                                    id="emg-variant-discount-amt"
-                                    type="number"
-                                    min={0}
-                                    placeholder="e.g. 5000"
-                                    value={discountAmount}
-                                    onChange={event => setDiscountAmount(event.target.value)}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="emg-variant-original-price">Original price</Label>
-                                <Input
-                                    id="emg-variant-original-price"
-                                    type="number"
-                                    min={0}
-                                    value={originalPrice}
-                                    onChange={event => setOriginalPrice(event.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </div>
 
                     <Button type="button" onClick={handleSave} disabled={saveMutation.isPending}>
                         <Pencil className="mr-2 size-4" />

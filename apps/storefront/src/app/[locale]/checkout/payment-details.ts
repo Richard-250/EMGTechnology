@@ -112,11 +112,11 @@ export function isCardFormValid(card: CardPaymentDetails): boolean {
     );
 }
 
+/** Customer must identify themselves; transaction ID is optional (admin confirms payment). */
 export function isMobileMoneyCheckoutValid(details: MobileMoneyCheckoutDetails): boolean {
     return (
         details.accountName.trim().length >= 2 &&
-        isValidRwandaMobileNumber(details.phoneNumber) &&
-        details.transactionId.trim().length >= 4
+        isValidRwandaMobileNumber(details.phoneNumber)
     );
 }
 

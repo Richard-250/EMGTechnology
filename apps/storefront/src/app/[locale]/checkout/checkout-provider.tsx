@@ -48,12 +48,21 @@ interface PaymentMethod {
   customFields?: PaymentMethodCustomFields | null;
 }
 
+interface CheckoutCustomerProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  phoneNumber?: string | null;
+}
+
 interface CheckoutContextType {
   order: CheckoutOrder;
   addresses: CustomerAddress[];
   countries: Country[];
   shippingMethods: ShippingMethod[];
   paymentMethods: PaymentMethod[];
+  customerProfile: CheckoutCustomerProfile | null;
   selectedPaymentMethodCode: string | null;
   setSelectedPaymentMethodCode: (code: string | null) => void;
   cardDetails: CardPaymentDetails;
@@ -91,6 +100,7 @@ interface CheckoutProviderProps {
   countries: Country[];
   shippingMethods: ShippingMethod[];
   paymentMethods: PaymentMethod[];
+  customerProfile?: CheckoutCustomerProfile | null;
   isGuest: boolean;
 }
 
@@ -101,6 +111,7 @@ export function CheckoutProvider({
   countries,
   shippingMethods,
   paymentMethods,
+  customerProfile = null,
   isGuest,
 }: CheckoutProviderProps) {
   const [selectedPaymentMethodCode, setSelectedPaymentMethodCode] = useState<string | null>(null);
@@ -123,6 +134,7 @@ export function CheckoutProvider({
         countries,
         shippingMethods,
         paymentMethods,
+        customerProfile,
         selectedPaymentMethodCode,
         setSelectedPaymentMethodCode: handleSetPaymentMethod,
         cardDetails,

@@ -4,10 +4,13 @@ import {Loader2, Upload} from 'lucide-react';
 import {useRef, useState} from 'react';
 import {toast} from 'sonner';
 
-/** Soft target for compression; Vendure/nginx allow up to 50MB. */
-const TARGET_MAX_BYTES = 20 * 1024 * 1024;
-const MAX_EDGE = 4096;
-const SKIP_COMPRESS_BELOW = 15 * 1024 * 1024;
+/**
+ * Fast client prep: only touch oversized images, resize aggressively for speed.
+ * Vendure/nginx still allow up to 50MB; we aim for ~1.5MB JPEGs for quick uploads.
+ */
+const TARGET_MAX_BYTES = 1.5 * 1024 * 1024;
+const MAX_EDGE = 1600;
+const SKIP_COMPRESS_BELOW = 900 * 1024;
 
 const createAssetsDocument = graphql(`
     mutation EmgCreateAssets($input: [CreateAssetInput!]!) {
@@ -48,6 +51,8 @@ type CreateAssetsResult = {
     >;
 };
 
+type UploadPhase = 'idle' | 'preparing' | 'uploading' | 'finishing';
+
 function isAssetResult(
     row: CreateAssetsResult['createAssets'][number],
 ): row is {id: string; name: string; preview: string; source: string; mimeType: string} {
@@ -57,39 +62,49 @@ function isAssetResult(
 function formatUploadError(error: unknown): string {
     const msg = error instanceof Error ? error.message : String(error);
     if (/413|payload too large|entity too large|request entity/i.test(msg)) {
-        return 'Upload blocked: file too large (HTTP 413). The image was compressed — if this continues, set nginx client_max_body_size 50m and reload nginx.';
+        return 'File too large for the server. Try a smaller image, or ask the host to raise nginx client_max_body_size.';
     }
     return msg || 'Could not upload image.';
 }
 
-/**
- * Shrink large photos so multipart uploads fit typical reverse-proxy body limits.
- * Non-image files are returned unchanged.
- */
+function phaseLabel(phase: UploadPhase, count: number): string {
+    if (phase === 'preparing') {
+        return count > 1 ? `Preparing ${count} images…` : 'Preparing image…';
+    }
+    if (phase === 'uploading') {
+        return count > 1 ? `Uploading ${count} images…` : 'Uploading image…';
+    }
+    if (phase === 'finishing') {
+        return 'Finishing up…';
+    }
+    return 'Upload';
+}
+
+/** Fast resize + JPEG compress for large photos only. */
 async function prepareFileForUpload(file: File): Promise<File> {
     if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
         return file;
     }
-    // Allow large images through when they already fit the soft target.
     if (file.size <= SKIP_COMPRESS_BELOW) {
         return file;
     }
 
     try {
         const bitmap = await createImageBitmap(file);
-        const needsResize = Math.max(bitmap.width, bitmap.height) > MAX_EDGE;
-        if (!needsResize && file.size <= TARGET_MAX_BYTES) {
-            bitmap.close();
-            return file;
-        }
-
         const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
         const width = Math.max(1, Math.round(bitmap.width * scale));
         const height = Math.max(1, Math.round(bitmap.height * scale));
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
+
+        // Prefer OffscreenCanvas when available (faster, no layout thrash)
+        const canvas =
+            typeof OffscreenCanvas !== 'undefined'
+                ? new OffscreenCanvas(width, height)
+                : Object.assign(document.createElement('canvas'), {width, height});
+
+        const ctx = canvas.getContext('2d') as
+            | CanvasRenderingContext2D
+            | OffscreenCanvasRenderingContext2D
+            | null;
         if (!ctx) {
             bitmap.close();
             return file;
@@ -97,16 +112,23 @@ async function prepareFileForUpload(file: File): Promise<File> {
         ctx.drawImage(bitmap, 0, 0, width, height);
         bitmap.close();
 
-        let quality = 0.9;
+        let quality = 0.72;
         let blob: Blob | null = null;
-        for (let i = 0; i < 8; i++) {
-            blob = await new Promise<Blob | null>(resolve =>
-                canvas.toBlob(resolve, 'image/jpeg', quality),
-            );
+        for (let i = 0; i < 4; i++) {
+            if ('convertToBlob' in canvas) {
+                blob = await (canvas as OffscreenCanvas).convertToBlob({
+                    type: 'image/jpeg',
+                    quality,
+                });
+            } else {
+                blob = await new Promise<Blob | null>(resolve =>
+                    (canvas as HTMLCanvasElement).toBlob(resolve, 'image/jpeg', quality),
+                );
+            }
             if (!blob || blob.size <= TARGET_MAX_BYTES) {
                 break;
             }
-            quality -= 0.08;
+            quality -= 0.1;
         }
         if (!blob) {
             return file;
@@ -119,8 +141,11 @@ async function prepareFileForUpload(file: File): Promise<File> {
     }
 }
 
-async function uploadFiles(files: File[]) {
+async function uploadFiles(files: File[], onPhase: (phase: UploadPhase) => void) {
+    onPhase('preparing');
     const prepared = await Promise.all(files.map(prepareFileForUpload));
+
+    onPhase('uploading');
     const data = (await api.mutate(createAssetsDocument, {
         input: prepared.map(file => ({file})),
     })) as CreateAssetsResult;
@@ -142,8 +167,8 @@ async function uploadFiles(files: File[]) {
 }
 
 /**
- * Single reliable Upload button for Assets / product pages.
- * Compresses large images client-side and surfaces clear errors (including HTTP 413).
+ * Fast Upload control for the Assets list (action bar).
+ * Shows a clear loading state so admins know to wait a few seconds.
  */
 export function EmgUploadAssetsButton({
     productId,
@@ -158,19 +183,41 @@ export function EmgUploadAssetsButton({
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
-    const [busy, setBusy] = useState(false);
+    const [phase, setPhase] = useState<UploadPhase>('idle');
+    const [fileCount, setFileCount] = useState(0);
+    const toastIdRef = useRef<string | number | null>(null);
+
+    const busy = phase !== 'idle';
 
     const mutation = useMutation({
         mutationFn: async (files: File[]) => {
-            if (!files.length) {
-                throw new Error('No files selected.');
-            }
-            const {created, errors} = await uploadFiles(files);
+            setFileCount(files.length);
+            toastIdRef.current = toast.loading(phaseLabel('preparing', files.length), {
+                description: 'Please wait a few seconds. Do not close this page.',
+            });
+
+            const {created, errors} = await uploadFiles(files, nextPhase => {
+                setPhase(nextPhase);
+                if (toastIdRef.current != null) {
+                    toast.loading(phaseLabel(nextPhase, files.length), {
+                        id: toastIdRef.current,
+                        description: 'Please wait a few seconds. Do not close this page.',
+                    });
+                }
+            });
+
             if (!created.length) {
                 throw new Error(errors.join('; ') || 'Upload failed.');
             }
 
             if (productId) {
+                setPhase('finishing');
+                if (toastIdRef.current != null) {
+                    toast.loading(phaseLabel('finishing', files.length), {
+                        id: toastIdRef.current,
+                        description: 'Attaching images to the product…',
+                    });
+                }
                 const assetIds = Array.from(new Set([...existingAssetIds, ...created.map(a => a.id)]));
                 await api.mutate(updateProductAssetsDocument, {
                     input: {
@@ -184,11 +231,20 @@ export function EmgUploadAssetsButton({
             return {created, errors};
         },
         onSuccess: ({created, errors}) => {
-            toast.success(
-                created.length === 1
-                    ? `Uploaded “${created[0].name}”`
-                    : `Uploaded ${created.length} images`,
-            );
+            if (toastIdRef.current != null) {
+                toast.success(
+                    created.length === 1
+                        ? `Uploaded “${created[0].name}”`
+                        : `Uploaded ${created.length} images`,
+                    {id: toastIdRef.current},
+                );
+            } else {
+                toast.success(
+                    created.length === 1
+                        ? `Uploaded “${created[0].name}”`
+                        : `Uploaded ${created.length} images`,
+                );
+            }
             if (errors.length) {
                 toast.warning(`Some files failed: ${errors.join('; ')}`);
             }
@@ -197,9 +253,17 @@ export function EmgUploadAssetsButton({
             queryClient.invalidateQueries({queryKey: ['asset-gallery']});
         },
         onError: (error: Error) => {
-            toast.error(formatUploadError(error));
+            if (toastIdRef.current != null) {
+                toast.error(formatUploadError(error), {id: toastIdRef.current});
+            } else {
+                toast.error(formatUploadError(error));
+            }
         },
-        onSettled: () => setBusy(false),
+        onSettled: () => {
+            setPhase('idle');
+            setFileCount(0);
+            toastIdRef.current = null;
+        },
     });
 
     return (
@@ -217,24 +281,31 @@ export function EmgUploadAssetsButton({
                     if (!files.length) {
                         return;
                     }
-                    setBusy(true);
+                    setPhase('preparing');
                     mutation.mutate(files);
                 }}
             />
-            <Button
-                type="button"
-                variant="default"
-                className="whitespace-nowrap"
-                disabled={busy || mutation.isPending}
-                onClick={() => inputRef.current?.click()}
-            >
-                {busy || mutation.isPending ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                ) : (
-                    <Upload className="mr-2 size-4" />
+            <div className="flex flex-col items-stretch gap-2 min-w-[9rem]">
+                <Button
+                    type="button"
+                    variant="default"
+                    className="whitespace-nowrap"
+                    disabled={busy || mutation.isPending}
+                    onClick={() => inputRef.current?.click()}
+                >
+                    {busy || mutation.isPending ? (
+                        <Loader2 className="mr-2 size-4 animate-spin" />
+                    ) : (
+                        <Upload className="mr-2 size-4" />
+                    )}
+                    {busy ? phaseLabel(phase, fileCount) : label}
+                </Button>
+                {busy && (
+                    <p className="text-[11px] text-muted-foreground leading-snug max-w-[14rem]">
+                        Upload in progress. This usually takes a few seconds.
+                    </p>
                 )}
-                {label}
-            </Button>
+            </div>
         </>
     );
 }

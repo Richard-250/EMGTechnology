@@ -69,6 +69,13 @@ export default async function CheckoutPage() {
                     countries={countries}
                     shippingMethods={shippingMethods}
                     paymentMethods={paymentMethods}
+                    customerProfile={{
+                        id: customer.id,
+                        firstName: customer.firstName,
+                        lastName: customer.lastName,
+                        emailAddress: customer.emailAddress,
+                        phoneNumber: customer.phoneNumber,
+                    }}
                     isGuest={false}
                 >
                     <CheckoutFlow/>

@@ -11,7 +11,7 @@ import {NavbarSubnav} from '@/components/layout/navbar/navbar-subnav';
 import {Suspense} from 'react';
 import {NavbarUserSkeleton} from '@/components/shared/skeletons/navbar-user-skeleton';
 import {SearchInputSkeleton} from '@/components/shared/skeletons/search-input-skeleton';
-import {SITE_NAME, SITE_LOGO} from '@/lib/metadata';
+import {SITE_NAME, SITE_LOGO_LIGHT} from '@/lib/metadata';
 import {COMPANY} from '@/lib/company';
 
 function RwandaFlag() {
@@ -39,7 +39,7 @@ export function Navbar() {
                                 </Suspense>
                                 <NavigationLink href="/" className="flex items-center shrink-0">
                                     <Image
-                                        src={SITE_LOGO}
+                                        src={SITE_LOGO_LIGHT}
                                         alt={SITE_NAME}
                                         width={180}
                                         height={64}

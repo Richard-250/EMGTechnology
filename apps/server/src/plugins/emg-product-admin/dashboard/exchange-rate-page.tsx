@@ -27,7 +27,6 @@ export function ExchangeRateCalculatorPage() {
     const queryClient = useQueryClient();
     const [rateInput, setRateInput] = useState('1300');
     const [sampleRwf, setSampleRwf] = useState('130000');
-    const [direction, setDirection] = useState<'RWF_TO_USD' | 'USD_TO_RWF'>('RWF_TO_USD');
 
     const rateQuery = useQuery({
         queryKey: ['emg-exchange-rate'],
@@ -50,7 +49,8 @@ export function ExchangeRateCalculatorPage() {
             return api.mutate(updateExchangeRateMutation, {
                 rwfPerUsd,
                 recalculate,
-                direction,
+                // Always update USD from RWF — RWF catalog prices stay as set manually
+                direction: 'RWF_TO_USD',
             });
         },
         onSuccess: async (data, recalculate) => {
@@ -58,10 +58,10 @@ export function ExchangeRateCalculatorPage() {
             await queryClient.invalidateQueries({queryKey: ['emg-exchange-rate']});
             if (recalculate) {
                 toast.success(
-                    `Rate saved at ${result.rwfPerUsd}. Updated ${result.updatedVariants} variant price(s).`,
+                    `Rate saved. Updated USD on ${result.updatedVariants} variant(s). RWF prices were not changed.`,
                 );
             } else {
-                toast.success(`Rate saved at ${result.rwfPerUsd} (prices not changed).`);
+                toast.success(`Rate saved at ${result.rwfPerUsd} RWF per USD (prices not changed).`);
             }
         },
         onError: (error: Error) => {
@@ -80,11 +80,12 @@ export function ExchangeRateCalculatorPage() {
             <div className="space-y-2">
                 <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
                     <Calculator className="size-6" />
-                    Exchange rate calculator
+                    Exchange rate
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                    Set how many RWF equal 1 USD. Saving with recalculation updates every product
-                    variant so RWF and USD catalog prices stay aligned.
+                    Set how many RWF equal 1 USD. You can update every product&apos;s{' '}
+                    <strong>USD</strong> price from its RWF price in one step. RWF prices are always
+                    edited manually per product.
                 </p>
             </div>
 
@@ -102,35 +103,13 @@ export function ExchangeRateCalculatorPage() {
                     <p className="text-xs text-muted-foreground">
                         Current saved rate:{' '}
                         {rateQuery.isPending
-                            ? '…'
+                            ? 'Loading'
                             : `${rateQuery.data?.emgExchangeRate?.rwfPerUsd ?? 1300} RWF`}
                     </p>
                 </div>
 
-                <div className="grid gap-2">
-                    <Label>When recalculating</Label>
-                    <div className="flex flex-wrap gap-2">
-                        <Button
-                            type="button"
-                            variant={direction === 'RWF_TO_USD' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setDirection('RWF_TO_USD')}
-                        >
-                            Update USD from RWF
-                        </Button>
-                        <Button
-                            type="button"
-                            variant={direction === 'USD_TO_RWF' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setDirection('USD_TO_RWF')}
-                        >
-                            Update RWF from USD
-                        </Button>
-                    </div>
-                </div>
-
                 <div className="rounded-lg border border-border/70 bg-muted/40 p-4 space-y-3">
-                    <p className="text-sm font-medium">Preview conversion</p>
+                    <p className="text-sm font-medium">Preview</p>
                     <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
                         <div className="grid gap-2">
                             <Label htmlFor="emg-fx-sample">Sample RWF amount</Label>
@@ -143,11 +122,11 @@ export function ExchangeRateCalculatorPage() {
                             />
                         </div>
                         <p className="text-sm tabular-nums pb-2">
-                            ≈ <span className="font-semibold">${sampleUsdMajor}</span> USD
+                            = <span className="font-semibold">${sampleUsdMajor}</span> USD
                         </p>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        Reverse check: ${sampleUsdMajor} → {(reverseRwfMinor / 100).toLocaleString()} RWF
+                        Check: ${sampleUsdMajor} = {(reverseRwfMinor / 100).toLocaleString()} RWF
                     </p>
                 </div>
 
@@ -159,7 +138,9 @@ export function ExchangeRateCalculatorPage() {
                         className="sm:flex-1"
                     >
                         <RefreshCw className="mr-2 size-4" />
-                        {saveMutation.isPending ? 'Updating…' : 'Save rate & update all prices'}
+                        {saveMutation.isPending
+                            ? 'Updating USD prices…'
+                            : 'Save rate & update all USD prices'}
                     </Button>
                     <Button
                         type="button"
@@ -170,6 +151,10 @@ export function ExchangeRateCalculatorPage() {
                         Save rate only
                     </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                    “Update all USD prices” recalculates USD from each variant&apos;s RWF price. It
+                    never overwrites RWF.
+                </p>
             </div>
         </div>
     );

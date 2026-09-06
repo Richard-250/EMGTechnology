@@ -58,6 +58,11 @@ export default function OrderSummary() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium line-clamp-2">{line.productVariant.product.name}</p>
+                            {line.productVariant.name !== line.productVariant.product.name && (
+                                <p className="text-[10px] text-muted-foreground line-clamp-1">
+                                    {line.productVariant.name}
+                                </p>
+                            )}
                             <p className="text-xs text-electric font-semibold mt-0.5">
                                 <Price value={line.linePriceWithTax} currencyCode={order.currencyCode} />
                             </p>
@@ -89,6 +94,18 @@ export default function OrderSummary() {
                     <span className="text-muted-foreground">{t('subtotal')}</span>
                     <Price value={order.subTotalWithTax} currencyCode={order.currencyCode} />
                 </div>
+                {(order.discounts?.length ?? 0) > 0 && (
+                    <div className="flex justify-between text-electric">
+                        <span>{t('discounts')}</span>
+                        <Price
+                            value={-(order.discounts ?? []).reduce(
+                                (sum, d) => sum + Math.abs(d.amountWithTax),
+                                0,
+                            )}
+                            currencyCode={order.currencyCode}
+                        />
+                    </div>
+                )}
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('shipping')}</span>
                     <span>
@@ -97,6 +114,15 @@ export default function OrderSummary() {
                             : t('toBeCalculated')}
                     </span>
                 </div>
+                {order.totalWithTax - order.total > 0 && (
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">{t('tax')}</span>
+                        <Price
+                            value={order.totalWithTax - order.total}
+                            currencyCode={order.currencyCode}
+                        />
+                    </div>
+                )}
             </div>
 
             <div className="rounded-lg bg-electric/10 border border-electric/20 px-4 py-3 mt-3 mb-4">

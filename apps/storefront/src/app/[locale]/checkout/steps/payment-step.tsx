@@ -151,27 +151,44 @@ function MobileMoneyCheckoutPanel({
   const steps = parsePaymentSteps(fields?.paymentSteps);
   const paymentReference = buildPaymentReference(providerCode, order.code);
   const providerName = providerCode === 'mtn-rwanda' ? t('mtnMobileMoney') : t('airtelMoney');
+  const merchantName = fields?.merchantDisplayName ?? method?.name ?? 'EMG Technology Ltd';
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
       <div className="flex items-start justify-between gap-4 border-b border-border bg-electric/5 px-5 py-4">
-        <h3 className="text-lg font-bold text-electric">{providerName}</h3>
-        <p className="text-lg font-bold text-electric whitespace-nowrap">
-          <Price value={order.totalWithTax} currencyCode={order.currencyCode} />
-        </p>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('merchantPaymentDetails')}
+          </p>
+          <h3 className="text-lg font-bold text-electric mt-1">{providerName}</h3>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground">{t('amountToPay')}</p>
+          <p className="text-lg font-bold text-electric whitespace-nowrap">
+            <Price value={order.totalWithTax} currencyCode={order.currencyCode} />
+          </p>
+        </div>
       </div>
 
-      <div className="px-5 py-4 space-y-4 text-sm">
-        <p className="text-foreground">
-          {t('payForMerchant', {
-            name: fields?.merchantDisplayName ?? method?.name ?? 'EMG Technology Ltd',
-            code: fields?.merchantMomoCode ?? '',
-          })}
-        </p>
-        <p className="text-foreground">
-          {t('momoNumberLabel')}{' '}
-          <strong className="text-electric">{fields?.merchantPhone ?? 'N/A'}</strong>
-        </p>
+      <div className="px-5 py-4 space-y-3 text-sm">
+        <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+          <div className="flex justify-between gap-3">
+            <span className="text-muted-foreground">{t('registeredMerchantName')}</span>
+            <span className="font-medium text-right">{merchantName}</span>
+          </div>
+          {fields?.merchantPhone ? (
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">{t('momoNumberLabel')}</span>
+              <strong className="text-electric text-right">{fields.merchantPhone}</strong>
+            </div>
+          ) : null}
+          {fields?.merchantMomoCode ? (
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">{t('momoCodeLabel')}</span>
+              <strong className="text-right font-mono text-sm">{fields.merchantMomoCode}</strong>
+            </div>
+          ) : null}
+        </div>
 
         {steps.length > 0 && (
           <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
@@ -184,6 +201,8 @@ function MobileMoneyCheckoutPanel({
         <div className="rounded-lg bg-muted px-4 py-3 text-sm font-medium text-foreground">
           {t('paymentReferenceLabel')}: {paymentReference}
         </div>
+
+        <p className="text-xs text-muted-foreground">{t('awaitingPaymentConfirmation')}</p>
       </div>
 
       <div className="border-t border-border px-5 py-5 space-y-4 bg-muted/20">
@@ -216,7 +235,7 @@ function MobileMoneyCheckoutPanel({
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="transactionId">{t('transactionId')}</FieldLabel>
+          <FieldLabel htmlFor="transactionId">{t('optionalTransactionId')}</FieldLabel>
           <Input
             id="transactionId"
             placeholder={t('transactionIdPlaceholder')}
@@ -228,11 +247,11 @@ function MobileMoneyCheckoutPanel({
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="paymentNote">{t('paymentNote')}</FieldLabel>
+          <FieldLabel htmlFor="paymentNote">{t('optionalPaymentNote')}</FieldLabel>
           <Textarea
             id="paymentNote"
             placeholder={t('paymentNotePlaceholder')}
-            rows={3}
+            rows={2}
             value={mobileMoneyDetails.note}
             onChange={(e) => setMobileMoneyDetails({ ...mobileMoneyDetails, note: e.target.value })}
           />
