@@ -52,7 +52,7 @@ export const orderConfirmationHandler = new EmailEventListener('order-confirmati
     })
     .setRecipient(event => event.order.customer!.emailAddress)
     .setFrom('{{ fromAddress }}')
-    .setSubject('Payment confirmed — Invoice for order #{{ order.code }}')
+    .setSubject('Payment confirmed — your EMG order #{{ order.code }} is received')
     .setTemplateVars(event => ({
         order: event.order,
         shippingLines: event.data.shippingLines,

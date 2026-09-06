@@ -10,8 +10,30 @@ export const emgExchangeRateAdminApiExtensions = gql`
         updatedVariants: Int!
     }
 
+    type EmgOrderNotifyAdministrator {
+        id: ID!
+        firstName: String!
+        lastName: String!
+        emailAddress: String!
+    }
+
+    type EmgOrderNotifySettings {
+        orderNotifyMode: String!
+        orderNotifyAdministratorIds: String!
+        administrators: [EmgOrderNotifyAdministrator!]!
+    }
+
+    type EmgConfirmOrderPaymentResult {
+        id: ID!
+        code: String!
+        state: String!
+        paymentConfirmedByName: String
+        paymentConfirmedAt: DateTime
+    }
+
     extend type Query {
         emgExchangeRate: EmgExchangeRateInfo!
+        emgOrderNotifySettings: EmgOrderNotifySettings!
     }
 
     extend type Mutation {
@@ -24,5 +46,16 @@ export const emgExchangeRateAdminApiExtensions = gql`
             recalculate: Boolean = true
             direction: String = "RWF_TO_USD"
         ): EmgExchangeRateUpdateResult!
+
+        emgUpdateOrderNotifySettings(
+            orderNotifyMode: String!
+            orderNotifyAdministratorIds: String
+        ): EmgOrderNotifySettings!
+
+        """
+        Verify payment proof and settle the order payment. Records who confirmed it.
+        Requires ConfirmOrderPayment permission (or SuperAdmin).
+        """
+        emgConfirmOrderPayment(orderId: ID!, paymentId: ID): EmgConfirmOrderPaymentResult!
     }
 `;

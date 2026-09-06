@@ -1,118 +1,115 @@
-{{> header title="New Order Received" }}
+{{> header title="New order — payment proof" }}
 
-<mj-raw>
-    <style type="text/css">
-    .callout {
-        background-color: #141A17;
-        padding: 15px 0;
-    }
-    .callout-large > div {
-        text-align: center !important;
-        color: #fff !important;
-        font-size: 16px !important;
-        font-weight: bold;
-        padding: 0;
-    }
-    .callout-small > div {
-        text-align: center !important;
-        color: #269A2D !important;
-        font-size: 14px !important;
-        font-weight: bold;
-        padding: 0;
-    }
-    ul.address {
-        list-style-type: none;
-        padding: 0;
-        margin: 0;
-    }
-    tr.order-row td {
-        border-bottom: 1px dashed #eee;
-        padding: 8px 4px;
-    }
-    tr.total-row {
-        font-weight: bold;
-        font-size: 15px;
-    }
-    .bg-off-white {
-        background-color: #f9f9f9;
-    }
-    </style>
-</mj-raw>
-
-<mj-section css-class="bg-off-white">
+<mj-section padding="8px 24px 0">
     <mj-column>
-        <mj-text font-size="18px" font-weight="bold" color="#0C1210">
-            🎉 You have a new order!
+        <mj-text font-size="18px" font-weight="700" color="#0C1210">
+            New customer order awaiting payment confirmation
         </mj-text>
         <mj-text font-size="14px" color="#4A5550">
-            A customer just completed checkout on EMG Technology Ltd. Below are the order details:
+            A customer completed checkout and submitted payment details. Please verify the payment proof below, then confirm the payment in the admin dashboard.
         </mj-text>
     </mj-column>
 </mj-section>
 
-<mj-section css-class="callout">
-    <mj-column>
-        <mj-text css-class="callout-large">Order Code</mj-text>
-        <mj-text css-class="callout-small">#{{ order.code }}</mj-text>
-    </mj-column>
-    <mj-column>
-        <mj-text css-class="callout-large">Customer</mj-text>
-        <mj-text css-class="callout-small">{{ order.customer.firstName }} {{ order.customer.lastName }}</mj-text>
-    </mj-column>
-    <mj-column>
-        <mj-text css-class="callout-large">Total Amount</mj-text>
-        <mj-text css-class="callout-small">{{ formatMoney order.totalWithTax order.currencyCode 'en' }}</mj-text>
-    </mj-column>
-</mj-section>
-
-<mj-section css-class="bg-off-white">
-    <mj-column>
-        <mj-text font-size="15px" font-weight="bold" color="#0C1210">Customer Contact & Delivery</mj-text>
-        <mj-text font-size="13px" color="#4A5550">
-            <strong>Email:</strong> {{ order.customer.emailAddress }}<br/>
-            {{#if order.customer.phoneNumber}}<strong>Phone:</strong> {{ order.customer.phoneNumber }}<br/>{{/if}}
-            {{#if order.customFields.deliveryDate}}<strong>📅 Scheduled Delivery Date:</strong> <span style="color: #15803d; font-weight: bold;">{{ order.customFields.deliveryDate }}</span><br/>{{/if}}
-            {{#each order.shippingLines}}
-                <strong>🚚 Delivery Method:</strong> {{ shippingMethod.name }} ({{ formatMoney priceWithTax ../order.currencyCode 'en' }})<br/>
-            {{/each}}
-            {{#with order.shippingAddress}}
-                <strong>Deliver To:</strong> {{ fullName }}<br/>
-                <ul class="address">
-                    {{#if streetLine1}}<li>{{ streetLine1 }}</li>{{/if}}
-                    {{#if city}}<li>{{ city }}, {{ province }}</li>{{/if}}
-                    {{#if country}}<li>{{ country }}</li>{{/if}}
-                    {{#if phoneNumber}}<li>Phone: {{ phoneNumber }}</li>{{/if}}
-                </ul>
-            {{/with}}
-        </mj-text>
-    </mj-column>
-</mj-section>
-
-<mj-section>
-    <mj-column>
-        <mj-text font-size="16px" font-weight="bold" color="#0C1210">
-            Ordered Items:
-        </mj-text>
-        <mj-table cellpadding="6px">
-            {{#each order.lines }}
-                <tr class="order-row">
-                    <td><strong>{{ quantity }}x</strong></td>
-                    <td>{{ productVariant.name }}</td>
-                    <td align="right">{{ formatMoney discountedLinePriceWithTax ../order.currencyCode 'en' }}</td>
-                </tr>
-            {{/each}}
-            <tr class="order-row total-row">
-                <td colspan="2">Total Paid:</td>
-                <td align="right">{{ formatMoney order.totalWithTax order.currencyCode 'en' }}</td>
+<mj-section padding="16px 24px">
+    <mj-column css-class="summary-box" padding="20px">
+        <mj-text css-class="summary-title" padding-bottom="12px">Order summary</mj-text>
+        <mj-table>
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Order</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:700;color:#111827;text-align:right;">#{{ order.code }}</td>
+            </tr>
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Customer</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ order.customer.firstName }} {{ order.customer.lastName }}</td>
+            </tr>
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Email</td>
+                <td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;">{{ order.customer.emailAddress }}</td>
+            </tr>
+            {{#if order.customer.phoneNumber}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Phone</td>
+                <td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;">{{ order.customer.phoneNumber }}</td>
+            </tr>
+            {{/if}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Total</td>
+                <td style="padding:6px 0;font-size:16px;font-weight:700;color:#269A2D;text-align:right;">{{ formatMoney order.totalWithTax order.currencyCode 'en' }}</td>
             </tr>
         </mj-table>
     </mj-column>
 </mj-section>
 
-<mj-section>
+<mj-section padding="0 24px 16px">
+    <mj-column css-class="summary-box" padding="20px">
+        <mj-text css-class="summary-title" padding-bottom="12px">Payment proof</mj-text>
+        <mj-table>
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Method</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{#if paymentProof.mobileMoneyProvider}}{{ paymentProof.mobileMoneyProvider }}{{else}}{{ paymentProof.method }}{{/if}}</td>
+            </tr>
+            {{#if paymentProof.payerAccountName}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Payer name</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ paymentProof.payerAccountName }}</td>
+            </tr>
+            {{/if}}
+            {{#if paymentProof.mobileMoneyPhone}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Payer phone</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ paymentProof.mobileMoneyPhone }}</td>
+            </tr>
+            {{/if}}
+            {{#if paymentProof.transactionId}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Transaction ID</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ paymentProof.transactionId }}</td>
+            </tr>
+            {{/if}}
+            {{#if paymentProof.paymentReference}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Reference</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ paymentProof.paymentReference }}</td>
+            </tr>
+            {{/if}}
+            {{#if paymentProof.paymentNote}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Note</td>
+                <td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;">{{ paymentProof.paymentNote }}</td>
+            </tr>
+            {{/if}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Status</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:700;color:#b45309;text-align:right;">Awaiting confirmation</td>
+            </tr>
+        </mj-table>
+    </mj-column>
+</mj-section>
+
+<mj-section padding="0 24px 16px">
+    <mj-column css-class="summary-box" padding="20px">
+        <mj-text css-class="summary-title" padding-bottom="8px">Items</mj-text>
+        <mj-table>
+            {{#each order.lines}}
+            <tr style="border-bottom:1px dashed #e5e7eb;">
+                <td style="padding:8px 0;font-size:14px;color:#374151;">{{ quantity }}× {{ productVariant.name }}</td>
+                <td style="padding:8px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ formatMoney linePriceWithTax ../order.currencyCode 'en' }}</td>
+            </tr>
+            {{/each}}
+        </mj-table>
+        {{#if order.customFields.deliveryDate}}
+        <mj-text font-size="13px" color="#4A5550" padding-top="10px">
+            Scheduled delivery: <strong>{{ order.customFields.deliveryDate }}</strong>
+        </mj-text>
+        {{/if}}
+    </mj-column>
+</mj-section>
+
+<mj-section padding="0 24px 8px">
     <mj-column>
-        <mj-button background-color="#269A2D" color="#ffffff" font-weight="bold" border-radius="4px" href="https://emgtechnologyltd.com/dashboard/orders">
-            View in Admin Dashboard
+        <mj-button href="{{ dashboardUrl }}" background-color="#269A2D" color="#ffffff" border-radius="10px" font-weight="600">
+            Review &amp; confirm payment
         </mj-button>
     </mj-column>
 </mj-section>

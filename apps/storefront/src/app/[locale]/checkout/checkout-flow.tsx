@@ -26,10 +26,8 @@ function deriveCheckoutProgress(order: {
     const hasAddress = Boolean(order.shippingAddress?.streetLine1);
     const hasShipping = Boolean(order.shippingLines?.length);
     const deliveryDate =
-        typeof order.customFields === 'object' &&
-        order.customFields !== null &&
-        'deliveryDate' in order.customFields
-            ? String((order.customFields as {deliveryDate?: string}).deliveryDate ?? '')
+        order.customFields && typeof order.customFields === 'object'
+            ? String((order.customFields as {deliveryDate?: string | null}).deliveryDate ?? '')
             : '';
     const hasDelivery = hasShipping && Boolean(deliveryDate);
 

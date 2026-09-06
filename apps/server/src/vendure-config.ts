@@ -210,6 +210,28 @@ export const config: VendureConfig = {
                     value: 'Exchange rate used to convert RWF catalog prices into USD (and vice versa)',
                 }],
             },
+            {
+                name: 'orderNotifyMode',
+                type: 'string',
+                defaultValue: 'default',
+                public: false,
+                label: [{ languageCode: LanguageCode.en, value: 'New order email recipients' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'default = ADMIN_NOTIFICATION_EMAIL; all = every administrator; specific = listed IDs; none = do not email staff',
+                }],
+            },
+            {
+                name: 'orderNotifyAdministratorIds',
+                type: 'text',
+                defaultValue: '',
+                public: false,
+                label: [{ languageCode: LanguageCode.en, value: 'Specific staff IDs for order emails' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Comma-separated Administrator IDs when mode is “specific”',
+                }],
+            },
         ],
         Order: [
             {
@@ -218,6 +240,31 @@ export const config: VendureConfig = {
                 public: true,
                 label: [{ languageCode: LanguageCode.en, value: 'Delivery Date / Time' }],
                 description: [{ languageCode: LanguageCode.en, value: 'Customer chosen delivery date for order fulfillment' }],
+            },
+            {
+                name: 'paymentConfirmedById',
+                type: 'string',
+                public: false,
+                readonly: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Payment confirmed by (admin ID)' }],
+            },
+            {
+                name: 'paymentConfirmedByName',
+                type: 'string',
+                public: true,
+                readonly: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Payment confirmed by' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Staff member who verified and confirmed the customer payment',
+                }],
+            },
+            {
+                name: 'paymentConfirmedAt',
+                type: 'datetime',
+                public: true,
+                readonly: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Payment confirmed at' }],
             },
         ],
         Asset: [

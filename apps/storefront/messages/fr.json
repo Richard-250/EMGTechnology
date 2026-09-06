@@ -110,7 +110,10 @@
     "noMatchTitle": "Nous n'avons pas « {query} »",
     "noMatchHint": "Votre recherche a été enregistrée. Découvrez des produits similaires ci-dessous, ou essayez un autre mot-clé.",
     "similarProducts": "Produits similaires",
-    "clearHistory": "Effacer l'historique"
+    "clearHistory": "Effacer l'historique",
+    "recentSearches": "Recent searches",
+    "basedOnYourSearches": "Based on your searches",
+    "removeFromHistory": "Remove from history"
   },
   "Home": {
     "pageTitle": "Magasin d'équipement fitness",
@@ -188,7 +191,9 @@
       "secureCheckout": "Secure Checkout",
       "guarantee": "30-Day Guarantee"
     },
-    "priceIncludesTax": "Prix TTC"
+    "priceIncludesTax": "Prix TTC",
+    "overview": "Product overview",
+    "description": "Product details"
   },
   "Sort": {
     "newest": "Newest first",
@@ -232,7 +237,28 @@
     "quantityLabel": "Qté : {count}",
     "updateCart": "Mettre à jour le panier",
     "updatingCart": "Mise à jour...",
-    "cartUpdated": "Panier mis à jour"
+    "cartUpdated": "Panier mis à jour",
+    "myCart": "My Cart",
+    "productsCount": "Products ({count})",
+    "basketTotals": "Basket Totals",
+    "includeVat": "Include VAT ({rate}%)",
+    "inclVat": "incl. VAT",
+    "exclVat": "excl. VAT",
+    "estimatedTotal": "Estimated Total",
+    "vatLine": "VAT ({rate}%)",
+    "promoPlaceholder": "Promo code...",
+    "clear": "Clear",
+    "saveForLater": "Save for later",
+    "saveForLaterSoon": "Save for later coming soon",
+    "uncategorized": "Uncategorized",
+    "itemRemoved": "{name} removed from cart",
+    "cartCleared": "Cart cleared",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity",
+    "trustSecure": "Secure SSL checkout",
+    "trustDelivery": "Reliable delivery across Rwanda",
+    "trustPayments": "MTN MoMo · Airtel · VISA",
+    "trustReturns": "30-day easy returns"
   },
   "Checkout": {
     "pageTitle": "Checkout",
@@ -241,7 +267,8 @@
       "address": "Address",
       "delivery": "Delivery",
       "payment": "Payment",
-      "review": "Review"
+      "review": "Review",
+      "fulfillment": "Fulfillment"
     },
     "contactInformation": "Contact Information",
     "shippingAddress": "Shipping Address",
@@ -390,7 +417,15 @@
     "emailFromAccount": "L'e-mail vient de votre compte et ne peut pas être modifié ici.",
     "doneEditing": "Terminé",
     "deliveryDateLabel": "Date de livraison",
-    "reviewOrder": "Vérifier la commande"
+    "reviewOrder": "Vérifier la commande",
+    "checkoutProgress": "Checkout progress",
+    "back": "Back",
+    "fulfillmentHint": "Complete your address to choose delivery",
+    "payerPhone": "Your phone (+250...)",
+    "transactionId": "MoMo / card transaction ID *",
+    "transactionIdPlaceholder": "Transaction ID from your payment",
+    "paymentNote": "Note (optional)",
+    "paymentNotePlaceholder": "Any extra details for our team"
   },
   "OrderStatus": {
     "AddingItems": "Adding Items",
@@ -476,7 +511,8 @@
     "verifyOtp": "Vérifier le code",
     "verifyingOtp": "Vérification...",
     "resendOtp": "Renvoyer le code",
-    "emailVerifiedContinue": "{email} est vérifié. Définissez votre téléphone et mot de passe pour terminer."
+    "emailVerifiedContinue": "{email} est vérifié. Définissez votre téléphone et mot de passe pour terminer.",
+    "quickSignIn": "Quick sign in with Google"
   },
   "Verify": {
     "invalidLink": "Invalid Verification Link",

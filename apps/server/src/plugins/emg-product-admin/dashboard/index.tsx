@@ -1,10 +1,12 @@
 import {defineDashboardExtension} from '@vendure/dashboard';
-import {Calculator} from 'lucide-react';
+import {Bell, Calculator} from 'lucide-react';
 
 import {EmgUploadAssetsButton} from './asset-upload-panel';
 import {AutoSkuInput} from './auto-sku-input';
 import {ExchangeRateCalculatorPage} from './exchange-rate-page';
 import {HiddenCustomField} from './hidden-custom-field';
+import {OrderNotifySettingsPage} from './order-notify-settings-page';
+import {OrderPaymentConfirmPanel} from './order-payment-confirm-panel';
 import {ProductDiscountPanel} from './product-discount-panel';
 import {VariantNameQuickEditCell, VariantQuickEditor} from './variant-quick-editor';
 
@@ -19,6 +21,17 @@ defineDashboardExtension({
                 sectionId: 'settings',
                 icon: Calculator,
                 requiresPermission: ['UpdateSettings', 'UpdateCatalog', 'UpdateProduct'],
+            },
+        },
+        {
+            path: '/order-notifications',
+            component: () => <OrderNotifySettingsPage />,
+            navMenuItem: {
+                id: 'emg-order-notifications',
+                title: 'Order emails',
+                sectionId: 'settings',
+                icon: Bell,
+                requiresPermission: ['UpdateSettings', 'ReadSettings'],
             },
         },
     ],
@@ -99,6 +112,18 @@ defineDashboardExtension({
             requiresPermission: ['UpdateCatalog', 'UpdateProduct'],
         },
         {
+            id: 'emg-order-payment-confirm',
+            title: 'Payment proof & confirmation',
+            location: {
+                pageId: 'order-detail',
+                column: 'side',
+                position: {blockId: 'order-summary', order: 'after'},
+            },
+            shouldRender: context => Boolean(context.entity?.id),
+            component: ({context}) => <OrderPaymentConfirmPanel context={context} />,
+            requiresPermission: ['ConfirmOrderPayment', 'UpdateOrder'],
+        },
+        {
             id: 'emg-payment-method-merchant-help',
             title: 'Customer checkout display',
             location: {
@@ -114,8 +139,8 @@ defineDashboardExtension({
                         checkout when they choose MTN or Airtel. Only admins can change them.
                     </p>
                     <p>
-                        MTN and Airtel stay in “awaiting confirmation” until you settle the
-                        payment on the order in the Orders dashboard.
+                        MTN and Airtel stay in awaiting confirmation until a staff member with
+                        ConfirmOrderPayment permission confirms the payment on the order.
                     </p>
                 </div>
             ),

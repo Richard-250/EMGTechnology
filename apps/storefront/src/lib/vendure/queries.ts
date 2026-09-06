@@ -204,7 +204,9 @@ export const GetActiveOrderForCheckoutQuery = graphql(`
             totalWithTax
             currencyCode
             couponCodes
-            customFields
+            customFields {
+                deliveryDate
+            }
             customer {
                 id
                 firstName

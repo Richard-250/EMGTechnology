@@ -269,7 +269,9 @@ export const SetOrderCustomFieldsMutation = graphql(`
             ... on Order {
                 id
                 code
-                customFields
+                customFields {
+                    deliveryDate
+                }
             }
             ... on ErrorResult {
                 errorCode

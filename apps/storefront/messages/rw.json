@@ -110,7 +110,10 @@
     "noMatchTitle": "Nta \"{query}\" dufite",
     "noMatchHint": "Ishakisha ryawe ryabitswe. Reba ibisa nk'ibyo hepfo, cyangwa gerageza ijambo rindi.",
     "similarProducts": "Ibindi bishobora kukwiriye",
-    "clearHistory": "Siba amateka"
+    "clearHistory": "Siba amateka",
+    "recentSearches": "Recent searches",
+    "basedOnYourSearches": "Based on your searches",
+    "removeFromHistory": "Remove from history"
   },
   "Home": {
     "pageTitle": "Iduka ry'ibikoresho by'imyitozo",
@@ -188,7 +191,9 @@
       "secureCheckout": "Secure Checkout",
       "guarantee": "30-Day Guarantee"
     },
-    "priceIncludesTax": "Igiciro kirimo umusoro"
+    "priceIncludesTax": "Igiciro kirimo umusoro",
+    "overview": "Product overview",
+    "description": "Product details"
   },
   "Sort": {
     "newest": "Newest first",
@@ -232,7 +237,28 @@
     "quantityLabel": "Umubare: {count}",
     "updateCart": "Hindura agafuka",
     "updatingCart": "Birimo guhindurwa...",
-    "cartUpdated": "Agafuka kahinduwe"
+    "cartUpdated": "Agafuka kahinduwe",
+    "myCart": "My Cart",
+    "productsCount": "Products ({count})",
+    "basketTotals": "Basket Totals",
+    "includeVat": "Include VAT ({rate}%)",
+    "inclVat": "incl. VAT",
+    "exclVat": "excl. VAT",
+    "estimatedTotal": "Estimated Total",
+    "vatLine": "VAT ({rate}%)",
+    "promoPlaceholder": "Promo code...",
+    "clear": "Clear",
+    "saveForLater": "Save for later",
+    "saveForLaterSoon": "Save for later coming soon",
+    "uncategorized": "Uncategorized",
+    "itemRemoved": "{name} removed from cart",
+    "cartCleared": "Cart cleared",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity",
+    "trustSecure": "Secure SSL checkout",
+    "trustDelivery": "Reliable delivery across Rwanda",
+    "trustPayments": "MTN MoMo · Airtel · VISA",
+    "trustReturns": "30-day easy returns"
   },
   "Checkout": {
     "pageTitle": "Checkout",
@@ -241,7 +267,8 @@
       "address": "Address",
       "delivery": "Delivery",
       "payment": "Payment",
-      "review": "Review"
+      "review": "Review",
+      "fulfillment": "Fulfillment"
     },
     "contactInformation": "Contact Information",
     "shippingAddress": "Shipping Address",
@@ -390,7 +417,15 @@
     "emailFromAccount": "Imeri iva kuri konti yawe ntishobora guhindurwa hano.",
     "doneEditing": "Byarangiye",
     "deliveryDateLabel": "Itariki yo kugezwa",
-    "reviewOrder": "Suzuma ikomande"
+    "reviewOrder": "Suzuma ikomande",
+    "checkoutProgress": "Checkout progress",
+    "back": "Back",
+    "fulfillmentHint": "Complete your address to choose delivery",
+    "payerPhone": "Your phone (+250...)",
+    "transactionId": "MoMo / card transaction ID *",
+    "transactionIdPlaceholder": "Transaction ID from your payment",
+    "paymentNote": "Note (optional)",
+    "paymentNotePlaceholder": "Any extra details for our team"
   },
   "OrderStatus": {
     "AddingItems": "Adding Items",
@@ -476,7 +511,8 @@
     "verifyOtp": "Emeza kode",
     "verifyingOtp": "Turareba...",
     "resendOtp": "Ongera wohereze kode",
-    "emailVerifiedContinue": "{email} yemejwe. Shyiraho telefoni n'ijambo ry'ibanga urangize."
+    "emailVerifiedContinue": "{email} yemejwe. Shyiraho telefoni n'ijambo ry'ibanga urangize.",
+    "quickSignIn": "Quick sign in with Google"
   },
   "Verify": {
     "invalidLink": "Invalid Verification Link",
@@ -680,6 +716,7 @@
     "failedAddToCart": "Failed to add item to cart",
     "googleAuthFailed": "Kwinjira na Google byanze. Ongera ugerageze cyangwa ukoreshe imeri.",
     "googleEmailNotVerified": "Iyi imeri ifite konti itaremejwe. Banza wemeze imeri yawe, hanyuma ongera ugerageze Komeza na Google.",
-    "invalidOtp": "Kode yo kwemeza ntiyemewe cyangwa yararangiye. Ongera ugerageze."
+    "invalidOtp": "Kode yo kwemeza ntiyemewe cyangwa yararangiye. Ongera ugerageze.",
+    "accountExistsSignIn": "Your account was created. Please sign in with your email and password."
   }
 }

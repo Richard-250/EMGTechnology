@@ -82,7 +82,7 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
 
     const [selectedMethodId, setSelectedMethodId] = useState<string>(() => {
         if (order.shippingLines?.length) {
-            return order.shippingLines[0].shippingMethod.id;
+            return order.shippingLines[0]?.shippingMethod?.id ?? '';
         }
         return '';
     });
