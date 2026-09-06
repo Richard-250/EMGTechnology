@@ -1,6 +1,6 @@
 'use client';
 
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {Button} from '@/components/ui/button';
 import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group';
 import {Label} from '@/components/ui/label';
@@ -84,12 +84,19 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
         if (order.shippingLines?.length) {
             return order.shippingLines[0].shippingMethod.id;
         }
-        return deliveryOptions[0]?.id ?? '';
+        return '';
     });
+
+    useEffect(() => {
+        if (!selectedMethodId && deliveryOptions[0]?.id) {
+            setSelectedMethodId(deliveryOptions[0].id);
+        }
+    }, [selectedMethodId, deliveryOptions]);
 
     const [deliveryDateMode, setDeliveryDateMode] = useState<DeliveryDateMode>('ship-today');
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const minSelectableDate = useMemo(() => {
         const d = new Date();
@@ -148,17 +155,31 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
     }, [isPickup, deliveryDateMode, selectedDate, todayLabel]);
 
     const handleContinue = async () => {
-        if (!selectedOption) return;
+        const methodId = selectedOption?.id || selectedMethodId || deliveryOptions[0]?.id;
+        if (!methodId) {
+            console.error('No shipping method selected');
+            return;
+        }
+
+        const dateLabel =
+            estimatedDateLabel ||
+            (isPickup ? 'Ready for pickup in 1-2 hours' : `Today, ${todayLabel}`);
 
         setSubmitting(true);
+        setSubmitError(null);
         try {
-            await setShippingMethodAction(selectedOption.id);
-            await setOrderDeliveryDate(estimatedDateLabel);
-            setDeliveryDateLabel(estimatedDateLabel);
-            router.refresh();
+            await setShippingMethodAction(methodId);
+            await setOrderDeliveryDate(dateLabel);
+            setDeliveryDateLabel(dateLabel);
             onComplete();
+            router.refresh();
         } catch (error) {
             console.error('Error setting shipping method:', error);
+            setSubmitError(
+                error instanceof Error
+                    ? error.message
+                    : 'Could not save delivery method. Please try again.',
+            );
         } finally {
             setSubmitting(false);
         }
@@ -396,6 +417,7 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
             )}
 
             <Button
+                type="button"
                 onClick={handleContinue}
                 disabled={submitting || (deliveryDateMode === 'choose-date' && !isPickup && !selectedDate)}
                 className="w-full bg-electric hover:bg-electric/90 text-electric-foreground font-bold py-6 rounded-xl shadow-sm text-base"
@@ -403,6 +425,9 @@ export default function DeliveryStep({onComplete}: DeliveryStepProps) {
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('continue')}
             </Button>
+            {submitError && (
+                <p className="text-sm text-destructive text-center">{submitError}</p>
+            )}
         </div>
     );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {Check, ChevronLeft, User, Truck, CreditCard, ClipboardCheck} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import ContactStep from './steps/contact-step';
@@ -10,23 +10,51 @@ import PaymentStep from './steps/payment-step';
 import ReviewStep from './steps/review-step';
 import OrderSummary from './order-summary';
 import {useTranslations} from 'next-intl';
+import {useCheckout} from './checkout-provider';
 
 type CheckoutStep = 'contact' | 'fulfillment' | 'review' | 'payment';
 type FulfillmentPhase = 'address' | 'delivery';
 
+function deriveCheckoutProgress(order: {
+    customer?: {emailAddress?: string | null} | null;
+    shippingAddress?: {streetLine1?: string | null} | null;
+    shippingLines?: Array<{shippingMethod?: {id?: string} | null}> | null;
+    customFields?: unknown;
+}): {current: CheckoutStep; completed: Set<CheckoutStep>; fulfillmentPhase: FulfillmentPhase} {
+    const completed = new Set<CheckoutStep>();
+    const hasCustomer = Boolean(order.customer?.emailAddress);
+    const hasAddress = Boolean(order.shippingAddress?.streetLine1);
+    const hasShipping = Boolean(order.shippingLines?.length);
+    const deliveryDate =
+        typeof order.customFields === 'object' &&
+        order.customFields !== null &&
+        'deliveryDate' in order.customFields
+            ? String((order.customFields as {deliveryDate?: string}).deliveryDate ?? '')
+            : '';
+    const hasDelivery = hasShipping && Boolean(deliveryDate);
+
+    if (hasCustomer) completed.add('contact');
+    if (hasDelivery) completed.add('fulfillment');
+
+    if (hasDelivery) {
+        return {current: 'review', completed, fulfillmentPhase: 'delivery'};
+    }
+    if (hasAddress) {
+        return {current: 'fulfillment', completed, fulfillmentPhase: 'delivery'};
+    }
+    if (hasCustomer) {
+        return {current: 'fulfillment', completed, fulfillmentPhase: 'address'};
+    }
+    return {current: 'contact', completed, fulfillmentPhase: 'address'};
+}
+
 export default function CheckoutFlow() {
     const t = useTranslations('Checkout');
+    const {order} = useCheckout();
 
     const stepOrder: CheckoutStep[] = ['contact', 'fulfillment', 'review', 'payment'];
 
-    const getInitialState = () => {
-        const completed = new Set<CheckoutStep>();
-        const current: CheckoutStep = 'contact';
-        const fulfillmentPhase: FulfillmentPhase = 'address';
-        return {completed, current, fulfillmentPhase};
-    };
-
-    const initial = getInitialState();
+    const initial = useMemo(() => deriveCheckoutProgress(order), [order.id]);
     const [currentStep, setCurrentStep] = useState<CheckoutStep>(initial.current);
     const [completedSteps, setCompletedSteps] = useState<Set<CheckoutStep>>(initial.completed);
     const [fulfillmentPhase, setFulfillmentPhase] = useState<FulfillmentPhase>(initial.fulfillmentPhase);

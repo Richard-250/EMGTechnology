@@ -1,12 +1,13 @@
-{{> header title="Order confirmation" }}
+{{> header title="Payment confirmed" }}
 
 <mj-section padding="8px 24px 0">
     <mj-column>
         <mj-text font-size="15px" color="#374151">
-            Dear {{ order.customer.firstName }} {{ order.customer.lastName }},
+            Dear {{ order.customer.firstName }},
         </mj-text>
         <mj-text font-size="15px" color="#374151">
-            Thank you for your order. Please find your order summary below.
+            Great news — your payment for order <strong>#{{ order.code }}</strong> has been confirmed.
+            Please find your invoice summary below, and download the attached PDF for your records.
         </mj-text>
     </mj-column>
 </mj-section>
@@ -58,7 +59,7 @@
         <mj-table>
             <tr>
                 <td style="padding:8px 0;font-size:16px;font-weight:700;color:#111827;">Total Paid</td>
-                <td style="padding:8px 0;font-size:16px;font-weight:700;color:#269A2D;text-align:right;">{{ formatMoney order.total order.currencyCode 'en' }}</td>
+                <td style="padding:8px 0;font-size:16px;font-weight:700;color:#269A2D;text-align:right;">{{ formatMoney order.totalWithTax order.currencyCode 'en' }}</td>
             </tr>
         </mj-table>
     </mj-column>
@@ -78,6 +79,7 @@
     </mj-column>
 </mj-section>
 
+{{#if order.shippingAddress}}
 <mj-section padding="0 24px 16px">
     <mj-column css-class="summary-box" padding="20px">
         <mj-text css-class="summary-title" padding-bottom="8px">Delivery Address</mj-text>
@@ -88,6 +90,29 @@
             {{#if city}}{{ city }}{{/if}}{{#if postalCode}}, {{ postalCode }}{{/if}}<br/>
             {{#if country}}{{ country }}{{/if}}
             {{/with}}
+        </mj-text>
+    </mj-column>
+</mj-section>
+{{/if}}
+
+<mj-section padding="0 24px 8px">
+    <mj-column>
+        <mj-button href="{{ storefrontUrl }}/account/orders" background-color="#269A2D" color="#ffffff" border-radius="10px" font-weight="600">
+            View your orders
+        </mj-button>
+        <mj-text font-size="13px" color="#6b7280" align="center" padding-top="8px">
+            Your PDF invoice is attached to this email.
+        </mj-text>
+    </mj-column>
+</mj-section>
+
+<mj-section padding="8px 24px 0">
+    <mj-column>
+        <mj-text font-size="14px" color="#374151">
+            If you have any questions, feel free to reach out to our support team.
+        </mj-text>
+        <mj-text font-size="14px" color="#111827" font-weight="600">
+            The EMG Technology Team
         </mj-text>
     </mj-column>
 </mj-section>

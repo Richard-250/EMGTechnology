@@ -17,6 +17,7 @@ import { EmgBrandingPlugin } from './plugins/emg-branding/emg-branding.plugin';
 import { EmailOtpPlugin } from './plugins/email-otp/email-otp.plugin';
 import { signupOtpHandler } from './plugins/email-otp/signup-otp.handler';
 import { adminOrderNotificationHandler } from './plugins/email-otp/admin-order.handler';
+import { orderConfirmationHandler } from './plugins/email-otp/order-confirmation.handler';
 import { GoogleAuthPlugin } from './plugins/google-auth/google-auth.plugin';
 import { EmailChangeBlockPlugin } from './plugins/email-change-block/email-change-block.plugin';
 import { EmgDiscountPlugin } from './plugins/emg-discount/emg-discount.plugin';
@@ -344,8 +345,12 @@ export const config: VendureConfig = {
                 }),
             handlers: [
                 ...defaultEmailHandlers.filter(
-                    handler => handler.type !== 'email-verification' && handler.type !== 'email-address-change',
+                    handler =>
+                        handler.type !== 'email-verification' &&
+                        handler.type !== 'email-address-change' &&
+                        handler.type !== 'order-confirmation',
                 ),
+                orderConfirmationHandler,
                 signupOtpHandler,
                 adminOrderNotificationHandler,
             ],

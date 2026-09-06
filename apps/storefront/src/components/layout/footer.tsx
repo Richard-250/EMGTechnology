@@ -4,7 +4,7 @@ import {getTopCollections} from '@/lib/vendure/cached';
 import Image from "next/image";
 import {NavigationLink} from '@/components/shared/navigation-link';
 import {getTranslations} from 'next-intl/server';
-import {SITE_NAME, SITE_LOGO} from "@/lib/metadata";
+import {SITE_NAME, SITE_LOGO_LIGHT} from "@/lib/metadata";
 import {COMPANY, formatCompanyAddress} from "@/lib/company";
 import {MapPin, Mail, Phone} from "lucide-react";
 
@@ -60,15 +60,13 @@ export async function Footer() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12">
                     <div className="sm:col-span-2 lg:col-span-1">
                         <NavigationLink href="/" className="inline-block mb-4 group">
-                            <span className="inline-flex items-center rounded-md bg-background px-3 py-2">
-                                <Image
-                                    src={SITE_LOGO}
-                                    alt={SITE_NAME}
-                                    width={200}
-                                    height={72}
-                                    className="h-12 w-auto object-contain bg-transparent"
-                                />
-                            </span>
+                            <Image
+                                src={SITE_LOGO_LIGHT}
+                                alt={SITE_NAME}
+                                width={200}
+                                height={72}
+                                className="h-12 w-auto object-contain bg-transparent"
+                            />
                         </NavigationLink>
                         <p className="text-sm text-background/70 dark:text-muted-foreground text-balance leading-relaxed max-w-sm">
                             {t('description')}
