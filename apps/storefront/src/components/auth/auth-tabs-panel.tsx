@@ -83,7 +83,7 @@ export function AuthTabsPanel({
                     </div>
                 )}
 
-                <div className="flex justify-center py-1">
+                <div className="w-full py-1">
                     <GoogleSignInButton redirectTo={redirectTo} />
                 </div>
 

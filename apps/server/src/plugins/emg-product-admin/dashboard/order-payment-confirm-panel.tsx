@@ -46,6 +46,7 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
         queryKey: ['emg-order-payment-proof', orderId],
         queryFn: () => api.query(orderPaymentQuery, {id: orderId!}),
         enabled: Boolean(orderId),
+        retry: 1,
     });
 
     const confirmMutation = useMutation({
@@ -57,6 +58,7 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
             );
             await queryClient.invalidateQueries({queryKey: ['emg-order-payment-proof', orderId]});
             await queryClient.invalidateQueries({queryKey: ['DetailPage']});
+            await queryClient.invalidateQueries({queryKey: ['emg-pending-payment-orders']});
         },
         onError: (error: Error) => {
             toast.error('Could not confirm payment', {description: error.message});
@@ -65,10 +67,19 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
 
     if (!orderId) return null;
 
-    const order = orderQuery.data?.order;
     if (orderQuery.isLoading) {
         return <p className="text-sm text-muted-foreground">Loading payment details…</p>;
     }
+    if (orderQuery.isError) {
+        return (
+            <p className="text-sm text-destructive">
+                Could not load payment proof. Restart the API after deploy so order custom fields are
+                created, then refresh this page.
+            </p>
+        );
+    }
+
+    const order = orderQuery.data?.order;
     if (!order) {
         return <p className="text-sm text-muted-foreground">Order not found.</p>;
     }

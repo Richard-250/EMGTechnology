@@ -18,26 +18,43 @@ export class OrderNotifyService {
     ) {}
 
     async getMode(ctx: RequestContext): Promise<OrderNotifyMode> {
-        const settings = await this.globalSettingsService.getSettings(ctx);
-        const mode = String(
-            (settings.customFields as {orderNotifyMode?: string} | null)?.orderNotifyMode || 'default',
-        );
-        if (mode === 'all' || mode === 'specific' || mode === 'none' || mode === 'default') {
-            return mode;
+        try {
+            const settings = await this.globalSettingsService.getSettings(ctx);
+            const mode = String(
+                (settings.customFields as {orderNotifyMode?: string} | null)?.orderNotifyMode ||
+                    'default',
+            );
+            if (mode === 'all' || mode === 'specific' || mode === 'none' || mode === 'default') {
+                return mode;
+            }
+            return 'default';
+        } catch (e) {
+            Logger.warn(
+                `Could not read orderNotifyMode (using default): ${e instanceof Error ? e.message : e}`,
+                loggerCtx,
+            );
+            return 'default';
         }
-        return 'default';
     }
 
     async getSpecificIds(ctx: RequestContext): Promise<string[]> {
-        const settings = await this.globalSettingsService.getSettings(ctx);
-        const raw = String(
-            (settings.customFields as {orderNotifyAdministratorIds?: string} | null)
-                ?.orderNotifyAdministratorIds || '',
-        );
-        return raw
-            .split(/[,\s]+/)
-            .map(s => s.trim())
-            .filter(Boolean);
+        try {
+            const settings = await this.globalSettingsService.getSettings(ctx);
+            const raw = String(
+                (settings.customFields as {orderNotifyAdministratorIds?: string} | null)
+                    ?.orderNotifyAdministratorIds || '',
+            );
+            return raw
+                .split(/[,\s]+/)
+                .map(s => s.trim())
+                .filter(Boolean);
+        } catch (e) {
+            Logger.warn(
+                `Could not read orderNotifyAdministratorIds: ${e instanceof Error ? e.message : e}`,
+                loggerCtx,
+            );
+            return [];
+        }
     }
 
     async resolveStaffEmails(ctx: RequestContext): Promise<string[]> {

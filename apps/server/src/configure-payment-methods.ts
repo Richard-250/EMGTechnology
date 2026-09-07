@@ -74,11 +74,28 @@ export async function configurePaymentMethods(app: Awaited<ReturnType<typeof boo
         const method = existing.find(m => m.code === target.code);
 
         if (method) {
-            // Preserve admin merchant config, name, description, and enabled flag
-            Logger.info(
-                `Payment method already present: ${method.code} — merchant settings left unchanged`,
-                loggerCtx,
-            );
+            // Preserve admin merchant config / name / enabled — only correct settle mode.
+            // MoMo must stay manual (Authorized) so staff get proof emails before confirm.
+            const currentSettle = method.handler?.args?.find(
+                (a: {name: string}) => a.name === 'automaticSettle',
+            )?.value;
+            const desiredSettle = target.handler.arguments.find(a => a.name === 'automaticSettle')
+                ?.value;
+            if (desiredSettle && currentSettle !== desiredSettle) {
+                await paymentMethodService.update(ctx, {
+                    id: method.id,
+                    handler: target.handler,
+                });
+                Logger.info(
+                    `Updated ${method.code} automaticSettle ${currentSettle} → ${desiredSettle}`,
+                    loggerCtx,
+                );
+            } else {
+                Logger.info(
+                    `Payment method already present: ${method.code} — merchant settings left unchanged`,
+                    loggerCtx,
+                );
+            }
             continue;
         }
 

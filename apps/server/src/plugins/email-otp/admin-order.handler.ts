@@ -83,7 +83,12 @@ export const adminOrderNotificationHandler = new EmailEventListener('admin-order
         order: event.order,
         shippingLines: event.order.shippingLines,
         paymentProof: event.data.paymentProof,
-        dashboardUrl: process.env.STOREFRONT_URL
-            ? `${process.env.STOREFRONT_URL.replace(/\/$/, '')}/dashboard/orders`
-            : 'https://emgtechnologyltd.com/dashboard/orders',
+        dashboardUrl: (() => {
+            const base =
+                process.env.ADMIN_UI_HOST ||
+                process.env.VENDURE_HOST ||
+                process.env.STOREFRONT_URL ||
+                'https://emgtechnologyltd.com';
+            return `${base.replace(/\/$/, '')}/dashboard/orders`;
+        })(),
     }));

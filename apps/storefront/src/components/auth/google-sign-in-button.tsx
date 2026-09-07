@@ -36,8 +36,8 @@ interface GoogleSignInButtonProps {
 }
 
 /**
- * Google Identity Services button (icon only).
- * Profile photo appears on the account icon after a successful sign-in.
+ * Full-width Google Identity Services “Continue with Google” button,
+ * styled to sit with the primary email auth actions.
  */
 export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
     const t = useTranslations('Auth');
@@ -91,19 +91,29 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
                 cancel_on_tap_outside: true,
             });
 
+            const width = Math.min(
+                Math.max(buttonRef.current.parentElement?.clientWidth || 320, 240),
+                400,
+            );
+
             buttonRef.current.innerHTML = '';
             window.google.accounts.id.renderButton(buttonRef.current, {
-                type: 'icon',
+                type: 'standard',
                 theme: 'outline',
                 size: 'large',
-                shape: 'circle',
+                text: 'continue_with',
+                shape: 'rectangular',
+                logo_alignment: 'left',
+                width,
             });
 
             const iframe = buttonRef.current.querySelector('iframe');
             if (iframe) {
                 iframe.style.pointerEvents = 'auto';
+                iframe.style.width = '100%';
             }
             buttonRef.current.style.pointerEvents = 'auto';
+            buttonRef.current.style.width = '100%';
 
             if (!cancelled) {
                 setSdkReady(true);
@@ -155,12 +165,12 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
         return (
             <div
                 className={cn(
-                    'flex size-11 items-center justify-center rounded-full border border-dashed border-border/80',
-                    'bg-muted/30 text-xs text-muted-foreground',
+                    'flex h-11 w-full items-center justify-center rounded-md border border-dashed border-border/80',
+                    'bg-muted/30 text-sm text-muted-foreground',
                 )}
                 title={t('googleUnavailable')}
             >
-                G
+                {t('continueWithGoogle')}
             </div>
         );
     }
@@ -169,21 +179,21 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
         return (
             <div
                 className={cn(
-                    'flex size-11 items-center justify-center rounded-full border border-dashed border-border/80',
-                    'bg-muted/30 text-xs text-muted-foreground text-center px-1',
+                    'flex h-11 w-full items-center justify-center rounded-md border border-dashed border-border/80',
+                    'bg-muted/30 text-sm text-muted-foreground',
                 )}
                 title={t('googleAuthFailed')}
             >
-                G
+                {t('continueWithGoogle')}
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex w-full flex-col items-stretch gap-2">
             <div
                 className={cn(
-                    'relative flex size-11 items-center justify-center overflow-hidden rounded-full',
+                    'relative flex h-11 w-full items-center justify-center overflow-hidden rounded-md',
                     'border border-border/80 bg-background shadow-xs',
                     pending && 'pointer-events-none opacity-70',
                 )}
@@ -191,8 +201,8 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
                 <div
                     ref={buttonRef}
                     className={cn(
-                        'relative z-10 flex items-center justify-center',
-                        '[&_iframe]:pointer-events-auto!',
+                        'relative z-10 flex h-full w-full items-center justify-center',
+                        '[&_iframe]:h-full! [&_iframe]:w-full! [&_iframe]:pointer-events-auto!',
                         !sdkReady && 'invisible absolute inset-0',
                     )}
                     aria-hidden={!sdkReady}
@@ -202,10 +212,10 @@ export function GoogleSignInButton({redirectTo}: GoogleSignInButtonProps) {
                 )}
             </div>
             {pending && (
-                <p className="text-xs text-muted-foreground">{t('googleSigningIn')}</p>
+                <p className="text-center text-xs text-muted-foreground">{t('googleSigningIn')}</p>
             )}
             {error && (
-                <p className="text-sm text-destructive text-center" role="alert">
+                <p className="text-center text-sm text-destructive" role="alert">
                     {error}
                 </p>
             )}

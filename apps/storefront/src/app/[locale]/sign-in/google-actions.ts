@@ -60,7 +60,7 @@ export async function authenticateWithGoogleAction(token: string, redirectTo?: s
     revalidatePath(`/${locale}`, 'layout');
 
     const safeRedirect =
-        redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/account/profile';
+        redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';
 
     redirect({href: safeRedirect, locale});
 }

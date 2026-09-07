@@ -5,12 +5,15 @@ import {EmgUploadAssetsButton} from './asset-upload-panel';
 import {AutoSkuInput} from './auto-sku-input';
 import {ExchangeRateCalculatorPage} from './exchange-rate-page';
 import {HiddenCustomField} from './hidden-custom-field';
+import {OrderDeletePanel} from './order-delete-panel';
 import {OrderNotifySettingsPage} from './order-notify-settings-page';
 import {OrderPaymentConfirmPanel} from './order-payment-confirm-panel';
+import {pendingPaymentOrdersAlert} from './pending-orders-alert';
 import {ProductDiscountPanel} from './product-discount-panel';
 import {VariantNameQuickEditCell, VariantQuickEditor} from './variant-quick-editor';
 
 defineDashboardExtension({
+    alerts: [pendingPaymentOrdersAlert],
     routes: [
         {
             path: '/exchange-rate',
@@ -122,6 +125,18 @@ defineDashboardExtension({
             shouldRender: context => Boolean(context.entity?.id),
             component: ({context}) => <OrderPaymentConfirmPanel context={context} />,
             requiresPermission: ['ConfirmOrderPayment', 'UpdateOrder'],
+        },
+        {
+            id: 'emg-order-delete',
+            title: 'Delete order',
+            location: {
+                pageId: 'order-detail',
+                column: 'side',
+                position: {blockId: 'emg-order-payment-confirm', order: 'after'},
+            },
+            shouldRender: context => Boolean(context.entity?.id),
+            component: ({context}) => <OrderDeletePanel context={context} />,
+            requiresPermission: ['DeleteOrder', 'UpdateOrder'],
         },
         {
             id: 'emg-payment-method-merchant-help',

@@ -35,14 +35,14 @@ export const initialData: InitialData = {
             name: 'MTN Rwanda',
             handler: {
                 code: 'dummy-payment-handler',
-                arguments: [{ name: 'automaticSettle', value: 'true' }],
+                arguments: [{ name: 'automaticSettle', value: 'false' }],
             },
         },
         {
             name: 'Airtel Rwanda',
             handler: {
                 code: 'dummy-payment-handler',
-                arguments: [{ name: 'automaticSettle', value: 'true' }],
+                arguments: [{ name: 'automaticSettle', value: 'false' }],
             },
         },
     ],
@@ -118,6 +118,10 @@ export const initialData: InitialData = {
                 Permission.ReadOrder,
                 Permission.UpdateOrder,
                 Permission.DeleteOrder,
+                Permission.CreateAdministrator,
+                Permission.ReadAdministrator,
+                Permission.UpdateAdministrator,
+                Permission.DeleteAdministrator,
                 Permission.CreateSystem,
                 Permission.ReadSystem,
                 Permission.UpdateSystem,
