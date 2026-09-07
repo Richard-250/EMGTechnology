@@ -2,6 +2,7 @@ import {HomeFitnessCatalog} from "@/components/commerce/home-fitness-catalog";
 import {getRouteLocale} from "@/i18n/server";
 import {connection} from 'next/server';
 import {getActiveCurrencyCode} from "@/lib/currency-server";
+import {getRwfPerUsd} from '@/lib/exchange-rate-server';
 import {withLiveFallback} from '@/lib/vendure/live-fallback';
 import {query} from "@/lib/vendure/api";
 import {SearchProductsQuery} from "@/lib/vendure/queries";
@@ -50,6 +51,7 @@ export async function HomeFitnessCatalogSection() {
 
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
+    const rwfPerUsd = await getRwfPerUsd();
     const t = await getTranslations({locale, namespace: "Home"});
 
     let allProducts: FragmentOf<typeof ProductCardFragment>[] = [];
@@ -77,6 +79,8 @@ export async function HomeFitnessCatalogSection() {
         <HomeFitnessCatalog
             products={allProducts}
             totalProducts={totalItems}
+            activeCurrency={currencyCode}
+            rwfPerUsd={rwfPerUsd}
             labels={{
                 title: t("fitnessCatalog"),
                 subtitle: t("fitnessCatalogSubtitle"),

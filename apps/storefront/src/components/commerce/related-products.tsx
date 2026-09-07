@@ -66,6 +66,8 @@ async function getRelatedProducts(
 export async function RelatedProducts({collectionSlug, currentProductId}: RelatedProductsProps) {
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
+    const {getRwfPerUsd} = await import('@/lib/exchange-rate-server');
+    const rwfPerUsd = await getRwfPerUsd();
     const t = await getTranslations({locale, namespace: 'Product'});
     const products = await getRelatedProducts(collectionSlug, currentProductId, currencyCode);
 
@@ -102,6 +104,8 @@ export async function RelatedProducts({collectionSlug, currentProductId}: Relate
                                 key={card.productId}
                                 product={item}
                                 customFields={customFields}
+                                activeCurrency={currencyCode}
+                                rwfPerUsd={rwfPerUsd}
                             />
                         );
                     })}

@@ -3,6 +3,8 @@ import {ProductGridClient} from './product-grid-client';
 import {SearchProductsQuery} from '@/lib/vendure/queries';
 import {getRouteLocale} from '@/i18n/server';
 import {getTranslations} from 'next-intl/server';
+import {getActiveCurrencyCode} from '@/lib/currency-server';
+import {getRwfPerUsd} from '@/lib/exchange-rate-server';
 
 interface ProductGridProps {
     productDataPromise: Promise<{
@@ -29,7 +31,11 @@ export async function ProductGrid({
     const t = await getTranslations({locale, namespace: 'Product'});
     const tSearch = await getTranslations({locale, namespace: 'Search'});
     const tHome = await getTranslations({locale, namespace: 'Home'});
-    const result = await productDataPromise;
+    const [result, activeCurrency, rwfPerUsd] = await Promise.all([
+        productDataPromise,
+        getActiveCurrencyCode(),
+        getRwfPerUsd(),
+    ]);
     const searchResult = result.data.search;
 
     return (
@@ -51,6 +57,8 @@ export async function ProductGrid({
             noMatchHint={tSearch('noMatchHint')}
             similarHeading={tSearch('similarProducts')}
             similarItems={similarItems}
+            activeCurrency={activeCurrency}
+            rwfPerUsd={rwfPerUsd}
         />
     );
 }

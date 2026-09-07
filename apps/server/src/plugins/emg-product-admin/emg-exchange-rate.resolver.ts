@@ -14,13 +14,6 @@ export class EmgExchangeRateResolver {
         return {rwfPerUsd};
     }
 
-    /** Shop API — used by product cards when search index stays in RWF. */
-    @Query()
-    @Allow(Permission.Public)
-    async emgStorefrontRwfPerUsd(@Ctx() ctx: RequestContext) {
-        return this.exchangeRateService.getRwfPerUsd(ctx);
-    }
-
     @Mutation()
     @Transaction()
     @Allow(Permission.UpdateSettings, Permission.UpdateCatalog, Permission.UpdateProduct)

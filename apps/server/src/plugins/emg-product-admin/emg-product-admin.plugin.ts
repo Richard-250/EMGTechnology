@@ -9,6 +9,7 @@ import {EmgExchangeRateResolver} from './emg-exchange-rate.resolver';
 import {EmgExchangeRateService} from './emg-exchange-rate.service';
 import {EmgOrderOpsResolver} from './emg-order-ops.resolver';
 import {EmgSkuService} from './emg-sku.service';
+import {EmgStorefrontExchangeRateResolver} from './emg-storefront-exchange-rate.resolver';
 import {EmgStorefrontRevalidationService} from './emg-storefront-revalidation.service';
 import {OrderNotifyService} from './order-notify.service';
 import {PaymentConfirmedByListener} from './payment-confirmed-by.listener';
@@ -25,7 +26,7 @@ import {PaymentConfirmedByListener} from './payment-confirmed-by.listener';
     ],
     shopApiExtensions: {
         schema: emgStorefrontShopApiExtensions,
-        resolvers: [EmgExchangeRateResolver],
+        resolvers: [EmgStorefrontExchangeRateResolver],
     },
     adminApiExtensions: {
         schema: emgExchangeRateAdminApiExtensions,

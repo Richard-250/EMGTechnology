@@ -18,6 +18,8 @@ const EMPTY_INTERACTIONS: ProductInteractionMap = {views: {}, clicks: {}};
 interface HomeFitnessCatalogProps {
     products: FragmentOf<typeof ProductCardFragment>[];
     totalProducts?: number;
+    activeCurrency: string;
+    rwfPerUsd: number;
     labels: {
         title: string;
         subtitle: string;
@@ -29,6 +31,8 @@ interface HomeFitnessCatalogProps {
 
 export function HomeFitnessCatalog({
     products,
+    activeCurrency,
+    rwfPerUsd,
     labels,
 }: HomeFitnessCatalogProps) {
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -85,6 +89,8 @@ export function HomeFitnessCatalog({
                                     key={`home-product-${readFragment(ProductCardFragment, product).productId}-${i}`}
                                     product={product}
                                     variant="compact"
+                                    activeCurrency={activeCurrency}
+                                    rwfPerUsd={rwfPerUsd}
                                 />
                             ))}
                         </div>

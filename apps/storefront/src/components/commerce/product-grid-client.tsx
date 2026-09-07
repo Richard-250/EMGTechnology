@@ -36,6 +36,8 @@ interface ProductGridClientProps {
     noMatchHint?: string;
     similarHeading?: string;
     similarItems?: ResultOf<typeof SearchProductsQuery>['search']['items'];
+    activeCurrency?: string;
+    rwfPerUsd?: number;
 }
 
 export function ProductGridClient({
@@ -52,6 +54,8 @@ export function ProductGridClient({
     noMatchHint,
     similarHeading,
     similarItems = [],
+    activeCurrency,
+    rwfPerUsd,
 }: ProductGridClientProps) {
     const locale = useLocale();
     const searchParams = useSearchParams();
@@ -175,6 +179,8 @@ export function ProductGridClient({
                                         i
                                     }
                                     product={product}
+                                    activeCurrency={activeCurrency}
+                                    rwfPerUsd={rwfPerUsd}
                                 />
                             ))}
                         </div>
@@ -200,6 +206,8 @@ export function ProductGridClient({
                             i
                         }
                         product={product}
+                        activeCurrency={activeCurrency}
+                        rwfPerUsd={rwfPerUsd}
                     />
                 ))}
                 {extraItems.map((product, i) => (

@@ -17,9 +17,16 @@ const EMPTY_INTERACTIONS: ProductInteractionMap = {views: {}, clicks: {}};
 interface ProductCarouselClientProps {
     title: string;
     products: Array<FragmentOf<typeof ProductCardFragment>>;
+    activeCurrency?: string;
+    rwfPerUsd?: number;
 }
 
-export function ProductCarousel({title, products}: ProductCarouselClientProps) {
+export function ProductCarousel({
+    title,
+    products,
+    activeCurrency,
+    rwfPerUsd,
+}: ProductCarouselClientProps) {
     const id = useId();
     const [historyTerms, setHistoryTerms] = useState<string[]>([]);
     const [interactions, setInteractions] = useState<ProductInteractionMap>(EMPTY_INTERACTIONS);
@@ -56,7 +63,11 @@ export function ProductCarousel({title, products}: ProductCarouselClientProps) {
                                 key={id + readFragment(ProductCardFragment, product).productId + i}
                                 className="pl-2 md:pl-4 basis-[72%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
                             >
-                                <ProductCard product={product}/>
+                                <ProductCard
+                                    product={product}
+                                    activeCurrency={activeCurrency}
+                                    rwfPerUsd={rwfPerUsd}
+                                />
                             </CarouselItem>
                         ))}
                     </CarouselContent>

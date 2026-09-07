@@ -45,6 +45,8 @@ export async function FeaturedProducts() {
 
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
+    const {getRwfPerUsd} = await import('@/lib/exchange-rate-server');
+    const rwfPerUsd = await getRwfPerUsd();
     const t = await getTranslations({locale, namespace: 'Product'});
 
     let products: FragmentOf<typeof ProductCardFragment>[] = [];
@@ -69,6 +71,8 @@ export async function FeaturedProducts() {
             <ProductCarousel
                 title={t('featuredProducts')}
                 products={products}
+                activeCurrency={currencyCode}
+                rwfPerUsd={rwfPerUsd}
             />
             <div className="container mx-auto px-4 -mt-6 mb-8">
                 <div className="flex justify-center">

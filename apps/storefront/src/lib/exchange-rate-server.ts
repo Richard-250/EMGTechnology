@@ -1,4 +1,3 @@
-import {cacheLife, cacheTag} from 'next/cache';
 import {DEFAULT_RWF_PER_USD} from '@/lib/currency-convert';
 
 const rawApiUrl =
@@ -14,7 +13,12 @@ const VENDURE_CHANNEL_TOKEN =
     '__default_channel__';
 const VENDURE_CHANNEL_TOKEN_HEADER = process.env.VENDURE_CHANNEL_TOKEN_HEADER || 'vendure-token';
 
-async function fetchRwfPerUsd(): Promise<number> {
+/**
+ * Live admin RWF-per-USD rate for converting search-card prices.
+ * No "use cache" here — this module may be imported from API routes and must
+ * stay free of Client Component / cacheLife restrictions.
+ */
+export async function getRwfPerUsd(): Promise<number> {
     try {
         const response = await fetch(VENDURE_API_URL, {
             method: 'POST',
@@ -23,7 +27,7 @@ async function fetchRwfPerUsd(): Promise<number> {
                 [VENDURE_CHANNEL_TOKEN_HEADER]: VENDURE_CHANNEL_TOKEN,
             },
             body: JSON.stringify({query: '{ emgStorefrontRwfPerUsd }'}),
-            next: {tags: ['exchange-rate']},
+            next: {revalidate: 3600, tags: ['exchange-rate']},
         });
         if (!response.ok) return DEFAULT_RWF_PER_USD;
         const json = (await response.json()) as {
@@ -33,21 +37,5 @@ async function fetchRwfPerUsd(): Promise<number> {
         return Number.isFinite(rate) && rate > 0 ? rate : DEFAULT_RWF_PER_USD;
     } catch {
         return DEFAULT_RWF_PER_USD;
-    }
-}
-
-async function getRwfPerUsdCached(): Promise<number> {
-    'use cache';
-    cacheLife('hours');
-    cacheTag('exchange-rate');
-    return fetchRwfPerUsd();
-}
-
-/** Live admin RWF-per-USD rate for converting search-card prices. */
-export async function getRwfPerUsd(): Promise<number> {
-    try {
-        return await getRwfPerUsdCached();
-    } catch {
-        return fetchRwfPerUsd();
     }
 }
