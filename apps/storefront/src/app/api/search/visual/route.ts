@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
         const querySig = await buildImageSignature(queryBuffer);
 
         const currencyCode = await getActiveCurrencyCode();
+        const {getRwfPerUsd} = await import('@/lib/exchange-rate-server');
+        const rwfPerUsd = await getRwfPerUsd();
         const catalog = await query(
             SearchProductsQuery,
             {
@@ -59,7 +61,9 @@ export async function POST(request: NextRequest) {
             {languageCode: locale, currencyCode},
         );
 
-        const cards = catalog.data.search.items.map(item => serializeProductCard(item));
+        const cards = catalog.data.search.items.map(item =>
+            serializeProductCard(item, {activeCurrency: currencyCode, rwfPerUsd}),
+        );
         const scored: Array<{card: (typeof cards)[number]; score: number}> = [];
 
         // Score in small parallel batches to avoid hammering the image CDN

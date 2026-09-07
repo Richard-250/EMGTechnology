@@ -49,7 +49,13 @@ export function useAuthModalOptional() {
     return useContext(AuthModalContext);
 }
 
-export function AuthModalProvider({children}: {children: ReactNode}) {
+export function AuthModalProvider({
+    children,
+    googleClientId,
+}: {
+    children: ReactNode;
+    googleClientId?: string;
+}) {
     const t = useTranslations('Auth');
     const router = useRouter();
     const pathname = usePathname();
@@ -121,6 +127,7 @@ export function AuthModalProvider({children}: {children: ReactNode}) {
                         message={message}
                         variant="modal"
                         onTabChange={setTab}
+                        googleClientId={googleClientId}
                     />
                 </DialogContent>
             </Dialog>

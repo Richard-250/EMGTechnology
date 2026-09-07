@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
 
     try {
         const currencyCode = await getActiveCurrencyCode();
+        const {getRwfPerUsd} = await import('@/lib/exchange-rate-server');
+        const rwfPerUsd = await getRwfPerUsd();
         const result = await query(
             SearchProductsQuery,
             {
@@ -44,7 +46,9 @@ export async function GET(request: NextRequest) {
         );
 
         return NextResponse.json({
-            items: result.data.search.items.map(item => serializeProductCard(item)),
+            items: result.data.search.items.map(item =>
+                serializeProductCard(item, {activeCurrency: currencyCode, rwfPerUsd}),
+            ),
             totalItems: result.data.search.totalItems,
         });
     } catch (error) {

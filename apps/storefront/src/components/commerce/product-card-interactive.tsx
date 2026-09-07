@@ -211,7 +211,17 @@ export function ProductCardInteractive({data, variant = 'default'}: ProductCardI
                     </div>
                 </Link>
 
-                <div className="hidden lg:group-hover:flex flex-col gap-1.5 px-2 pb-2 border-t border-border/60">
+                {/* Overlay inside the card — no height change, so neighbors / footer stay put */}
+                <div
+                    className={cn(
+                        'pointer-events-none absolute inset-x-0 bottom-0 z-40',
+                        'hidden lg:flex flex-col gap-1.5 rounded-b-xl border-t border-border/60',
+                        'bg-card/95 px-2 py-2 backdrop-blur-sm shadow-[0_-6px_16px_rgba(0,0,0,0.06)]',
+                        'opacity-0 translate-y-1 transition-all duration-200',
+                        'group-hover:pointer-events-auto group-hover:opacity-100 group-hover:translate-y-0',
+                        'focus-within:pointer-events-auto focus-within:opacity-100 focus-within:translate-y-0',
+                    )}
+                >
                     <Button
                         type="button"
                         size="sm"

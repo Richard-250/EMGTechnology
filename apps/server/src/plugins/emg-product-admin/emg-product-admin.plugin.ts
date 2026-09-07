@@ -1,6 +1,9 @@
 import {PluginCommonModule, VendurePlugin} from '@vendure/core';
 
-import {emgExchangeRateAdminApiExtensions} from './api-extensions';
+import {
+    emgExchangeRateAdminApiExtensions,
+    emgStorefrontShopApiExtensions,
+} from './api-extensions';
 import {ConfirmOrderPaymentService, confirmOrderPaymentPermission} from './confirm-order-payment.service';
 import {EmgExchangeRateResolver} from './emg-exchange-rate.resolver';
 import {EmgExchangeRateService} from './emg-exchange-rate.service';
@@ -20,6 +23,10 @@ import {PaymentConfirmedByListener} from './payment-confirmed-by.listener';
         ConfirmOrderPaymentService,
         PaymentConfirmedByListener,
     ],
+    shopApiExtensions: {
+        schema: emgStorefrontShopApiExtensions,
+        resolvers: [EmgExchangeRateResolver],
+    },
     adminApiExtensions: {
         schema: emgExchangeRateAdminApiExtensions,
         resolvers: [EmgExchangeRateResolver, EmgOrderOpsResolver],

@@ -3,6 +3,7 @@ import {withLiveFallback} from '@/lib/vendure/live-fallback';
 import {query} from '@/lib/vendure/api';
 import {GetCollectionProductsQuery} from '@/lib/vendure/queries';
 import {serializeProductCard, type SerializedProductCard} from '@/lib/product-price';
+import {getRwfPerUsd} from '@/lib/exchange-rate-server';
 import {cacheLife, cacheTag} from 'next/cache';
 
 export type CategoryProductsMap = Record<string, SerializedProductCard[]>;
@@ -12,6 +13,7 @@ async function fetchCategoryProductsMap(
     currencyCode: string,
 ): Promise<CategoryProductsMap> {
     const collections = await getTopCollections(locale);
+    const rwfPerUsd = await getRwfPerUsd();
     const entries = await Promise.all(
         collections.map(async collection => {
             const result = await query(
@@ -28,7 +30,9 @@ async function fetchCategoryProductsMap(
                 {languageCode: locale, currencyCode},
             );
 
-            const products = (result.data?.search?.items || []).map(item => serializeProductCard(item));
+            const products = (result.data?.search?.items || []).map(item =>
+                serializeProductCard(item, {activeCurrency: currencyCode, rwfPerUsd}),
+            );
             return [collection.slug, products] as const;
         }),
     );

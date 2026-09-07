@@ -35,10 +35,13 @@ export function HomeFitnessCatalog({
     // Apply visitor signals after mount to keep SSR/client hydration stable
     const [historyTerms, setHistoryTerms] = useState<string[]>([]);
     const [interactions, setInteractions] = useState<ProductInteractionMap>(EMPTY_INTERACTIONS);
+    // New rotation on each full page load so refresh shows a different mix
+    const [rotationBucket, setRotationBucket] = useState(0);
 
     useEffect(() => {
         setHistoryTerms(getSearchHistoryTerms());
         setInteractions(getProductInteractions());
+        setRotationBucket(Date.now());
     }, []);
 
     const displayProducts = useMemo(() => {
@@ -46,8 +49,9 @@ export function HomeFitnessCatalog({
             scope: 'home-catalog',
             historyTerms,
             interactions,
+            rotationBucket,
         });
-    }, [products, historyTerms, interactions]);
+    }, [products, historyTerms, interactions, rotationBucket]);
 
     const visible = displayProducts.slice(0, visibleCount);
     const hasMore = visibleCount < displayProducts.length;

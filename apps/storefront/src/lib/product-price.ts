@@ -1,5 +1,7 @@
 import {FragmentOf, readFragment} from '@/graphql';
 import {ProductCardFragment} from '@/lib/vendure/fragments';
+import {applyActiveCurrencyToSearchPrices} from '@/lib/search-price-display';
+import type {ProductDiscountFields} from '@/lib/discount-display';
 
 type PriceWithTax = {
     __typename: 'PriceRange' | 'SinglePrice';
@@ -18,10 +20,13 @@ export function getProductPrice(priceWithTax: PriceWithTax): number | null {
     return null;
 }
 
-export function serializeProductCard(product: FragmentOf<typeof ProductCardFragment>) {
+export function serializeProductCard(
+    product: FragmentOf<typeof ProductCardFragment>,
+    options?: {activeCurrency?: string; rwfPerUsd?: number},
+) {
     const data = readFragment(ProductCardFragment, product);
     const price = getProductPrice(data.priceWithTax);
-    return {
+    const base = {
         productId: data.productId,
         productVariantId: data.productVariantId,
         productName: data.productName,
@@ -32,6 +37,16 @@ export function serializeProductCard(product: FragmentOf<typeof ProductCardFragm
         priceMin: data.priceWithTax.__typename === 'PriceRange' ? data.priceWithTax.min : null,
         priceMax: data.priceWithTax.__typename === 'PriceRange' ? data.priceWithTax.max : null,
     };
+
+    if (!options?.activeCurrency || !options.rwfPerUsd) {
+        return base;
+    }
+
+    return applyActiveCurrencyToSearchPrices(
+        {...base, customFields: null as ProductDiscountFields | null},
+        options.activeCurrency,
+        options.rwfPerUsd,
+    );
 }
 
 export type SerializedProductCard = ReturnType<typeof serializeProductCard>;

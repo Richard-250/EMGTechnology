@@ -60,10 +60,12 @@ export function ProductGridClient({
     const [extraItems, setExtraItems] = useState<SerializedProductCard[]>([]);
     const [loadingMore, setLoadingMore] = useState(false);
     const [loadedCount, setLoadedCount] = useState(items.length);
+    const [rotationBucket, setRotationBucket] = useState(0);
 
     useEffect(() => {
         setHistoryTerms(getSearchHistoryTerms());
         setInteractions(getProductInteractions());
+        setRotationBucket(Date.now());
     }, []);
 
     // Reset appended pages when the server result set changes (new search/filter/page)
@@ -82,10 +84,11 @@ export function ProductGridClient({
                 searchTerm,
                 historyTerms,
                 interactions,
+                rotationBucket,
             });
         }
         return items;
-    }, [items, sortKey, currentPage, searchTerm, historyTerms, interactions]);
+    }, [items, sortKey, currentPage, searchTerm, historyTerms, interactions, rotationBucket]);
 
     const similarDisplay = useMemo(() => {
         if (!similarItems.length) return similarItems;
@@ -94,8 +97,9 @@ export function ProductGridClient({
             searchTerm,
             historyTerms,
             interactions,
+            rotationBucket,
         });
-    }, [similarItems, searchTerm, historyTerms, interactions]);
+    }, [similarItems, searchTerm, historyTerms, interactions, rotationBucket]);
 
     useEffect(() => {
         if (searchTerm?.trim()) {

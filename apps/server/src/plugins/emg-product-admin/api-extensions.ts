@@ -1,5 +1,12 @@
 import gql from 'graphql-tag';
 
+/** Public shop rate so storefront search cards can match PDP currency. */
+export const emgStorefrontShopApiExtensions = gql`
+    extend type Query {
+        emgStorefrontRwfPerUsd: Float!
+    }
+`;
+
 export const emgExchangeRateAdminApiExtensions = gql`
     type EmgExchangeRateInfo {
         rwfPerUsd: Float!

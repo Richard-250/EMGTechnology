@@ -105,6 +105,11 @@ export default async function LocaleLayout({children}: {children: React.ReactNod
 
     setRequestLocale(locale);
     const messages = await getMessages({locale});
+    const googleClientId = (
+        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+        process.env.GOOGLE_CLIENT_ID ||
+        ''
+    ).trim();
 
     return (
         <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
@@ -114,7 +119,7 @@ export default async function LocaleLayout({children}: {children: React.ReactNod
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider>
                         <Suspense fallback={null}>
-                        <AuthModalProvider>
+                        <AuthModalProvider googleClientId={googleClientId}>
                         <CartConfirmationProvider>
                         <Navbar />
                         <main className="flex-1 pb-14 md:pb-0">{children}</main>

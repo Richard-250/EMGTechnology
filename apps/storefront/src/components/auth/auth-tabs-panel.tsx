@@ -16,6 +16,7 @@ interface AuthTabsPanelProps {
     message?: string;
     variant?: 'page' | 'modal';
     onTabChange?: (tab: AuthTab) => void;
+    googleClientId?: string;
 }
 
 export function AuthTabsPanel({
@@ -24,6 +25,7 @@ export function AuthTabsPanel({
     message,
     variant = 'page',
     onTabChange,
+    googleClientId,
 }: AuthTabsPanelProps) {
     const t = useTranslations('Auth');
     const [activeTab, setActiveTab] = useState<AuthTab>(defaultTab);
@@ -84,7 +86,7 @@ export function AuthTabsPanel({
                 )}
 
                 <div className="w-full py-1">
-                    <GoogleSignInButton redirectTo={redirectTo} />
+                    <GoogleSignInButton redirectTo={redirectTo} clientId={googleClientId} />
                 </div>
 
                 <div className="relative">
