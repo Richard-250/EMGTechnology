@@ -384,7 +384,7 @@
     "payerAccountName": "Izina rya konti (nkuko riri kuri MoMo / banki) *",
     "payerAccountNamePlaceholder": "Izina rya konti yawe ya MoMo",
     "whereDeliver": "Tuzakugezaho he?",
-    "whereDeliverHint": "Hitamo intara, hanyuma akarere. Umuhanda n'ahantu hamenyekana bifasha umushoferi.",
+    "whereDeliverHint": "Hitamo intara n'akarere. Umuhanda / ahantu hamenyekana si ngombwa ariko bifasha umushoferi.",
     "shippingZoneRwanda": "Rwanda",
     "shippingZoneFrom": "Biturutse i Kigali",
     "deliveryLocation": "Aho bigezwa",
@@ -397,7 +397,7 @@
     "selectSector": "Hitamo umurenge",
     "streetLandmark": "Umuhanda / ahantu hamenyekana",
     "streetLandmarkPlaceholder": "Umuhanda, inomero, cyangwa ahantu hafi",
-    "fillDeliveryLocation": "Hitamo intara, akarere, n'umuhanda cyangwa ahantu hamenyekana.",
+    "fillDeliveryLocation": "Hitamo intara, akarere, n'amazina yawe yuzuye.",
     "howReceive": "Ushaka kwakira ibicuruzwa gute?",
     "howReceiveHint": "Hitamo uburyo bwo kugezwa kuri iyi aderesi.",
     "deliveryZone": "Agace k'itangwa",
@@ -425,7 +425,8 @@
     "transactionId": "MoMo / card transaction ID *",
     "transactionIdPlaceholder": "Transaction ID from your payment",
     "paymentNote": "Note (optional)",
-    "paymentNotePlaceholder": "Any extra details for our team"
+    "paymentNotePlaceholder": "Any extra details for our team",
+    "optional": "si ngombwa"
   },
   "OrderStatus": {
     "AddingItems": "Adding Items",
@@ -498,6 +499,7 @@
     "googleSigningIn": "Kwinjira na Google...",
     "googleLoading": "Gutegura kwinjira na Google...",
     "googleUnavailable": "Kwinjira na Google ntibyashyizweho.",
+    "googleAuthFailed": "Kwinjira na Google byanze. Ongera ugerageze cyangwa ukoreshe imeri.",
     "googleSignUpHint": "Ikora ku makonti mashya n'amakonti asanzwe. Niba wari wiyandikishije ukoresheje imeri, Google izahuza neza n'iyo konti imwe.",
     "googleLegalNotice": "Ukomeza na Google, wemera <privacy>Politiki y'ibanga</privacy> n'<terms>Amabwiriza yo gukoresha</terms>.",
     "orWithEmail": "cyangwa ukoreshe imeri",

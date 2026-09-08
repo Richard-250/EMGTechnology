@@ -58,16 +58,19 @@ export default function ShippingAddressStep({onComplete}: ShippingAddressStepPro
     };
 
     const handleContinue = async () => {
-        if (!province || !district || !street.trim() || !fullName.trim()) {
+        if (!province || !district || !fullName.trim()) {
             setError(t('fillDeliveryLocation'));
             return;
         }
         setLoading(true);
         setError(null);
         try {
+            const streetTrimmed = street.trim();
+            // Street / landmark is optional — fall back to district so Vendure still has streetLine1.
+            const streetLine1 = streetTrimmed || district;
             await setShippingAddress({
                 fullName: fullName.trim(),
-                streetLine1: street.trim(),
+                streetLine1,
                 streetLine2: sector || undefined,
                 city: district,
                 province,
@@ -162,7 +165,10 @@ export default function ShippingAddressStep({onComplete}: ShippingAddressStepPro
                 </div>
 
                 <div className="space-y-1.5">
-                    <Label>{t('streetLandmark')}</Label>
+                    <Label>
+                        {t('streetLandmark')}
+                        <span className="ml-1.5 font-normal text-muted-foreground">({t('optional')})</span>
+                    </Label>
                     <Input
                         value={street}
                         onChange={e => setStreet(e.target.value)}

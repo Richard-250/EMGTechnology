@@ -5,6 +5,8 @@ import {useRouter} from '@/i18n/navigation';
 import {authenticateWithGoogleAction} from '@/app/[locale]/sign-in/google-actions';
 import {useTranslations} from 'next-intl';
 import {cn} from '@/lib/utils';
+import {isRedirectError} from 'next/dist/client/components/redirect-error';
+import {useAuthModalOptional} from '@/components/auth/auth-modal-provider';
 
 declare global {
     interface Window {
@@ -65,6 +67,7 @@ function GoogleMark({className}: {className?: string}) {
 export function GoogleSignInButton({redirectTo, clientId}: GoogleSignInButtonProps) {
     const t = useTranslations('Auth');
     const router = useRouter();
+    const authModal = useAuthModalOptional();
     const hostRef = useRef<HTMLDivElement>(null);
     const overlayRef = useRef<HTMLDivElement>(null);
     const [pending, setPending] = useState(false);
@@ -92,14 +95,21 @@ export function GoogleSignInButton({redirectTo, clientId}: GoogleSignInButtonPro
                     setError(result.error);
                     return;
                 }
+                // Successful auth redirects via the server action.
+                authModal?.closeAuth();
                 router.refresh();
-            } catch {
+            } catch (err) {
+                // redirect() throws NEXT_REDIRECT — treat as success and close the modal.
+                if (isRedirectError(err)) {
+                    authModal?.closeAuth();
+                    return;
+                }
                 setError(t('googleAuthFailed'));
             } finally {
                 setPending(false);
             }
         },
-        [redirectTo, router, t],
+        [authModal, redirectTo, router, t],
     );
 
     useEffect(() => {

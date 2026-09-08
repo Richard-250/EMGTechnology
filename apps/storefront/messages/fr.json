@@ -384,7 +384,7 @@
     "payerAccountName": "Nom du compte (comme sur MoMo / banque) *",
     "payerAccountNamePlaceholder": "Nom de votre compte MoMo",
     "whereDeliver": "Où livrer ?",
-    "whereDeliverHint": "Choisissez la province, puis le district. Rue et repère aident le livreur.",
+    "whereDeliverHint": "Choisissez la province et le district. Rue ou repère est optionnel mais aide le livreur.",
     "shippingZoneRwanda": "Rwanda",
     "shippingZoneFrom": "Expédié depuis Kigali",
     "deliveryLocation": "Lieu de livraison",
@@ -397,7 +397,7 @@
     "selectSector": "Choisir le secteur",
     "streetLandmark": "Rue / repère",
     "streetLandmarkPlaceholder": "Rue, numéro, ou repère proche",
-    "fillDeliveryLocation": "Veuillez choisir province, district, et rue ou repère.",
+    "fillDeliveryLocation": "Veuillez choisir province, district, et votre nom complet.",
     "howReceive": "Comment souhaitez-vous recevoir votre commande ?",
     "howReceiveHint": "Choisissez une option de livraison pour cette adresse.",
     "deliveryZone": "Zone de livraison",
@@ -425,7 +425,8 @@
     "transactionId": "MoMo / card transaction ID *",
     "transactionIdPlaceholder": "Transaction ID from your payment",
     "paymentNote": "Note (optional)",
-    "paymentNotePlaceholder": "Any extra details for our team"
+    "paymentNotePlaceholder": "Any extra details for our team",
+    "optional": "facultatif"
   },
   "OrderStatus": {
     "AddingItems": "Adding Items",
@@ -498,6 +499,7 @@
     "googleSigningIn": "Connexion avec Google...",
     "googleLoading": "Chargement de la connexion Google...",
     "googleUnavailable": "La connexion Google n'est pas configurée.",
+    "googleAuthFailed": "La connexion Google a échoué. Réessayez ou utilisez l'e-mail.",
     "googleSignUpHint": "Fonctionne pour les nouveaux comptes et les comptes existants. Si vous vous êtes déjà inscrit par e-mail, Google se liera en toute sécurité au même compte.",
     "googleLegalNotice": "En continuant avec Google, vous acceptez notre <privacy>Politique de confidentialité</privacy> et nos <terms>Conditions d'utilisation</terms>.",
     "orWithEmail": "ou avec e-mail",

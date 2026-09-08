@@ -329,7 +329,7 @@
     "paymentNote": "Note (optional)",
     "paymentNotePlaceholder": "Any extra details for our team",
     "whereDeliver": "Where should we deliver?",
-    "whereDeliverHint": "Choose your province, then district. Street and landmark help the rider find you.",
+    "whereDeliverHint": "Choose your province and district. Street or landmark is optional but helps the rider find you.",
     "shippingZoneRwanda": "Rwanda",
     "shippingZoneFrom": "Ships from Kigali",
     "deliveryLocation": "Delivery location",
@@ -342,7 +342,7 @@
     "selectSector": "Select sector",
     "streetLandmark": "Street / landmark",
     "streetLandmarkPlaceholder": "Street, house number, or nearby landmark",
-    "fillDeliveryLocation": "Please choose province, district, and street or landmark.",
+    "fillDeliveryLocation": "Please choose province, district, and your full name.",
     "howReceive": "How would you like to receive your order?",
     "howReceiveHint": "Choose a delivery option for this address.",
     "deliveryZone": "Delivery zone",
@@ -362,7 +362,8 @@
     "emailFromAccount": "Email comes from your account and cannot be changed here.",
     "doneEditing": "Done",
     "deliveryDateLabel": "Delivery date",
-    "reviewOrder": "Review Order"
+    "reviewOrder": "Review Order",
+    "optional": "optional"
   },
   "OrderStatus": {
     "AddingItems": "Artikel hinzufügen",
@@ -434,6 +435,7 @@
     "googleSigningIn": "Anmeldung mit Google...",
     "googleLoading": "Google-Anmeldung wird geladen...",
     "googleUnavailable": "Google-Anmeldung ist nicht konfiguriert.",
+    "googleAuthFailed": "Google-Anmeldung fehlgeschlagen. Bitte erneut versuchen oder E-Mail verwenden.",
     "googleSignUpHint": "Funktioniert für neue und bestehende Konten. Wenn Sie sich bereits per E-Mail registriert haben, verknüpft Google sicher dasselbe Konto.",
     "googleLegalNotice": "Mit der Fortsetzung über Google stimmen Sie unserer <privacy>Datenschutzrichtlinie</privacy> und den <terms>Nutzungsbedingungen</terms> zu.",
     "orWithEmail": "oder mit E-Mail",
