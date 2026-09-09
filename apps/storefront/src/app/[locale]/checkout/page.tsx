@@ -56,7 +56,8 @@ export default async function CheckoutPage() {
 
     return (
         <div className="min-h-screen bg-muted/40">
-            <div className="container mx-auto px-4 py-8 md:py-10">
+            {/* Extra bottom space on mobile so Continue clears WhatsApp + bottom nav */}
+            <div className="container mx-auto px-4 py-8 md:py-10 pb-28 md:pb-10">
                 <h1 className="text-2xl md:text-3xl font-bold mb-6">{t('pageTitle')}</h1>
                 {paymentMethods.length === 0 && (
                     <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
