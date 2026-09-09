@@ -17,7 +17,13 @@ import {CartConfirmationProvider} from "@/components/commerce/cart-confirmation-
 import {CartConfirmationDrawer} from "@/components/commerce/cart-confirmation-drawer";
 import {ThemeProvider} from "@/components/providers/theme-provider";
 import {AuthModalProvider} from "@/components/auth/auth-modal-provider";
-import {SITE_NAME, SITE_URL} from "@/lib/metadata";
+import {GoogleAnalytics} from "@/components/analytics/google-analytics";
+import {GA_MEASUREMENT_ID, GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL} from "@/lib/metadata";
+import {
+    buildLocalBusinessJsonLd,
+    buildOrganizationJsonLd,
+    jsonLdScript,
+} from "@/lib/seo/json-ld";
 import "./globals.css";
 
 const bebasNeue = Bebas_Neue({
@@ -78,6 +84,9 @@ export async function generateMetadata(): Promise<Metadata> {
                 "max-snippet": -1,
             },
         },
+        ...(GOOGLE_SITE_VERIFICATION
+            ? {verification: {google: GOOGLE_SITE_VERIFICATION}}
+            : {}),
         alternates: {
             languages: Object.fromEntries(
                 routing.locales.map((l) => [l, `/${l}`])
@@ -116,6 +125,16 @@ export default async function LocaleLayout({children}: {children: React.ReactNod
             <body
                 className={`${bebasNeue.variable} ${manrope.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
             >
+                <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: jsonLdScript([
+                            buildOrganizationJsonLd(),
+                            buildLocalBusinessJsonLd(),
+                        ]),
+                    }}
+                />
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider>
                         <Suspense fallback={null}>

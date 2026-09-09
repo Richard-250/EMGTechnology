@@ -60,6 +60,7 @@ export const GetProductDetailQuery = graphql(`
                 name
                 sku
                 priceWithTax
+                currencyCode
                 stockLevel
                 options {
                     id
@@ -509,3 +510,27 @@ export const GetCollectionProductsQuery = graphql(`
         }
     }
 `, [ProductCardFragment]);
+
+export const GetSitemapProductsQuery = graphql(`
+    query GetSitemapProducts($options: ProductListOptions) {
+        products(options: $options) {
+            totalItems
+            items {
+                slug
+                updatedAt
+            }
+        }
+    }
+`);
+
+export const GetSitemapCollectionsQuery = graphql(`
+    query GetSitemapCollections($options: CollectionListOptions) {
+        collections(options: $options) {
+            totalItems
+            items {
+                slug
+                updatedAt
+            }
+        }
+    }
+`);

@@ -6,7 +6,7 @@ import {NavigationLink} from '@/components/shared/navigation-link';
 import {getTranslations} from 'next-intl/server';
 import {SITE_NAME, SITE_LOGO_LIGHT} from "@/lib/metadata";
 import {COMPANY, formatCompanyAddress} from "@/lib/company";
-import {MapPin, Mail, Phone} from "lucide-react";
+import {Clock, MapPin, Mail, Phone} from "lucide-react";
 
 const COPYRIGHT_YEAR = 2026;
 
@@ -24,6 +24,14 @@ function TikTokIcon({className}: {className?: string}) {
     return (
         <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
             <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 16.2a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.73a8.18 8.18 0 0 0 4.76 1.52V6.84a4.84 4.84 0 0 1-1-.15Z" />
+        </svg>
+    );
+}
+
+function YouTubeIcon({className}: {className?: string}) {
+    return (
+        <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+            <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8ZM9.75 15.5v-7l6.2 3.5-6.2 3.5Z" />
         </svg>
     );
 }
@@ -89,6 +97,15 @@ export async function Footer() {
                                 aria-label="TikTok"
                             >
                                 <TikTokIcon className="size-5" />
+                            </a>
+                            <a
+                                href={COMPANY.social.youtube}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex size-10 items-center justify-center rounded-sm border border-background/20 text-background/80 hover:text-electric hover:border-electric transition-colors"
+                                aria-label="YouTube"
+                            >
+                                <YouTubeIcon className="size-5" />
                             </a>
                         </div>
                     </div>
@@ -179,6 +196,10 @@ export async function Footer() {
                                         {t('getDirections')}
                                     </a>
                                 </div>
+                            </li>
+                            <li className="flex gap-2.5 items-start">
+                                <Clock className="size-4 shrink-0 mt-0.5 text-electric" aria-hidden />
+                                <span>{COMPANY.openingHoursDisplay}</span>
                             </li>
                             <li>
                                 <a

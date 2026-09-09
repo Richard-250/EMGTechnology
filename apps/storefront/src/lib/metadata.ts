@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 
 export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'EMG Technology Ltd';
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://emgtechnologyltd.com';
 export const SITE_LOGO = '/images/logo.png';
 /** Transparent light logo for dark backgrounds (footer, dark hero panels). */
 export const SITE_LOGO_LIGHT = '/images/logo-light.png';
+/** Paste the HTML-tag content value from Google Search Console (optional). */
+export const GOOGLE_SITE_VERIFICATION =
+    process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '';
+/** Google Analytics 4 measurement ID (public). */
+export const GA_MEASUREMENT_ID =
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-KY900LWV05';
 
 /**
  * Truncate text to a maximum length, preserving word boundaries.

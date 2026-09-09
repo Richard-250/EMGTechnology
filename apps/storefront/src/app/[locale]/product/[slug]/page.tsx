@@ -22,6 +22,11 @@ import {
     buildCanonicalUrl,
     buildOgImages,
 } from '@/lib/metadata';
+import {
+    buildBreadcrumbJsonLd,
+    buildProductJsonLd,
+    jsonLdScript,
+} from '@/lib/seo/json-ld';
 import {getTranslations} from 'next-intl/server';
 import {toOgLocale} from '@/i18n/locale-utils';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
@@ -138,8 +143,25 @@ export default async function ProductDetailPage({params, searchParams}: PageProp
     const productForDisplay = {...product, optionGroups: getDisplayOptionGroups(product)};
     const carouselImages = resolveProductCarouselImages(product.assets, slug);
 
+    const breadcrumbCrumbs = [
+        {name: t('home'), path: '/'},
+        ...(primaryCollection
+            ? [{name: primaryCollection.name, path: `/collection/${primaryCollection.slug}`}]
+            : []),
+        {name: product.name},
+    ];
+
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: jsonLdScript([
+                        buildProductJsonLd(product, locale, currencyCode),
+                        buildBreadcrumbJsonLd(locale, breadcrumbCrumbs),
+                    ]),
+                }}
+            />
             <div className="container mx-auto px-4 py-8">
                 {/* Breadcrumb Navigation */}
                 <Breadcrumb className="mb-6">

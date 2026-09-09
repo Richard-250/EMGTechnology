@@ -19,9 +19,17 @@ export const COMPANY = {
         country: 'Rwanda',
     },
     mapUrl: 'https://maps.app.goo.gl/tWVenRVjRNCRZVPUA?g_st=ic',
+    /** Customer-facing hours label. Closed Sunday. */
+    openingHoursDisplay: 'Mon–Sat 8:00–22:00',
+    openingHours: {
+        days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const,
+        opens: '08:00',
+        closes: '22:00',
+    },
     social: {
         instagram: 'https://www.instagram.com/emgymtech?igsh=MXF6emxkc3cxY3Z1MQ%3D%3D&utm_source=qr',
         tiktok: 'https://www.tiktok.com/@emgymtechnologyltd',
+        youtube: 'https://www.youtube.com/channel/UCebXrHXHg7glWIRBiV6lnIA',
     },
     legal: {
         privacyPolicyUrl: 'https://emgtechnologyltd.com/privacy-policy',
@@ -32,4 +40,8 @@ export const COMPANY = {
 export function formatCompanyAddress(): string {
     const {road, building, city, country} = COMPANY.address;
     return `${building}, ${road}, ${city}, ${country}`;
+}
+
+export function companySocialLinks(): string[] {
+    return Object.values(COMPANY.social).filter(Boolean);
 }
