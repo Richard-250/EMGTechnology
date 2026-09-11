@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { CreditCard, Loader2, Smartphone } from 'lucide-react';
+import { CreditCard, ImagePlus, Loader2, Smartphone, X } from 'lucide-react';
 import { useCheckout } from '../checkout-provider';
 import { placeOrder as placeOrderAction } from '../actions';
+import { uploadPaymentProofAction } from '../upload-payment-proof';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Price } from '@/components/commerce/price';
@@ -24,6 +24,9 @@ import {
   parsePaymentSteps,
   resolvePaymentMethodFields,
 } from '../payment-details';
+
+const MAX_PROOF_BYTES = 5 * 1024 * 1024;
+const ALLOWED_PROOF_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']);
 
 function PaymentMethodIcon({ code }: { code: string }) {
   if (code === 'mtn-rwanda') {
@@ -135,6 +138,15 @@ function CardPaymentForm() {
   );
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Could not read image'));
+    reader.readAsDataURL(file);
+  });
+}
+
 function MobileMoneyCheckoutPanel({
   providerCode,
   onPlaceOrder,
@@ -152,6 +164,47 @@ function MobileMoneyCheckoutPanel({
   const paymentReference = buildPaymentReference(providerCode, order.code);
   const providerName = providerCode === 'mtn-rwanda' ? t('mtnMobileMoney') : t('airtelMoney');
   const merchantName = fields?.merchantDisplayName ?? method?.name ?? 'EMG Technology Ltd';
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [proofError, setProofError] = useState<string | null>(null);
+
+  const previewSrc = mobileMoneyDetails.proofUrl || mobileMoneyDetails.proofDataUrl;
+
+  const handlePickProof = async (file: File | null) => {
+    setProofError(null);
+    if (!file) return;
+
+    if (!ALLOWED_PROOF_TYPES.has(file.type.toLowerCase())) {
+      setProofError(t('paymentProofInvalidType'));
+      return;
+    }
+    if (file.size > MAX_PROOF_BYTES) {
+      setProofError(t('paymentProofTooLarge'));
+      return;
+    }
+
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setMobileMoneyDetails({
+        proofFileName: file.name,
+        proofMimeType: file.type,
+        proofDataUrl: dataUrl,
+        proofUrl: '',
+      });
+    } catch {
+      setProofError(t('paymentProofUploadFailed'));
+    }
+  };
+
+  const clearProof = () => {
+    setProofError(null);
+    setMobileMoneyDetails({
+      proofFileName: '',
+      proofMimeType: '',
+      proofDataUrl: '',
+      proofUrl: '',
+    });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
@@ -206,56 +259,51 @@ function MobileMoneyCheckoutPanel({
       </div>
 
       <div className="border-t border-border px-5 py-5 space-y-4 bg-muted/20">
-        <p className="font-semibold text-sm">{t('paymentProofTitle')}</p>
+        <div>
+          <p className="font-semibold text-sm">{t('paymentProofTitle')}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('paymentProofHint')}</p>
+        </div>
 
-        <Field>
-          <FieldLabel htmlFor="payerAccountName">{t('payerAccountName')}</FieldLabel>
-          <Input
-            id="payerAccountName"
-            placeholder={t('payerAccountNamePlaceholder')}
-            value={mobileMoneyDetails.accountName}
-            onChange={(e) =>
-              setMobileMoneyDetails({ ...mobileMoneyDetails, accountName: e.target.value })
-            }
-          />
-        </Field>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="sr-only"
+          onChange={(e) => handlePickProof(e.target.files?.[0] ?? null)}
+        />
 
-        <Field>
-          <FieldLabel htmlFor="payerPhone">{t('payerPhone')}</FieldLabel>
-          <Input
-            id="payerPhone"
-            type="tel"
-            inputMode="tel"
-            placeholder="+250780000000"
-            value={mobileMoneyDetails.phoneNumber}
-            onChange={(e) =>
-              setMobileMoneyDetails({ ...mobileMoneyDetails, phoneNumber: e.target.value })
-            }
-          />
-        </Field>
+        {previewSrc ? (
+          <div className="relative rounded-lg border border-border overflow-hidden bg-background">
+            <img
+              src={previewSrc}
+              alt={t('paymentProofPreviewAlt')}
+              className="max-h-56 w-full object-contain bg-muted/30"
+            />
+            <button
+              type="button"
+              onClick={clearProof}
+              className="absolute top-2 right-2 inline-flex size-8 items-center justify-center rounded-full bg-background/90 border border-border shadow-sm hover:bg-background"
+              aria-label={t('paymentProofRemove')}
+            >
+              <X className="size-4" />
+            </button>
+            <p className="px-3 py-2 text-xs text-muted-foreground truncate border-t border-border">
+              {mobileMoneyDetails.proofFileName || t('paymentProofAttached')}
+            </p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full rounded-lg border border-dashed border-border bg-background px-4 py-8 text-center hover:border-electric hover:bg-electric/5 transition-colors"
+          >
+            <ImagePlus className="mx-auto size-8 text-electric mb-2" />
+            <p className="text-sm font-medium">{t('paymentProofUpload')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('paymentProofFormats')}</p>
+          </button>
+        )}
 
-        <Field>
-          <FieldLabel htmlFor="transactionId">{t('optionalTransactionId')}</FieldLabel>
-          <Input
-            id="transactionId"
-            placeholder={t('transactionIdPlaceholder')}
-            value={mobileMoneyDetails.transactionId}
-            onChange={(e) =>
-              setMobileMoneyDetails({ ...mobileMoneyDetails, transactionId: e.target.value })
-            }
-          />
-        </Field>
-
-        <Field>
-          <FieldLabel htmlFor="paymentNote">{t('optionalPaymentNote')}</FieldLabel>
-          <Textarea
-            id="paymentNote"
-            placeholder={t('paymentNotePlaceholder')}
-            rows={2}
-            value={mobileMoneyDetails.note}
-            onChange={(e) => setMobileMoneyDetails({ ...mobileMoneyDetails, note: e.target.value })}
-          />
-        </Field>
+        {proofError && <p className="text-sm text-destructive">{proofError}</p>}
 
         <Button
           onClick={onPlaceOrder}
@@ -279,6 +327,7 @@ export default function PaymentStep() {
     setSelectedPaymentMethodCode,
     cardDetails,
     mobileMoneyDetails,
+    setMobileMoneyDetails,
     deliveryDateLabel,
   } = useCheckout();
   const [formError, setFormError] = useState<string | null>(null);
@@ -317,12 +366,41 @@ export default function PaymentStep() {
     setLoading(true);
 
     try {
+      let mobileDetails = mobileMoneyDetails;
+
+      if (
+        (selectedPaymentMethodCode === 'mtn-rwanda' || selectedPaymentMethodCode === 'airtel-rwanda') &&
+        !mobileDetails.proofUrl &&
+        mobileDetails.proofDataUrl
+      ) {
+        const uploaded = await uploadPaymentProofAction({
+          fileBase64: mobileDetails.proofDataUrl,
+          fileName: mobileDetails.proofFileName || 'payment-proof.jpg',
+          mimeType: mobileDetails.proofMimeType || 'image/jpeg',
+        });
+        mobileDetails = {
+          ...mobileDetails,
+          proofUrl: uploaded.url,
+          proofDataUrl: '',
+        };
+        setMobileMoneyDetails(mobileDetails);
+      }
+
+      if (
+        (selectedPaymentMethodCode === 'mtn-rwanda' || selectedPaymentMethodCode === 'airtel-rwanda') &&
+        !mobileDetails.proofUrl
+      ) {
+        setFormError(t('mobileMoneyFormIncomplete'));
+        setLoading(false);
+        return;
+      }
+
       const paymentReference = buildPaymentReference(selectedPaymentMethodCode, order.code);
       const metadata = buildPaymentMetadata(selectedPaymentMethodCode, {
         card: selectedPaymentMethodCode === 'card' ? cardDetails : undefined,
         mobile:
           selectedPaymentMethodCode === 'mtn-rwanda' || selectedPaymentMethodCode === 'airtel-rwanda'
-            ? mobileMoneyDetails
+            ? mobileDetails
             : undefined,
         paymentReference,
         deliveryDate,
@@ -335,7 +413,12 @@ export default function PaymentStep() {
         throw error;
       }
       console.error('Error placing order:', error);
-      setFormError(t('unexpectedError'));
+      const message = error instanceof Error ? error.message : '';
+      setFormError(
+        /upload|Cloudinary|proof|image/i.test(message)
+          ? t('paymentProofUploadFailed')
+          : t('unexpectedError'),
+      );
       setLoading(false);
     }
   };

@@ -26,6 +26,10 @@ export const MEDIA_FOLDERS = {
     banners: 'banners',
     userAvatars: 'users/avatars',
     blog: 'blog',
+    paymentProofs: 'payment-proofs',
 } as const;
+
+/** Customer checkout payment screenshots (MoMo / Airtel). */
+export const MAX_PAYMENT_PROOF_BYTES = 5 * 1024 * 1024;
 
 export type CloudinaryMediaFolderKey = keyof typeof MEDIA_FOLDERS;

@@ -1,5 +1,23 @@
 import gql from 'graphql-tag';
 
+export const shopApiExtensions = gql`
+    type UploadPaymentProofResult {
+        url: String!
+    }
+
+    extend type Mutation {
+        """
+        Upload a MoMo/Airtel payment screenshot from checkout. Returns a public image URL
+        stored on Cloudinary for staff review.
+        """
+        uploadPaymentProof(
+            fileBase64: String!
+            fileName: String!
+            mimeType: String!
+        ): UploadPaymentProofResult!
+    }
+`;
+
 export const adminApiExtensions = gql`
     enum CloudinaryMediaFolder {
         PRODUCTS

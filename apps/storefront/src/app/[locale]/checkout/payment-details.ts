@@ -6,11 +6,14 @@ export interface CardPaymentDetails {
     cvv: string;
 }
 
+/** MoMo / Airtel checkout — only a payment screenshot is required from the customer. */
 export interface MobileMoneyCheckoutDetails {
-    accountName: string;
-    phoneNumber: string;
-    transactionId: string;
-    note: string;
+    proofFileName: string;
+    proofMimeType: string;
+    /** Data URL or raw base64 — cleared after upload */
+    proofDataUrl: string;
+    /** Set after successful Cloudinary upload */
+    proofUrl: string;
 }
 
 export interface PaymentMethodCustomFields {
@@ -29,14 +32,14 @@ export const DEFAULT_MOMO_MERCHANT: Record<
         merchantPhone: '+250796345773',
         merchantMomoCode: '*182*8*1*0796345773#',
         paymentSteps:
-            'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nFill in your account name and transaction ID below, then place your order',
+            'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nTake a screenshot of the successful payment and upload it below',
     },
     'airtel-rwanda': {
         merchantDisplayName: 'EMG Technology Ltd',
         merchantPhone: '+250796345773',
         merchantMomoCode: '*185*1*0796345773#',
         paymentSteps:
-            'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nFill in your account name and transaction ID below, then place your order',
+            'Dial the USSD code shown above\nEnter the exact order amount in RWF\nUse your payment reference as the reason / message\nTake a screenshot of the successful payment and upload it below',
     },
 };
 
@@ -53,12 +56,9 @@ export function resolvePaymentMethodFields(
 export interface PaymentDetailsMetadata {
     cardLast4?: string;
     cardBrand?: string;
-    mobileMoneyPhone?: string;
     mobileMoneyProvider?: string;
-    payerAccountName?: string;
-    transactionId?: string;
-    paymentNote?: string;
     paymentReference?: string;
+    paymentProofUrl?: string;
     deliveryDate?: string;
     deliveryMethodName?: string;
 }
@@ -70,28 +70,6 @@ export function digitsOnly(value: string): string {
 export function formatCardNumber(value: string): string {
     const digits = digitsOnly(value).slice(0, 16);
     return digits.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
-}
-
-export function isValidRwandaMobileNumber(phone: string): boolean {
-    const digits = digitsOnly(phone);
-    if (digits.startsWith('250')) {
-        return digits.length === 12 && /^2507\d{8}$/.test(digits);
-    }
-    if (digits.startsWith('07')) {
-        return digits.length === 10 && /^07\d{8}$/.test(digits);
-    }
-    if (digits.startsWith('7')) {
-        return digits.length === 9 && /^7\d{8}$/.test(digits);
-    }
-    return false;
-}
-
-export function normalizeRwandaMobileNumber(phone: string): string {
-    const digits = digitsOnly(phone);
-    if (digits.startsWith('250')) return `+${digits}`;
-    if (digits.startsWith('07')) return `+250${digits.slice(1)}`;
-    if (digits.startsWith('7') && digits.length === 9) return `+250${digits}`;
-    return phone.trim();
 }
 
 export function isCardFormValid(card: CardPaymentDetails): boolean {
@@ -112,12 +90,9 @@ export function isCardFormValid(card: CardPaymentDetails): boolean {
     );
 }
 
-/** Customer must identify themselves; transaction ID is optional (admin confirms payment). */
+/** Customer must attach a payment screenshot before placing the order. */
 export function isMobileMoneyCheckoutValid(details: MobileMoneyCheckoutDetails): boolean {
-    return (
-        details.accountName.trim().length >= 2 &&
-        isValidRwandaMobileNumber(details.phoneNumber)
-    );
+    return Boolean(details.proofUrl.trim()) || Boolean(details.proofDataUrl.trim());
 }
 
 export function buildPaymentReference(methodCode: string, orderCode?: string | null): string {
@@ -149,12 +124,9 @@ export function buildPaymentMetadata(
 
     if ((paymentMethodCode === 'mtn-rwanda' || paymentMethodCode === 'airtel-rwanda') && options?.mobile) {
         return {
-            mobileMoneyPhone: normalizeRwandaMobileNumber(options.mobile.phoneNumber),
             mobileMoneyProvider: paymentMethodCode === 'mtn-rwanda' ? 'MTN Mobile Money' : 'Airtel Money',
-            payerAccountName: options.mobile.accountName.trim(),
-            transactionId: options.mobile.transactionId.trim(),
-            paymentNote: options.mobile.note.trim() || undefined,
             paymentReference: options.paymentReference,
+            paymentProofUrl: options.mobile.proofUrl.trim(),
             deliveryDate: options.deliveryDate,
             deliveryMethodName: options.deliveryMethodName,
         };

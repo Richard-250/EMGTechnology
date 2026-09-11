@@ -1,0 +1,65 @@
+{{> header title="Order confirmed" }}
+
+<mj-section padding="8px 24px 0">
+    <mj-column>
+        <mj-text font-size="18px" font-weight="700" color="#0C1210">
+            Payment verified — order confirmed
+        </mj-text>
+        <mj-text font-size="14px" color="#4A5550">
+            A staff member confirmed the customer payment. The customer has been emailed their confirmation and invoice.
+        </mj-text>
+    </mj-column>
+</mj-section>
+
+<mj-section padding="16px 24px">
+    <mj-column css-class="summary-box" padding="20px">
+        <mj-text css-class="summary-title" padding-bottom="12px">Order summary</mj-text>
+        <mj-table>
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Order</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:700;color:#111827;text-align:right;">#{{ order.code }}</td>
+            </tr>
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Customer</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ order.customer.firstName }} {{ order.customer.lastName }}</td>
+            </tr>
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Email</td>
+                <td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;">{{ order.customer.emailAddress }}</td>
+            </tr>
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Total</td>
+                <td style="padding:6px 0;font-size:16px;font-weight:700;color:#269A2D;text-align:right;">{{ formatMoney order.totalWithTax order.currencyCode 'en' }}</td>
+            </tr>
+            {{#if paymentProof.confirmedByName}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Confirmed by</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:600;color:#111827;text-align:right;">{{ paymentProof.confirmedByName }}</td>
+            </tr>
+            {{/if}}
+            <tr>
+                <td style="padding:6px 0;font-size:14px;color:#6b7280;">Status</td>
+                <td style="padding:6px 0;font-size:14px;font-weight:700;color:#269A2D;text-align:right;">Payment confirmed</td>
+            </tr>
+        </mj-table>
+    </mj-column>
+</mj-section>
+
+{{#if paymentProof.paymentProofUrl}}
+<mj-section padding="0 24px 16px">
+    <mj-column>
+        <mj-text css-class="summary-title" padding-bottom="8px">Payment screenshot</mj-text>
+        <mj-image src="{{ paymentProof.paymentProofUrl }}" alt="Payment proof" width="320px" border-radius="8px" />
+    </mj-column>
+</mj-section>
+{{/if}}
+
+<mj-section padding="0 24px 8px">
+    <mj-column>
+        <mj-button href="{{ dashboardUrl }}" background-color="#269A2D" color="#ffffff" border-radius="10px" font-weight="600">
+            Open order in dashboard
+        </mj-button>
+    </mj-column>
+</mj-section>
+
+{{> footer }}

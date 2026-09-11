@@ -43,15 +43,6 @@ export class ConfirmOrderPaymentService {
             throw new UserInputError('No payment found on this order to confirm');
         }
 
-        if (payment.state !== 'Settled') {
-            const settleResult = await this.orderService.settlePayment(ctx, payment.id);
-            if ((settleResult as {errorCode?: string}).errorCode) {
-                throw new UserInputError(
-                    `Could not settle payment: ${(settleResult as {message?: string}).message || 'unknown error'}`,
-                );
-            }
-        }
-
         let confirmedByName = 'Staff';
         let confirmedById = ctx.activeUserId ? String(ctx.activeUserId) : '';
 
@@ -72,11 +63,21 @@ export class ConfirmOrderPaymentService {
             }
         }
 
+        // Record confirmer before settle so staff confirmation emails can include the name.
         await this.orderService.updateCustomFields(ctx, orderId, {
             paymentConfirmedById: confirmedById,
             paymentConfirmedByName: confirmedByName,
             paymentConfirmedAt: new Date(),
         });
+
+        if (payment.state !== 'Settled') {
+            const settleResult = await this.orderService.settlePayment(ctx, payment.id);
+            if ((settleResult as {errorCode?: string}).errorCode) {
+                throw new UserInputError(
+                    `Could not settle payment: ${(settleResult as {message?: string}).message || 'unknown error'}`,
+                );
+            }
+        }
 
         const updated = await this.orderService.findOne(ctx, orderId, ['payments', 'customer', 'lines']);
         Logger.info(

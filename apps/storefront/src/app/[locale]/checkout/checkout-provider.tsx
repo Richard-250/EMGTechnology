@@ -87,10 +87,10 @@ const EMPTY_CARD: CardPaymentDetails = {
 };
 
 const EMPTY_MOBILE: MobileMoneyCheckoutDetails = {
-  accountName: '',
-  phoneNumber: '',
-  transactionId: '',
-  note: '',
+  proofFileName: '',
+  proofMimeType: '',
+  proofDataUrl: '',
+  proofUrl: '',
 };
 
 interface CheckoutProviderProps {
