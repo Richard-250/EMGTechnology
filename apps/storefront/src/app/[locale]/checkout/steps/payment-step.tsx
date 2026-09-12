@@ -7,10 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { CreditCard, ImagePlus, Loader2, Smartphone, X } from 'lucide-react';
+import { CheckCircle2, CreditCard, ImagePlus, Loader2, Smartphone, X } from 'lucide-react';
 import { useCheckout } from '../checkout-provider';
 import { placeOrder as placeOrderAction } from '../actions';
-import { uploadPaymentProofAction } from '../upload-payment-proof';
+import { uploadPaymentProof } from '../upload-payment-proof';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Price } from '@/components/commerce/price';
@@ -25,8 +25,69 @@ import {
   resolvePaymentMethodFields,
 } from '../payment-details';
 
-const MAX_PROOF_BYTES = 5 * 1024 * 1024;
-const ALLOWED_PROOF_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']);
+const MAX_PROOF_INPUT_BYTES = 15 * 1024 * 1024; // 15MB raw input before client compression
+
+/**
+ * Compresses an image in the browser using HTML5 Canvas.
+ * Reduces 5MB-10MB phone screenshots to a sharp ~100-200 KB JPEG.
+ */
+async function compressImage(
+  file: File,
+  maxWidth = 1200,
+  maxHeight = 1600,
+  quality = 0.82,
+): Promise<{
+  dataUrl: string;
+  mimeType: string;
+  fileName: string;
+}> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = String(e.target?.result || '');
+      if (!src) {
+        resolve({ dataUrl: '', mimeType: 'image/jpeg', fileName: file.name });
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          let { width, height } = img;
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve({ dataUrl: src, mimeType: file.type || 'image/jpeg', fileName: file.name });
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', quality);
+          resolve({
+            dataUrl: compressed,
+            mimeType: 'image/jpeg',
+            fileName: file.name.replace(/\.[^.]+$/, '') + '.jpg',
+          });
+        } catch {
+          resolve({ dataUrl: src, mimeType: file.type || 'image/jpeg', fileName: file.name });
+        }
+      };
+      img.onerror = () => {
+        resolve({ dataUrl: src, mimeType: file.type || 'image/jpeg', fileName: file.name });
+      };
+      img.src = src;
+    };
+    reader.onerror = () => {
+      resolve({ dataUrl: '', mimeType: 'image/jpeg', fileName: file.name });
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 function PaymentMethodIcon({ code }: { code: string }) {
   if (code === 'mtn-rwanda') {
@@ -138,15 +199,6 @@ function CardPaymentForm() {
   );
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(new Error('Could not read image'));
-    reader.readAsDataURL(file);
-  });
-}
-
 function MobileMoneyCheckoutPanel({
   providerCode,
   onPlaceOrder,
@@ -166,32 +218,60 @@ function MobileMoneyCheckoutPanel({
   const merchantName = fields?.merchantDisplayName ?? method?.name ?? 'EMG Technology Ltd';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [proofError, setProofError] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const previewSrc = mobileMoneyDetails.proofUrl || mobileMoneyDetails.proofDataUrl;
+  const isProofReady = isMobileMoneyCheckoutValid(mobileMoneyDetails);
 
   const handlePickProof = async (file: File | null) => {
     setProofError(null);
     if (!file) return;
 
-    if (!ALLOWED_PROOF_TYPES.has(file.type.toLowerCase())) {
+    if (file.type && !file.type.startsWith('image/')) {
       setProofError(t('paymentProofInvalidType'));
       return;
     }
-    if (file.size > MAX_PROOF_BYTES) {
+    if (file.size > MAX_PROOF_INPUT_BYTES) {
       setProofError(t('paymentProofTooLarge'));
       return;
     }
 
     try {
-      const dataUrl = await fileToDataUrl(file);
+      setCompressing(true);
+      const compressed = await compressImage(file);
+      if (!compressed.dataUrl) {
+        throw new Error('Could not read image file');
+      }
+
+      // 1. Immediately set preview so customer sees their photo
       setMobileMoneyDetails({
-        proofFileName: file.name,
-        proofMimeType: file.type,
-        proofDataUrl: dataUrl,
+        proofFileName: compressed.fileName,
+        proofMimeType: compressed.mimeType,
+        proofDataUrl: compressed.dataUrl,
         proofUrl: '',
       });
-    } catch {
-      setProofError(t('paymentProofUploadFailed'));
+      setCompressing(false);
+
+      // 2. Upload in background immediately so placing order is instant
+      setUploading(true);
+      const result = await uploadPaymentProof({
+        fileBase64: compressed.dataUrl,
+        fileName: compressed.fileName,
+        mimeType: compressed.mimeType,
+      });
+
+      setMobileMoneyDetails({
+        proofFileName: compressed.fileName,
+        proofMimeType: compressed.mimeType,
+        proofDataUrl: compressed.dataUrl,
+        proofUrl: result.url || compressed.dataUrl,
+      });
+    } catch (err) {
+      console.warn('Proof handling warning:', err);
+    } finally {
+      setCompressing(false);
+      setUploading(false);
     }
   };
 
@@ -267,7 +347,7 @@ function MobileMoneyCheckoutPanel({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept="image/*"
           className="sr-only"
           onChange={(e) => handlePickProof(e.target.files?.[0] ?? null)}
         />
@@ -277,7 +357,7 @@ function MobileMoneyCheckoutPanel({
             <img
               src={previewSrc}
               alt={t('paymentProofPreviewAlt')}
-              className="max-h-56 w-full object-contain bg-muted/30"
+              className="max-h-64 w-full object-contain bg-muted/30"
             />
             <button
               type="button"
@@ -287,18 +367,36 @@ function MobileMoneyCheckoutPanel({
             >
               <X className="size-4" />
             </button>
-            <p className="px-3 py-2 text-xs text-muted-foreground truncate border-t border-border">
-              {mobileMoneyDetails.proofFileName || t('paymentProofAttached')}
-            </p>
+            <div className="flex items-center justify-between px-3 py-2 text-xs text-muted-foreground border-t border-border bg-muted/10">
+              <span className="truncate max-w-[200px]">
+                {mobileMoneyDetails.proofFileName || t('paymentProofAttached')}
+              </span>
+              {uploading ? (
+                <span className="inline-flex items-center gap-1 text-electric">
+                  <Loader2 className="size-3 animate-spin" /> Uploading…
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-500 font-medium">
+                  <CheckCircle2 className="size-3.5" /> Ready
+                </span>
+              )}
+            </div>
           </div>
         ) : (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
+            disabled={compressing}
             className="w-full rounded-lg border border-dashed border-border bg-background px-4 py-8 text-center hover:border-electric hover:bg-electric/5 transition-colors"
           >
-            <ImagePlus className="mx-auto size-8 text-electric mb-2" />
-            <p className="text-sm font-medium">{t('paymentProofUpload')}</p>
+            {compressing ? (
+              <Loader2 className="mx-auto size-8 text-electric mb-2 animate-spin" />
+            ) : (
+              <ImagePlus className="mx-auto size-8 text-electric mb-2" />
+            )}
+            <p className="text-sm font-medium">
+              {compressing ? 'Preparing image…' : t('paymentProofUpload')}
+            </p>
             <p className="text-xs text-muted-foreground mt-1">{t('paymentProofFormats')}</p>
           </button>
         )}
@@ -307,7 +405,7 @@ function MobileMoneyCheckoutPanel({
 
         <Button
           onClick={onPlaceOrder}
-          disabled={loading || !isMobileMoneyCheckoutValid(mobileMoneyDetails)}
+          disabled={loading || compressing || !isProofReady}
           className="w-full bg-electric hover:bg-electric/90 text-electric-foreground font-semibold py-6"
         >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -369,30 +467,36 @@ export default function PaymentStep() {
       let mobileDetails = mobileMoneyDetails;
 
       if (
-        (selectedPaymentMethodCode === 'mtn-rwanda' || selectedPaymentMethodCode === 'airtel-rwanda') &&
-        !mobileDetails.proofUrl &&
-        mobileDetails.proofDataUrl
+        selectedPaymentMethodCode === 'mtn-rwanda' ||
+        selectedPaymentMethodCode === 'airtel-rwanda'
       ) {
-        const uploaded = await uploadPaymentProofAction({
-          fileBase64: mobileDetails.proofDataUrl,
-          fileName: mobileDetails.proofFileName || 'payment-proof.jpg',
-          mimeType: mobileDetails.proofMimeType || 'image/jpeg',
-        });
-        mobileDetails = {
-          ...mobileDetails,
-          proofUrl: uploaded.url,
-          proofDataUrl: '',
-        };
-        setMobileMoneyDetails(mobileDetails);
-      }
+        // If background upload hasn't set proofUrl yet, upload now or fallback to dataUrl
+        if (!mobileDetails.proofUrl && mobileDetails.proofDataUrl) {
+          const uploaded = await uploadPaymentProof({
+            fileBase64: mobileDetails.proofDataUrl,
+            fileName: mobileDetails.proofFileName || 'payment-proof.jpg',
+            mimeType: mobileDetails.proofMimeType || 'image/jpeg',
+          });
+          mobileDetails = {
+            ...mobileDetails,
+            proofUrl: uploaded.url || mobileDetails.proofDataUrl,
+          };
+          setMobileMoneyDetails(mobileDetails);
+        }
 
-      if (
-        (selectedPaymentMethodCode === 'mtn-rwanda' || selectedPaymentMethodCode === 'airtel-rwanda') &&
-        !mobileDetails.proofUrl
-      ) {
-        setFormError(t('mobileMoneyFormIncomplete'));
-        setLoading(false);
-        return;
+        // Final safeguard: fallback to dataUrl if proofUrl is empty
+        if (!mobileDetails.proofUrl && mobileDetails.proofDataUrl) {
+          mobileDetails = {
+            ...mobileDetails,
+            proofUrl: mobileDetails.proofDataUrl,
+          };
+        }
+
+        if (!mobileDetails.proofUrl && !mobileDetails.proofDataUrl) {
+          setFormError(t('mobileMoneyFormIncomplete'));
+          setLoading(false);
+          return;
+        }
       }
 
       const paymentReference = buildPaymentReference(selectedPaymentMethodCode, order.code);
@@ -408,15 +512,21 @@ export default function PaymentStep() {
       });
 
       await placeOrderAction(selectedPaymentMethodCode, metadata);
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+    } catch (error: unknown) {
+      // In Next.js, redirect() throws an error with digest NEXT_REDIRECT. Rethrow it!
+      const digest = (error as { digest?: string })?.digest;
+      if (
+        digest?.startsWith?.('NEXT_REDIRECT') ||
+        (error instanceof Error && error.message.includes('NEXT_REDIRECT'))
+      ) {
         throw error;
       }
+
       console.error('Error placing order:', error);
-      const message = error instanceof Error ? error.message : '';
+      const message = error instanceof Error ? error.message : String(error || '');
       setFormError(
-        /upload|Cloudinary|proof|image/i.test(message)
-          ? t('paymentProofUploadFailed')
+        message && !message.includes('Server Components render') && !message.includes('NEXT_REDIRECT')
+          ? message
           : t('unexpectedError'),
       );
       setLoading(false);

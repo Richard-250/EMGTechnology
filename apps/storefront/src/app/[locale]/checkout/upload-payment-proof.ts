@@ -1,65 +1,35 @@
-'use server';
-
-const UPLOAD_PAYMENT_PROOF = `
-    mutation UploadPaymentProof($fileBase64: String!, $fileName: String!, $mimeType: String!) {
-        uploadPaymentProof(fileBase64: $fileBase64, fileName: $fileName, mimeType: $mimeType) {
-            url
-        }
-    }
-`;
-
 /**
- * Upload a MoMo/Airtel payment screenshot via the Vendure shop API (Cloudinary).
+ * Upload a customer MoMo/Airtel payment screenshot.
+ * Calls the Next.js API route /api/checkout/upload-proof (direct Cloudinary/local upload).
+ * If the server is offline or upload fails, gracefully falls back to the compressed
+ * data URL so the customer can ALWAYS place their order without error.
  */
-export async function uploadPaymentProofAction(input: {
+export async function uploadPaymentProof(input: {
     fileBase64: string;
     fileName: string;
     mimeType: string;
 }): Promise<{url: string}> {
-    const apiUrl =
-        process.env.VENDURE_SHOP_API_URL ||
-        process.env.NEXT_PUBLIC_VENDURE_SHOP_API_URL ||
-        'http://127.0.0.1:3001/shop-api';
-    const channelToken =
-        process.env.VENDURE_CHANNEL_TOKEN ||
-        process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN ||
-        '__default_channel__';
-    const channelHeader = process.env.VENDURE_CHANNEL_TOKEN_HEADER || 'vendure-token';
+    try {
+        const response = await fetch('/api/checkout/upload-proof', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(input),
+        });
 
-    const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            [channelHeader]: channelToken,
-        },
-        body: JSON.stringify({
-            query: UPLOAD_PAYMENT_PROOF,
-            variables: {
-                fileBase64: input.fileBase64,
-                fileName: input.fileName,
-                mimeType: input.mimeType,
-            },
-        }),
-        cache: 'no-store',
-    });
-
-    if (!response.ok) {
-        throw new Error(`Upload failed (HTTP ${response.status})`);
+        if (response.ok) {
+            const data = (await response.json()) as {url?: string; error?: string};
+            if (data.url) {
+                return {url: data.url};
+            }
+        }
+        console.warn('Upload API responded with non-ok status, falling back to data URL');
+    } catch (err) {
+        console.warn('Network issue during proof upload, falling back to data URL:', err);
     }
 
-    const json = (await response.json()) as {
-        data?: {uploadPaymentProof?: {url?: string}};
-        errors?: Array<{message: string}>;
-    };
-
-    if (json.errors?.length) {
-        throw new Error(json.errors.map(e => e.message).join(', '));
-    }
-
-    const url = json.data?.uploadPaymentProof?.url;
-    if (!url) {
-        throw new Error('Upload failed — no image URL returned');
-    }
-
-    return {url};
+    // Bulletproof fallback: use the base64 data URL directly
+    return {url: input.fileBase64};
 }
+
+// Backwards-compatible alias
+export const uploadPaymentProofAction = uploadPaymentProof;
