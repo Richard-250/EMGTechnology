@@ -1,6 +1,6 @@
 'use server';
 
-import {mutate} from '@/lib/vendure/api';
+import {mutate, query} from '@/lib/vendure/api';
 import {
     SetOrderShippingAddressMutation,
     SetOrderBillingAddressMutation,
@@ -12,6 +12,11 @@ import {
     SetCustomerForOrderMutation,
     UpdateCustomerMutation,
 } from '@/lib/vendure/mutations';
+import {
+    GetActiveOrderForCheckoutQuery,
+    GetEligibleShippingMethodsQuery,
+} from '@/lib/vendure/queries';
+import {getActiveCustomer} from '@/lib/vendure/actions';
 import {revalidatePath, updateTag} from 'next/cache';
 import {redirect} from '@/i18n/navigation';
 import {getLocale} from 'next-intl/server';
@@ -110,8 +115,9 @@ export async function transitionToArrangingPayment() {
 
     if (result.data.transitionOrderToState?.__typename === 'OrderStateTransitionError') {
         const errorResult = result.data.transitionOrderToState;
+        const detail = errorResult.transitionError || errorResult.message;
         throw new Error(
-            `Failed to transition order state: ${errorResult.errorCode} - ${errorResult.message}`
+            `Failed to transition order state: ${errorResult.errorCode} - ${detail}`
         );
     }
 
@@ -127,18 +133,131 @@ export async function placeOrder(
     paymentMethodCode: string,
     paymentDetails?: PaymentDetailsMetadata,
 ): Promise<PlaceOrderResult> {
-    // Reuse the same active order — never create a second order when navigating checkout steps.
-    // Only transition when not already arranging payment (avoids duplicate transition errors).
+    // 1. Fetch current active order to check its real state
+    let activeOrder;
     try {
-        await transitionToArrangingPayment();
+        const orderResult = await query(
+            GetActiveOrderForCheckoutQuery,
+            {},
+            { useAuthToken: true }
+        );
+        activeOrder = orderResult.data.activeOrder;
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        // Safe to continue if already in ArrangingPayment (e.g. retry after a failed payment add)
-        if (!/already|ArrangingPayment|fromState/i.test(message)) {
-            return { success: false, message: `Could not proceed to payment: ${message}` };
+        console.error('Failed to get active order for checkout:', error);
+    }
+
+    if (!activeOrder) {
+        return {
+            success: false,
+            message: 'No active cart found. Please refresh the page and try again.',
+        };
+    }
+
+    // 2. If already placed/settled, return existing order code
+    if (activeOrder.state === 'PaymentSettled' || activeOrder.state === 'PaymentAuthorized') {
+        updateTag('cart');
+        updateTag('active-order');
+        return { success: true, orderCode: activeOrder.code };
+    }
+
+    // 3. Ensure the order is in "ArrangingPayment" state before adding payment
+    if (activeOrder.state !== 'ArrangingPayment') {
+        // Ensure customer is attached to the order if missing
+        if (!activeOrder.customer?.emailAddress) {
+            try {
+                const customer = await getActiveCustomer();
+                if (customer?.emailAddress) {
+                    await mutate(
+                        SetCustomerForOrderMutation,
+                        {
+                            input: {
+                                emailAddress: customer.emailAddress,
+                                firstName: customer.firstName || 'Customer',
+                                lastName: customer.lastName || '',
+                                phoneNumber: customer.phoneNumber || undefined,
+                            },
+                        },
+                        { useAuthToken: true }
+                    );
+                }
+            } catch (custErr) {
+                console.error('Failed to attach customer before payment transition:', custErr);
+            }
+        }
+
+        // Ensure shipping method is set if missing
+        if (!activeOrder.shippingLines || activeOrder.shippingLines.length === 0) {
+            try {
+                const shippingResult = await query(
+                    GetEligibleShippingMethodsQuery,
+                    {},
+                    { useAuthToken: true }
+                );
+                const eligible = shippingResult.data.eligibleShippingMethods ?? [];
+                if (eligible.length > 0) {
+                    const matched = paymentDetails?.deliveryMethodName
+                        ? eligible.find(
+                              m =>
+                                  m.name.toLowerCase() ===
+                                  paymentDetails.deliveryMethodName?.toLowerCase()
+                          )
+                        : undefined;
+                    const methodId = (matched || eligible[0]).id;
+                    await mutate(
+                        SetOrderShippingMethodMutation,
+                        { shippingMethodId: [methodId] },
+                        { useAuthToken: true }
+                    );
+                } else {
+                    return {
+                        success: false,
+                        message:
+                            'No eligible shipping method found. Please confirm your delivery address before placing your order.',
+                    };
+                }
+            } catch (shipErr) {
+                console.error('Failed to set shipping method before payment transition:', shipErr);
+            }
+        }
+
+        // Transition from AddingItems to ArrangingPayment
+        let transitionResult;
+        try {
+            transitionResult = await mutate(
+                TransitionOrderToStateMutation,
+                { state: 'ArrangingPayment' },
+                { useAuthToken: true }
+            );
+        } catch (transErr) {
+            const message = transErr instanceof Error ? transErr.message : String(transErr);
+            return {
+                success: false,
+                message: `Could not proceed to payment: ${message}`,
+            };
+        }
+
+        const transitionData = transitionResult.data.transitionOrderToState;
+        if (transitionData?.__typename === 'OrderStateTransitionError') {
+            const errorMsg =
+                transitionData.transitionError ||
+                transitionData.message ||
+                `Cannot transition order from "${transitionData.fromState}" to "${transitionData.toState}"`;
+            return {
+                success: false,
+                message: `Could not proceed to payment: ${errorMsg}`,
+            };
+        }
+
+        if (transitionData?.__typename !== 'Order' || transitionData.state !== 'ArrangingPayment') {
+            return {
+                success: false,
+                message:
+                    'Failed to prepare order for payment. Please refresh the page and try again.',
+            };
         }
     }
 
+    // 4. Order is now guaranteed to be in ArrangingPayment state — add payment
     const metadata: Record<string, unknown> = {
         shouldDecline: false,
         shouldError: false,
