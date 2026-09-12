@@ -11,8 +11,9 @@ echo " EMG Technology: Restore & Health Recovery"
 echo "=========================================="
 
 echo ">>> 1. Cleaning up stale PM2 processes and orphaned ports..."
-pm2 delete all 2>/dev/null || true
+pm2 kill 2>/dev/null || true
 fuser -k 3001/tcp 3002/tcp 2>/dev/null || true
+pkill -9 -f node 2>/dev/null || true
 sleep 2
 
 echo ">>> 2. Pulling latest code..."
@@ -29,7 +30,7 @@ pm2 save
 
 echo ">>> 5. Waiting for Vendure API to respond on port 3001..."
 API_READY=false
-for i in $(seq 1 45); do
+for i in $(seq 1 60); do
   if curl -sf http://127.0.0.1:3001/health >/dev/null 2>&1; then
     echo "  ✓ Vendure API healthy after ${i}s"
     API_READY=true

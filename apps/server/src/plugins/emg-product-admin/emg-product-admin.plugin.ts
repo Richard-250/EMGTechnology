@@ -24,7 +24,6 @@ import {PaymentConfirmedByListener} from './payment-confirmed-by.listener';
         OrderNotifyService,
         ConfirmOrderPaymentService,
         PaymentConfirmedByListener,
-        EmgPaymentProofUploadResolver,
     ],
     shopApiExtensions: {
         schema: emgStorefrontShopApiExtensions,
