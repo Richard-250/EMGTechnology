@@ -120,11 +120,11 @@ defineDashboardExtension({
             location: {
                 pageId: 'order-detail',
                 column: 'side',
-                position: {blockId: 'order-summary', order: 'after'},
+                position: {blockId: 'state', order: 'after'},
             },
             shouldRender: context => Boolean(context.entity?.id),
             component: ({context}) => <OrderPaymentConfirmPanel context={context} />,
-            requiresPermission: ['ConfirmOrderPayment', 'UpdateOrder'],
+            requiresPermission: ['ReadOrder'],
         },
         {
             id: 'emg-order-delete',
@@ -132,7 +132,7 @@ defineDashboardExtension({
             location: {
                 pageId: 'order-detail',
                 column: 'side',
-                position: {blockId: 'emg-order-payment-confirm', order: 'after'},
+                position: {blockId: 'customer', order: 'after'},
             },
             shouldRender: context => Boolean(context.entity?.id),
             component: ({context}) => <OrderDeletePanel context={context} />,

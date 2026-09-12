@@ -52,6 +52,52 @@ function cleanVendureFromDOM() {
     });
 
     sanitizeTitle();
+    polishOrderStateBadges();
+}
+
+const STATE_SLUG_MAP: Record<string, string> = {
+    'payment authorized': 'payment-authorized',
+    'paymentauthorized': 'payment-authorized',
+    'payment settled': 'payment-settled',
+    'paymentsettled': 'payment-settled',
+    'arranging payment': 'arranging-payment',
+    'arrangingpayment': 'arranging-payment',
+    'arranging additional payment': 'arranging-payment',
+    'arrangingadditionalpayment': 'arranging-payment',
+    'shipped': 'shipped',
+    'partially shipped': 'partially-shipped',
+    'partiallyshipped': 'partially-shipped',
+    'delivered': 'delivered',
+    'partially delivered': 'partially-delivered',
+    'partiallydelivered': 'partially-delivered',
+    'cancelled': 'cancelled',
+    'canceled': 'cancelled',
+    'adding items': 'adding-items',
+    'addingitems': 'adding-items',
+    'draft': 'draft',
+    'modifying': 'modifying',
+};
+
+function polishOrderStateBadges() {
+    if (typeof document === 'undefined') return;
+
+    // Scan table cells, badges, and state containers
+    const candidates = document.querySelectorAll<HTMLElement>(
+        'table tbody td span, table tbody td div, [role="cell"] span, [role="cell"] div, [data-slot="badge"], .emg-state-badge, [title]'
+    );
+
+    candidates.forEach(el => {
+        if (el.children.length > 2) return;
+        const text = el.textContent?.trim().toLowerCase();
+        const titleText = el.getAttribute('title')?.trim().toLowerCase();
+        const match = (text && STATE_SLUG_MAP[text]) || (titleText && STATE_SLUG_MAP[titleText]);
+        if (match) {
+            if (el.getAttribute('data-emg-order-state') !== match) {
+                el.setAttribute('data-emg-order-state', match);
+                el.classList.add('emg-order-state-pill');
+            }
+        }
+    });
 }
 
 /**
