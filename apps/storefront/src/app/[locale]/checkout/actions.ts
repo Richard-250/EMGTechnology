@@ -119,10 +119,14 @@ export async function transitionToArrangingPayment() {
     revalidatePath(`/${locale}/checkout`);
 }
 
+export type PlaceOrderResult =
+    | { success: true; orderCode: string }
+    | { success: false; message: string };
+
 export async function placeOrder(
     paymentMethodCode: string,
     paymentDetails?: PaymentDetailsMetadata,
-) {
+): Promise<PlaceOrderResult> {
     // Reuse the same active order — never create a second order when navigating checkout steps.
     // Only transition when not already arranging payment (avoids duplicate transition errors).
     try {
@@ -131,7 +135,7 @@ export async function placeOrder(
         const message = error instanceof Error ? error.message : String(error);
         // Safe to continue if already in ArrangingPayment (e.g. retry after a failed payment add)
         if (!/already|ArrangingPayment|fromState/i.test(message)) {
-            throw error;
+            return { success: false, message: `Could not proceed to payment: ${message}` };
         }
     }
 
@@ -144,22 +148,27 @@ export async function placeOrder(
         ...paymentDetails,
     };
 
-    const result = await mutate(
-        AddPaymentToOrderMutation,
-        {
-            input: {
-                method: paymentMethodCode,
-                metadata,
+    let result;
+    try {
+        result = await mutate(
+            AddPaymentToOrderMutation,
+            {
+                input: {
+                    method: paymentMethodCode,
+                    metadata,
+                },
             },
-        },
-        {useAuthToken: true}
-    );
+            {useAuthToken: true}
+        );
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return { success: false, message: `Payment request failed: ${message}` };
+    }
 
     if (result.data.addPaymentToOrder.__typename !== 'Order') {
         const errorResult = result.data.addPaymentToOrder;
-        // If payment was already added (double-click), redirect to confirmation when possible
         const msg = `${errorResult.errorCode} - ${errorResult.message}`;
-        throw new Error(`Failed to place order: ${msg}`);
+        return { success: false, message: `Failed to place order: ${msg}` };
     }
 
     const orderCode = result.data.addPaymentToOrder.code;
@@ -167,8 +176,7 @@ export async function placeOrder(
     updateTag('cart');
     updateTag('active-order');
 
-    const locale = await getLocale();
-    redirect({href: `/order-confirmation/${orderCode}`, locale});
+    return { success: true, orderCode };
 }
 
 interface GuestCustomerInput {

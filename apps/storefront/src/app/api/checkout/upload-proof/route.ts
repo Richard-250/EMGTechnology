@@ -3,48 +3,83 @@ import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
-// Default Cloudinary credentials from project config (can be overridden by env)
-const DEFAULT_CLOUD_NAME = 'sugamvn4';
-const DEFAULT_API_KEY = '115874335927736';
-const DEFAULT_API_SECRET = 'yuDRsigvGr0o6Be6LsY-lY1ORtw';
-
-async function uploadToCloudinary(dataUrl: string): Promise<string | null> {
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || DEFAULT_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY || DEFAULT_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET || DEFAULT_API_SECRET;
-
-    if (!cloudName || !apiKey || !apiSecret) {
-        return null;
+const EMG_UPLOAD_PAYMENT_PROOF = `
+    mutation EmgUploadPaymentProof($fileBase64: String!, $fileName: String!, $mimeType: String!) {
+        emgUploadPaymentProof(fileBase64: $fileBase64, fileName: $fileName, mimeType: $mimeType) {
+            url
+            assetId
+        }
     }
+`;
 
-    const timestamp = Math.round(Date.now() / 1000);
-    const folder = 'emg/payment-proofs';
-    const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
-    const signature = crypto.createHash('sha1').update(paramsToSign + apiSecret).digest('hex');
+/**
+ * Upload to Vendure's native Asset storage via the Shop API.
+ * Uses Vendure's AssetService (exact same way product & admin assets are saved).
+ */
+async function uploadToVendureAsset(input: {
+    fileBase64: string;
+    fileName: string;
+    mimeType: string;
+}): Promise<string | null> {
+    const rawApiUrl =
+        process.env.VENDURE_SHOP_API_URL ||
+        process.env.NEXT_PUBLIC_VENDURE_SHOP_API_URL ||
+        'http://127.0.0.1:3001/shop-api';
+    const apiUrl = rawApiUrl.startsWith('http')
+        ? rawApiUrl
+        : `http://127.0.0.1:3001${rawApiUrl.startsWith('/') ? '' : '/'}${rawApiUrl}`;
 
-    const formData = new FormData();
-    formData.append('file', dataUrl);
-    formData.append('api_key', apiKey);
-    formData.append('timestamp', String(timestamp));
-    formData.append('signature', signature);
-    formData.append('folder', folder);
+    const channelToken =
+        process.env.VENDURE_CHANNEL_TOKEN ||
+        process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN ||
+        '__default_channel__';
+    const channelHeader = process.env.VENDURE_CHANNEL_TOKEN_HEADER || 'vendure-token';
 
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    const res = await fetch(apiUrl, {
         method: 'POST',
-        body: formData,
+        headers: {
+            'Content-Type': 'application/json',
+            [channelHeader]: channelToken,
+        },
+        body: JSON.stringify({
+            query: EMG_UPLOAD_PAYMENT_PROOF,
+            variables: {
+                fileBase64: input.fileBase64,
+                fileName: input.fileName,
+                mimeType: input.mimeType,
+            },
+        }),
+        cache: 'no-store',
     });
 
     if (!res.ok) {
-        const errorText = await res.text();
-        console.warn('Cloudinary upload returned non-200:', res.status, errorText);
+        const errText = await res.text();
+        console.warn('Vendure asset upload returned non-ok:', res.status, errText);
         return null;
     }
 
-    const json = (await res.json()) as {secure_url?: string; url?: string};
-    return json.secure_url || json.url || null;
+    const json = (await res.json()) as {
+        data?: {
+            emgUploadPaymentProof?: {
+                url?: string;
+                assetId?: string;
+            };
+        };
+        errors?: Array<{message: string}>;
+    };
+
+    if (json.errors?.length) {
+        console.warn('Vendure asset upload GraphQL errors:', json.errors);
+        return null;
+    }
+
+    return json.data?.emgUploadPaymentProof?.url || null;
 }
 
-async function saveToLocalUploads(
+/**
+ * Fallback: write directly to Vendure static assets folder or storefront public folder
+ */
+async function saveToLocalAssetDisk(
     dataUrl: string,
     req: NextRequest,
 ): Promise<string | null> {
@@ -53,21 +88,33 @@ async function saveToLocalUploads(
         const buffer = Buffer.from(base64Data, 'base64');
         if (!buffer.length) return null;
 
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'payment-proofs');
-        await fs.mkdir(uploadsDir, {recursive: true});
-
         const ext = dataUrl.startsWith('data:image/png') ? 'png' : 'jpg';
         const fileName = `proof-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
-        const filePath = path.join(uploadsDir, fileName);
 
-        await fs.writeFile(filePath, buffer);
+        // Try writing directly to Vendure's static assets source directory if available
+        const vendureAssetDir = path.resolve(process.cwd(), '../server/static/assets/source');
+        let written = false;
 
-        // Build absolute or relative URL
-        const origin =
+        try {
+            await fs.mkdir(vendureAssetDir, {recursive: true});
+            await fs.writeFile(path.join(vendureAssetDir, fileName), buffer);
+            written = true;
+        } catch {
+            // If server directory is not accessible from storefront process, write to storefront public
+            const fallbackDir = path.join(process.cwd(), 'public', 'uploads', 'payment-proofs');
+            await fs.mkdir(fallbackDir, {recursive: true});
+            await fs.writeFile(path.join(fallbackDir, fileName), buffer);
+        }
+
+        const siteUrl =
             process.env.NEXT_PUBLIC_SITE_URL ||
             req.nextUrl.origin ||
             'https://emgtechnologyltd.com';
-        return `${origin.replace(/\/$/, '')}/uploads/payment-proofs/${fileName}`;
+
+        if (written) {
+            return `${siteUrl.replace(/\/$/, '')}/assets/source/${fileName}`;
+        }
+        return `${siteUrl.replace(/\/$/, '')}/uploads/payment-proofs/${fileName}`;
     } catch (err) {
         console.warn('Could not save payment proof to local disk:', err);
         return null;
@@ -90,24 +137,33 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 1. Try Cloudinary direct upload
+        const fileName = body.fileName || 'payment-proof.jpg';
+        const mimeType = body.mimeType || 'image/jpeg';
+
+        // 1. Upload to Vendure native Asset storage (exact same as product images)
         try {
-            const cloudinaryUrl = await uploadToCloudinary(dataUrl);
-            if (cloudinaryUrl) {
-                return NextResponse.json({url: cloudinaryUrl, provider: 'cloudinary'});
+            const assetUrl = await uploadToVendureAsset({
+                fileBase64: dataUrl,
+                fileName,
+                mimeType,
+            });
+            if (assetUrl) {
+                return NextResponse.json({url: assetUrl, provider: 'vendure-asset'});
             }
-        } catch (cloudErr) {
-            console.warn('Cloudinary upload error:', cloudErr);
+        } catch (err) {
+            console.warn('Vendure asset upload exception:', err);
         }
 
-        // 2. Try local filesystem upload
-        const localUrl = await saveToLocalUploads(dataUrl, req);
+        // 2. Fallback: Save directly to asset storage directory
+        const localUrl = await saveToLocalAssetDisk(dataUrl, req);
         if (localUrl) {
-            return NextResponse.json({url: localUrl, provider: 'local'});
+            return NextResponse.json({url: localUrl, provider: 'local-asset'});
         }
 
-        // 3. Last-resort fallback: return the compressed data URL directly so checkout NEVER fails
-        return NextResponse.json({url: dataUrl, provider: 'inline'});
+        return NextResponse.json(
+            {error: 'Could not save payment proof image'},
+            {status: 500},
+        );
     } catch (err) {
         console.error('Error handling payment proof upload:', err);
         return NextResponse.json(

@@ -1,34 +1,30 @@
 /**
- * Upload a customer MoMo/Airtel payment screenshot.
- * Calls the Next.js API route /api/checkout/upload-proof (direct Cloudinary/local upload).
- * If the server is offline or upload fails, gracefully falls back to the compressed
- * data URL so the customer can ALWAYS place their order without error.
+ * Upload a customer MoMo/Airtel payment screenshot into Vendure's native Asset storage.
+ * Calls Next.js API route /api/checkout/upload-proof which creates a real Vendure Asset
+ * with preview/source URLs (same as product assets).
  */
 export async function uploadPaymentProof(input: {
     fileBase64: string;
     fileName: string;
     mimeType: string;
 }): Promise<{url: string}> {
-    try {
-        const response = await fetch('/api/checkout/upload-proof', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(input),
-        });
+    const response = await fetch('/api/checkout/upload-proof', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(input),
+    });
 
-        if (response.ok) {
-            const data = (await response.json()) as {url?: string; error?: string};
-            if (data.url) {
-                return {url: data.url};
-            }
-        }
-        console.warn('Upload API responded with non-ok status, falling back to data URL');
-    } catch (err) {
-        console.warn('Network issue during proof upload, falling back to data URL:', err);
+    if (!response.ok) {
+        const errJson = (await response.json().catch(() => ({}))) as {error?: string};
+        throw new Error(errJson.error || 'Failed to save payment screenshot');
     }
 
-    // Bulletproof fallback: use the base64 data URL directly
-    return {url: input.fileBase64};
+    const data = (await response.json()) as {url?: string; error?: string};
+    if (!data.url) {
+        throw new Error(data.error || 'No asset URL returned');
+    }
+
+    return {url: data.url};
 }
 
 // Backwards-compatible alias

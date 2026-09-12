@@ -2,8 +2,25 @@ import gql from 'graphql-tag';
 
 /** Public shop rate so storefront search cards can match PDP currency. */
 export const emgStorefrontShopApiExtensions = gql`
+    type EmgPaymentProofUploadResult {
+        url: String!
+        assetId: ID!
+    }
+
     extend type Query {
         emgStorefrontRwfPerUsd: Float!
+    }
+
+    extend type Mutation {
+        """
+        Upload a customer payment proof image into Vendure's native asset storage.
+        Returns the asset's URL on the server.
+        """
+        emgUploadPaymentProof(
+            fileBase64: String!
+            fileName: String!
+            mimeType: String!
+        ): EmgPaymentProofUploadResult!
     }
 `;
 

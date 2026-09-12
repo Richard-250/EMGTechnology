@@ -12,6 +12,7 @@ import { useCheckout } from '../checkout-provider';
 import { placeOrder as placeOrderAction } from '../actions';
 import { uploadPaymentProof } from '../upload-payment-proof';
 import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { Price } from '@/components/commerce/price';
 import {
@@ -265,7 +266,7 @@ function MobileMoneyCheckoutPanel({
         proofFileName: compressed.fileName,
         proofMimeType: compressed.mimeType,
         proofDataUrl: compressed.dataUrl,
-        proofUrl: result.url || compressed.dataUrl,
+        proofUrl: result.url,
       });
     } catch (err) {
       console.warn('Proof handling warning:', err);
@@ -418,6 +419,7 @@ function MobileMoneyCheckoutPanel({
 
 export default function PaymentStep() {
   const t = useTranslations('Checkout');
+  const router = useRouter();
   const {
     order,
     paymentMethods,
@@ -470,29 +472,28 @@ export default function PaymentStep() {
         selectedPaymentMethodCode === 'mtn-rwanda' ||
         selectedPaymentMethodCode === 'airtel-rwanda'
       ) {
-        // If background upload hasn't set proofUrl yet, upload now or fallback to dataUrl
+        // Ensure image is uploaded to native Vendure Asset storage before placing order
         if (!mobileDetails.proofUrl && mobileDetails.proofDataUrl) {
-          const uploaded = await uploadPaymentProof({
-            fileBase64: mobileDetails.proofDataUrl,
-            fileName: mobileDetails.proofFileName || 'payment-proof.jpg',
-            mimeType: mobileDetails.proofMimeType || 'image/jpeg',
-          });
-          mobileDetails = {
-            ...mobileDetails,
-            proofUrl: uploaded.url || mobileDetails.proofDataUrl,
-          };
-          setMobileMoneyDetails(mobileDetails);
+          try {
+            const uploaded = await uploadPaymentProof({
+              fileBase64: mobileDetails.proofDataUrl,
+              fileName: mobileDetails.proofFileName || 'payment-proof.jpg',
+              mimeType: mobileDetails.proofMimeType || 'image/jpeg',
+            });
+            mobileDetails = {
+              ...mobileDetails,
+              proofUrl: uploaded.url,
+            };
+            setMobileMoneyDetails(mobileDetails);
+          } catch (uploadErr) {
+            const msg = uploadErr instanceof Error ? uploadErr.message : 'Could not upload payment proof';
+            setFormError(msg);
+            setLoading(false);
+            return;
+          }
         }
 
-        // Final safeguard: fallback to dataUrl if proofUrl is empty
-        if (!mobileDetails.proofUrl && mobileDetails.proofDataUrl) {
-          mobileDetails = {
-            ...mobileDetails,
-            proofUrl: mobileDetails.proofDataUrl,
-          };
-        }
-
-        if (!mobileDetails.proofUrl && !mobileDetails.proofDataUrl) {
+        if (!mobileDetails.proofUrl) {
           setFormError(t('mobileMoneyFormIncomplete'));
           setLoading(false);
           return;
@@ -511,24 +512,19 @@ export default function PaymentStep() {
         deliveryMethodName,
       });
 
-      await placeOrderAction(selectedPaymentMethodCode, metadata);
-    } catch (error: unknown) {
-      // In Next.js, redirect() throws an error with digest NEXT_REDIRECT. Rethrow it!
-      const digest = (error as { digest?: string })?.digest;
-      if (
-        digest?.startsWith?.('NEXT_REDIRECT') ||
-        (error instanceof Error && error.message.includes('NEXT_REDIRECT'))
-      ) {
-        throw error;
+      const placeResult = await placeOrderAction(selectedPaymentMethodCode, metadata);
+
+      if (!placeResult.success) {
+        setFormError(placeResult.message);
+        setLoading(false);
+        return;
       }
 
+      router.push(`/order-confirmation/${placeResult.orderCode}`);
+    } catch (error: unknown) {
       console.error('Error placing order:', error);
       const message = error instanceof Error ? error.message : String(error || '');
-      setFormError(
-        message && !message.includes('Server Components render') && !message.includes('NEXT_REDIRECT')
-          ? message
-          : t('unexpectedError'),
-      );
+      setFormError(message || t('unexpectedError'));
       setLoading(false);
     }
   };
