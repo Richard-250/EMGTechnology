@@ -15,6 +15,7 @@
     "start:worker": "node ./dist/index-worker.js",
     "start": "vendure start all",
     "seed": "ts-node ./src/seed.ts",
+    "reindex": "ts-node ./src/reindex.ts",
     "configure-store": "ts-node ./src/configure-store.ts"
   },
   "dependencies": {

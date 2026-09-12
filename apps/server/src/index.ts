@@ -5,6 +5,7 @@ import { configureShippingMethods } from './configure-shipping-methods';
 import { configureSuperDeals } from './configure-super-deals';
 import { configurePaymentMethods } from './configure-payment-methods';
 import { ensureCustomFieldColumns } from './ensure-custom-field-columns';
+import { ensureSearchIndex } from './ensure-search-index';
 
 runMigrations(config)
     .then(() => bootstrap(config))
@@ -33,6 +34,11 @@ runMigrations(config)
             await configureSuperDeals(app);
         } catch (e) {
             console.error('Failed to configure super deals:', e);
+        }
+        try {
+            await ensureSearchIndex(app);
+        } catch (e) {
+            console.error('Failed to ensure search index:', e);
         }
         return app;
     })
