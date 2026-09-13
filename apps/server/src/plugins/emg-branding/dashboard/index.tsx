@@ -2,6 +2,7 @@ import {useEffect, type ReactNode} from 'react';
 import {defineDashboardExtension} from '@vendure/dashboard';
 
 import logoUrl from './assets/logo.png';
+import logoLightUrl from './assets/logo-light.png';
 import {EmgDefaultLayoutProvider} from './default-layout-provider';
 import {EmgLoadingStabilityProvider} from './emg-loading-provider';
 import {
@@ -16,7 +17,12 @@ function EmgLoginLogo() {
             <img
                 src={logoUrl}
                 alt="EMG Technology Ltd"
-                className="h-20 w-auto max-w-[300px] object-contain"
+                className="h-20 w-auto max-w-[300px] object-contain dark:hidden"
+            />
+            <img
+                src={logoLightUrl}
+                alt="EMG Technology Ltd"
+                className="h-20 w-auto max-w-[300px] object-contain hidden dark:block"
             />
         </div>
     );
@@ -38,8 +44,21 @@ function EmgLoginWelcome() {
 function EmgToolbarBrand() {
     return (
         <div className="emg-toolbar-brand flex items-center gap-2 pr-2 border-r border-border mr-1">
-            <img src={logoUrl} alt="EMG Technology" className="h-6 md:h-7 w-auto object-contain" />
-            <span className="text-xs md:text-sm font-semibold text-foreground hidden sm:inline">EMG Admin</span>
+            {/* Dark logo for light theme */}
+            <img
+                src={logoUrl}
+                alt="EMG Technology"
+                className="h-6 md:h-7 w-auto object-contain dark:hidden"
+            />
+            {/* White/light logo for dark theme — same as storefront footer */}
+            <img
+                src={logoLightUrl}
+                alt="EMG Technology"
+                className="h-6 md:h-7 w-auto object-contain hidden dark:block"
+            />
+            <span className="text-xs md:text-sm font-semibold text-foreground hidden sm:inline">
+                EMG Admin
+            </span>
         </div>
     );
 }

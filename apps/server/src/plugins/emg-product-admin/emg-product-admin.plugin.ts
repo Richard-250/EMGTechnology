@@ -14,6 +14,7 @@ import {EmgPaymentProofUploadResolver} from './emg-payment-proof-upload.resolver
 import {EmgStorefrontRevalidationService} from './emg-storefront-revalidation.service';
 import {OrderNotifyService} from './order-notify.service';
 import {PaymentConfirmedByListener} from './payment-confirmed-by.listener';
+import {PaymentProofPersistListener} from './payment-proof-persist.listener';
 
 @VendurePlugin({
     imports: [PluginCommonModule],
@@ -24,6 +25,7 @@ import {PaymentConfirmedByListener} from './payment-confirmed-by.listener';
         OrderNotifyService,
         ConfirmOrderPaymentService,
         PaymentConfirmedByListener,
+        PaymentProofPersistListener,
     ],
     shopApiExtensions: {
         schema: emgStorefrontShopApiExtensions,

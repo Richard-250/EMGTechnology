@@ -313,10 +313,12 @@ function StatusRow({
     );
 }
 
-function stateTone(state: string): 'neutral' | 'warn' | 'ok' | 'danger' {
-    if (state === 'Delivered' || state === 'PaymentSettled') return 'ok';
+function stateTone(state: string): 'neutral' | 'warn' | 'ok' | 'danger' | 'shipped' | 'delivered' {
+    if (state === 'Delivered' || state === 'PartiallyDelivered') return 'delivered';
+    if (state === 'PaymentSettled') return 'ok';
     if (state === 'Cancelled') return 'danger';
-    if (state === 'Shipped' || state === 'PaymentAuthorized') return 'warn';
+    if (state === 'Shipped' || state === 'PartiallyShipped') return 'shipped';
+    if (state === 'PaymentAuthorized' || state === 'ArrangingPayment') return 'warn';
     return 'neutral';
 }
 
@@ -675,7 +677,7 @@ export function EmgStatsWidget() {
                                                         variant="secondary"
                                                         className={`emg-state-badge emg-state-badge--${stateTone(order.state)}`}
                                                     >
-                                                        {order.state}
+                                                        {order.state.replace(/([a-z])([A-Z])/g, '$1 $2')}
                                                     </Badge>
                                                 </td>
                                                 <td className="text-muted-foreground whitespace-nowrap">

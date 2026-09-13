@@ -47,6 +47,7 @@ const orderPaymentQuery = graphql(`
                 paymentConfirmedByName
                 paymentConfirmedAt
                 deliveryDate
+                paymentProofUrl
             }
             payments {
                 id
@@ -89,6 +90,44 @@ function normalizeProofUrl(rawUrl?: string | null): string {
         path = `assets/${path}`;
     }
     return `${origin.replace(/\/$/, '')}/${path}`;
+}
+
+/** Pull a payment-proof image URL from arbitrary payment metadata JSON. */
+function extractProofUrlFromMetadata(metadata: unknown): string {
+    if (!metadata || typeof metadata !== 'object') return '';
+    const meta = metadata as Record<string, unknown>;
+    const keys = [
+        'paymentProofUrl',
+        'proofUrl',
+        'paymentProof',
+        'proofImageUrl',
+        'screenshotUrl',
+        'url',
+    ];
+    for (const key of keys) {
+        const value = meta[key];
+        if (typeof value === 'string' && value.trim()) {
+            return value.trim();
+        }
+    }
+    for (const value of Object.values(meta)) {
+        if (typeof value === 'string') {
+            const v = value.trim();
+            if (
+                (v.startsWith('http') || v.startsWith('/') || v.startsWith('data:image/')) &&
+                (/payment-proof|\/assets\/|\/preview\/|\/uploads\/|cloudinary|\.(jpe?g|png|webp|gif)(\?|$)/i.test(
+                    v,
+                ) ||
+                    /proof/i.test(v))
+            ) {
+                return v;
+            }
+        } else if (value && typeof value === 'object') {
+            const nested = extractProofUrlFromMetadata(value);
+            if (nested) return nested;
+        }
+    }
+    return '';
 }
 
 function formatMoney(amountMajor: number, currencyCode = 'RWF'): string {
@@ -156,8 +195,8 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
         if (!order?.payments?.length) return null;
         return (
             order.payments.find((p: {state: string}) => p.state === 'Authorized') ||
-            order.payments.find((p: {metadata?: {paymentProofUrl?: string}}) =>
-                Boolean(p.metadata && (p.metadata as Record<string, unknown>).paymentProofUrl),
+            order.payments.find((p: {metadata?: unknown}) =>
+                Boolean(extractProofUrlFromMetadata(p.metadata)),
             ) ||
             order.payments[order.payments.length - 1]
         );
@@ -168,12 +207,19 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
     }, [payment?.metadata]);
 
     const proofUrl = useMemo(() => {
-        const raw =
-            meta.paymentProofUrl ||
-            meta.proofUrl ||
-            (payment?.metadata ? String((payment.metadata as Record<string, unknown>).url || '') : '');
-        return normalizeProofUrl(raw);
-    }, [meta, payment?.metadata]);
+        const fromOrderField = (order?.customFields as {paymentProofUrl?: string} | undefined)
+            ?.paymentProofUrl;
+        const fromMeta = extractProofUrlFromMetadata(payment?.metadata);
+        // Scan all payments if the selected one has no proof
+        let fromAnyPayment = fromMeta;
+        if (!fromAnyPayment && order?.payments?.length) {
+            for (const p of order.payments) {
+                fromAnyPayment = extractProofUrlFromMetadata(p.metadata);
+                if (fromAnyPayment) break;
+            }
+        }
+        return normalizeProofUrl(fromOrderField || fromAnyPayment || '');
+    }, [order?.customFields, order?.payments, payment?.metadata]);
 
     // Expected order total in major units
     const expectedMajor = useMemo(() => {
@@ -390,14 +436,20 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
                         </div>
                     </div>
                 ) : (
-                    <div className="p-4 text-center space-y-1.5 bg-amber-500/5">
+                    <div className="p-4 text-center space-y-2 bg-amber-500/5">
                         <AlertCircle className="size-5 text-amber-600 dark:text-amber-400 mx-auto" />
                         <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
                             No payment screenshot attached
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            Customer may have completed checkout with Cash or skipped proof upload.
+                            Customer may have used Card, or the upload did not save. Check Payment
+                            details → Payment metadata for <code>paymentProofUrl</code>.
                         </p>
+                        {payment?.metadata ? (
+                            <pre className="text-left text-[10px] max-h-28 overflow-auto rounded bg-muted/60 p-2 text-muted-foreground whitespace-pre-wrap break-all">
+                                {JSON.stringify(payment.metadata, null, 2)}
+                            </pre>
+                        ) : null}
                     </div>
                 )}
             </div>

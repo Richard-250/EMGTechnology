@@ -8,6 +8,7 @@ import {HiddenCustomField} from './hidden-custom-field';
 import {OrderDeletePanel} from './order-delete-panel';
 import {OrderNotifySettingsPage} from './order-notify-settings-page';
 import {OrderPaymentConfirmPanel} from './order-payment-confirm-panel';
+import {EmgOrderStateBadge} from './order-state-badge';
 import {pendingPaymentOrdersAlert} from './pending-orders-alert';
 import {ProductDiscountPanel} from './product-discount-panel';
 import {VariantNameQuickEditCell, VariantQuickEditor} from './variant-quick-editor';
@@ -119,8 +120,8 @@ defineDashboardExtension({
             title: 'Payment proof & confirmation',
             location: {
                 pageId: 'order-detail',
-                column: 'side',
-                position: {blockId: 'state', order: 'after'},
+                column: 'main',
+                position: {blockId: 'payment-details', order: 'before'},
             },
             shouldRender: context => Boolean(context.entity?.id),
             component: ({context}) => <OrderPaymentConfirmPanel context={context} />,
@@ -186,6 +187,15 @@ defineDashboardExtension({
         },
     ],
     dataTables: [
+        {
+            pageId: 'order-list',
+            displayComponents: [
+                {
+                    column: 'state',
+                    component: EmgOrderStateBadge as any,
+                },
+            ],
+        },
         {
             pageId: 'product-detail',
             blockId: 'product-variants-table',

@@ -1013,22 +1013,38 @@ html.emg-dashboard-stable [data-slot="sidebar-inset"] {
 }
 
 .emg-state-badge--ok {
-  color: #5cbf60 !important;
-  background: color-mix(in oklab, #5cbf60 16%, transparent) !important;
+  color: #047857 !important;
+  background: color-mix(in oklab, #10b981 16%, transparent) !important;
+  border: 1px solid color-mix(in oklab, #10b981 40%, transparent) !important;
 }
 
 .emg-state-badge--warn {
-  color: #f59e0b !important;
+  color: #b45309 !important;
   background: color-mix(in oklab, #f59e0b 16%, transparent) !important;
+  border: 1px solid color-mix(in oklab, #f59e0b 45%, transparent) !important;
 }
 
 .emg-state-badge--danger {
-  color: #ff5630 !important;
-  background: color-mix(in oklab, #ff5630 16%, transparent) !important;
+  color: #b91c1c !important;
+  background: color-mix(in oklab, #ef4444 16%, transparent) !important;
+  border: 1px solid color-mix(in oklab, #ef4444 40%, transparent) !important;
+}
+
+.emg-state-badge--shipped {
+  color: #1d4ed8 !important;
+  background: color-mix(in oklab, #3b82f6 16%, transparent) !important;
+  border: 1px solid color-mix(in oklab, #3b82f6 40%, transparent) !important;
+}
+
+.emg-state-badge--delivered {
+  color: #6d28d9 !important;
+  background: color-mix(in oklab, #8b5cf6 16%, transparent) !important;
+  border: 1px solid color-mix(in oklab, #8b5cf6 40%, transparent) !important;
 }
 
 .emg-state-badge--neutral {
   color: var(--color-emg-muted) !important;
+  border: 1px solid var(--color-emg-border) !important;
 }
 
 @media (max-width: 1200px) {

@@ -267,6 +267,17 @@ export const config: VendureConfig = {
                 readonly: true,
                 label: [{ languageCode: LanguageCode.en, value: 'Payment confirmed at' }],
             },
+            {
+                name: 'paymentProofUrl',
+                type: 'string',
+                public: false,
+                readonly: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Payment proof screenshot URL' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'URL of the MoMo/Airtel payment screenshot uploaded by the customer at checkout',
+                }],
+            },
         ],
         Asset: [
             {
