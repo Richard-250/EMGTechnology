@@ -7,7 +7,7 @@ export async function uploadPaymentProof(input: {
     fileBase64: string;
     fileName: string;
     mimeType: string;
-}): Promise<{url: string}> {
+}): Promise<{url: string; assetId: string}> {
     const response = await fetch('/api/checkout/upload-proof', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -19,12 +19,16 @@ export async function uploadPaymentProof(input: {
         throw new Error(errJson.error || 'Failed to save payment screenshot');
     }
 
-    const data = (await response.json()) as {url?: string; error?: string};
+    const data = (await response.json()) as {
+        url?: string;
+        assetId?: string;
+        error?: string;
+    };
     if (!data.url) {
         throw new Error(data.error || 'No asset URL returned');
     }
 
-    return {url: data.url};
+    return {url: data.url, assetId: data.assetId || ''};
 }
 
 // Backwards-compatible alias

@@ -62,6 +62,16 @@ const orderPaymentQuery = graphql(`
     }
 `);
 
+const assetPreviewQuery = graphql(`
+    query EmgPaymentProofAsset($id: ID!) {
+        asset(id: $id) {
+            id
+            preview
+            source
+        }
+    }
+`);
+
 const confirmPaymentMutation = graphql(`
     mutation EmgConfirmOrderPayment($orderId: ID!, $paymentId: ID) {
         emgConfirmOrderPayment(orderId: $orderId, paymentId: $paymentId) {
@@ -81,15 +91,50 @@ function normalizeProofUrl(rawUrl?: string | null): string {
     if (trimmed.startsWith('data:image/')) {
         return trimmed;
     }
+
+    const origin =
+        typeof window !== 'undefined' ? window.location.origin : 'https://emgtechnologyltd.com';
+
+    // Absolute URL — may be a historical wrong storefront-origin asset link (:3002).
+    // Rewrite known bad hosts that point at /assets/ onto the current (dashboard/API) origin.
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-        return trimmed;
+        try {
+            const parsed = new URL(trimmed);
+            const path = parsed.pathname || '';
+            const isAssetPath =
+                path.startsWith('/assets/') ||
+                path.startsWith('/preview/') ||
+                path.startsWith('/source/');
+            const isWrongLocalStorefront =
+                (parsed.port === '3002' || parsed.hostname.includes('localhost')) &&
+                isAssetPath &&
+                typeof window !== 'undefined' &&
+                window.location.port !== '3002';
+
+            if (isWrongLocalStorefront) {
+                const assetPath = path.startsWith('/assets/')
+                    ? path
+                    : `/assets${path.startsWith('/') ? path : `/${path}`}`;
+                return `${origin.replace(/\/$/, '')}${assetPath}${parsed.search || ''}`;
+            }
+            return trimmed;
+        } catch {
+            return trimmed;
+        }
     }
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://emgtechnologyltd.com';
+
     let path = trimmed.replace(/^\//, '');
     if (!path.startsWith('assets/') && (path.startsWith('preview/') || path.startsWith('source/'))) {
         path = `assets/${path}`;
     }
     return `${origin.replace(/\/$/, '')}/${path}`;
+}
+
+function extractProofAssetId(metadata: unknown): string {
+    if (!metadata || typeof metadata !== 'object') return '';
+    const meta = metadata as Record<string, unknown>;
+    const id = meta.paymentProofAssetId || meta.proofAssetId || meta.assetId;
+    return typeof id === 'string' && id.trim() ? id.trim() : '';
 }
 
 /** Pull a payment-proof image URL from arbitrary payment metadata JSON. */
@@ -206,6 +251,24 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
         return (payment?.metadata ?? {}) as Record<string, string>;
     }, [payment?.metadata]);
 
+    const proofAssetId = useMemo(() => {
+        let id = extractProofAssetId(payment?.metadata);
+        if (!id && order?.payments?.length) {
+            for (const p of order.payments) {
+                id = extractProofAssetId(p.metadata);
+                if (id) break;
+            }
+        }
+        return id;
+    }, [order?.payments, payment?.metadata]);
+
+    const assetQuery = useQuery({
+        queryKey: ['emg-payment-proof-asset', proofAssetId],
+        queryFn: () => api.query(assetPreviewQuery, {id: proofAssetId}),
+        enabled: Boolean(proofAssetId),
+        retry: 1,
+    });
+
     const proofUrl = useMemo(() => {
         const fromOrderField = (order?.customFields as {paymentProofUrl?: string} | undefined)
             ?.paymentProofUrl;
@@ -218,8 +281,10 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
                 if (fromAnyPayment) break;
             }
         }
-        return normalizeProofUrl(fromOrderField || fromAnyPayment || '');
-    }, [order?.customFields, order?.payments, payment?.metadata]);
+        const fromAsset =
+            assetQuery.data?.asset?.preview || assetQuery.data?.asset?.source || '';
+        return normalizeProofUrl(fromOrderField || fromAnyPayment || fromAsset || '');
+    }, [order?.customFields, order?.payments, payment?.metadata, assetQuery.data?.asset]);
 
     // Expected order total in major units
     const expectedMajor = useMemo(() => {

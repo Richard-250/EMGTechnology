@@ -91,6 +91,7 @@ const EMPTY_MOBILE: MobileMoneyCheckoutDetails = {
   proofMimeType: '',
   proofDataUrl: '',
   proofUrl: '',
+  proofAssetId: '',
 };
 
 interface CheckoutProviderProps {

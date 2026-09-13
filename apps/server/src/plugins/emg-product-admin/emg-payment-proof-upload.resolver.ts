@@ -35,6 +35,52 @@ function bufferToStream(buffer: Buffer): Readable {
     });
 }
 
+/**
+ * Absolute base URL for AssetServerPlugin (`/assets/...`).
+ * Must point at the Vendure API host that serves assets — NOT the Next.js storefront
+ * when they run on different ports (e.g. API :3001 vs storefront :3002).
+ */
+function resolveAssetBaseUrl(): string {
+    const fromEnv = process.env.ASSET_URL_PREFIX?.trim();
+    if (fromEnv) {
+        return fromEnv.endsWith('/') ? fromEnv : `${fromEnv}/`;
+    }
+
+    const isDev =
+        process.env.APP_ENV === 'dev' ||
+        process.env.NODE_ENV === 'development' ||
+        !process.env.NODE_ENV;
+
+    if (isDev) {
+        const port = process.env.PORT || '3001';
+        return `http://localhost:${port}/assets/`;
+    }
+
+    // Production: same public origin usually reverse-proxies /assets → Vendure
+    const storefront = process.env.STOREFRONT_URL?.replace(/\/$/, '');
+    if (storefront) {
+        return `${storefront}/assets/`;
+    }
+
+    return 'https://emgtechnologyltd.com/assets/';
+}
+
+function toAbsoluteAssetUrl(relativeOrAbsolute: string): string {
+    const trimmed = relativeOrAbsolute.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return trimmed;
+    }
+    const base = resolveAssetBaseUrl();
+    const path = trimmed.replace(/^\//, '');
+    // Avoid /assets/assets/... if path already includes assets/
+    if (path.startsWith('assets/')) {
+        const origin = base.replace(/\/assets\/?$/, '');
+        return `${origin}/${path}`;
+    }
+    return `${base.replace(/\/$/, '')}/${path}`;
+}
+
 @Resolver()
 export class EmgPaymentProofUploadResolver {
     constructor(private assetService: AssetService) {}
@@ -96,17 +142,8 @@ export class EmgPaymentProofUploadResolver {
         }
 
         const asset = assetResult;
-        let url = asset.preview || asset.source || '';
-
-        // If the preview is a relative path (e.g. "preview/xx/img.jpg"), ensure absolute URL
-        if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
-            const base =
-                process.env.ASSET_URL_PREFIX ||
-                (process.env.STOREFRONT_URL
-                    ? `${process.env.STOREFRONT_URL.replace(/\/$/, '')}/assets/`
-                    : 'https://emgtechnologyltd.com/assets/');
-            url = `${base.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
-        }
+        const relative = asset.preview || asset.source || '';
+        const url = toAbsoluteAssetUrl(relative);
 
         Logger.info(
             `Payment proof saved as Vendure Asset #${asset.id} (${safeFileName}, ${buffer.length} bytes) → ${url}`,

@@ -251,6 +251,7 @@ function MobileMoneyCheckoutPanel({
         proofMimeType: compressed.mimeType,
         proofDataUrl: compressed.dataUrl,
         proofUrl: '',
+        proofAssetId: '',
       });
       setCompressing(false);
 
@@ -267,6 +268,7 @@ function MobileMoneyCheckoutPanel({
         proofMimeType: compressed.mimeType,
         proofDataUrl: compressed.dataUrl,
         proofUrl: result.url,
+        proofAssetId: result.assetId || '',
       });
     } catch (err) {
       console.warn('Proof handling warning:', err);
@@ -283,6 +285,7 @@ function MobileMoneyCheckoutPanel({
       proofMimeType: '',
       proofDataUrl: '',
       proofUrl: '',
+      proofAssetId: '',
     });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -483,6 +486,7 @@ export default function PaymentStep() {
             mobileDetails = {
               ...mobileDetails,
               proofUrl: uploaded.url,
+              proofAssetId: uploaded.assetId || '',
             };
             setMobileMoneyDetails(mobileDetails);
           } catch (uploadErr) {

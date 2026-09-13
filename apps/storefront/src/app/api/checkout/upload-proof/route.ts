@@ -1,7 +1,4 @@
 import {NextRequest, NextResponse} from 'next/server';
-import crypto from 'crypto';
-import fs from 'fs/promises';
-import path from 'path';
 
 const EMG_UPLOAD_PAYMENT_PROOF = `
     mutation EmgUploadPaymentProof($fileBase64: String!, $fileName: String!, $mimeType: String!) {
@@ -14,13 +11,13 @@ const EMG_UPLOAD_PAYMENT_PROOF = `
 
 /**
  * Upload to Vendure's native Asset storage via the Shop API.
- * Uses Vendure's AssetService (exact same way product & admin assets are saved).
+ * Fail hard if Shop upload fails — do not invent broken storefront /assets URLs.
  */
 async function uploadToVendureAsset(input: {
     fileBase64: string;
     fileName: string;
     mimeType: string;
-}): Promise<string | null> {
+}): Promise<{url: string; assetId: string} | null> {
     const rawApiUrl =
         process.env.VENDURE_SHOP_API_URL ||
         process.env.NEXT_PUBLIC_VENDURE_SHOP_API_URL ||
@@ -73,52 +70,12 @@ async function uploadToVendureAsset(input: {
         return null;
     }
 
-    return json.data?.emgUploadPaymentProof?.url || null;
-}
-
-/**
- * Fallback: write directly to Vendure static assets folder or storefront public folder
- */
-async function saveToLocalAssetDisk(
-    dataUrl: string,
-    req: NextRequest,
-): Promise<string | null> {
-    try {
-        const base64Data = dataUrl.includes(',') ? dataUrl.split(',').pop() || '' : dataUrl;
-        const buffer = Buffer.from(base64Data, 'base64');
-        if (!buffer.length) return null;
-
-        const ext = dataUrl.startsWith('data:image/png') ? 'png' : 'jpg';
-        const fileName = `proof-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
-
-        // Try writing directly to Vendure's static assets source directory if available
-        const vendureAssetDir = path.resolve(process.cwd(), '../server/static/assets/source');
-        let written = false;
-
-        try {
-            await fs.mkdir(vendureAssetDir, {recursive: true});
-            await fs.writeFile(path.join(vendureAssetDir, fileName), buffer);
-            written = true;
-        } catch {
-            // If server directory is not accessible from storefront process, write to storefront public
-            const fallbackDir = path.join(process.cwd(), 'public', 'uploads', 'payment-proofs');
-            await fs.mkdir(fallbackDir, {recursive: true});
-            await fs.writeFile(path.join(fallbackDir, fileName), buffer);
-        }
-
-        const siteUrl =
-            process.env.NEXT_PUBLIC_SITE_URL ||
-            req.nextUrl.origin ||
-            'https://emgtechnologyltd.com';
-
-        if (written) {
-            return `${siteUrl.replace(/\/$/, '')}/assets/source/${fileName}`;
-        }
-        return `${siteUrl.replace(/\/$/, '')}/uploads/payment-proofs/${fileName}`;
-    } catch (err) {
-        console.warn('Could not save payment proof to local disk:', err);
+    const result = json.data?.emgUploadPaymentProof;
+    if (!result?.url || !result?.assetId) {
         return null;
     }
+
+    return {url: result.url, assetId: String(result.assetId)};
 }
 
 export async function POST(req: NextRequest) {
@@ -131,39 +88,30 @@ export async function POST(req: NextRequest) {
 
         const dataUrl = body.fileBase64?.trim();
         if (!dataUrl) {
+            return NextResponse.json({error: 'No image data provided'}, {status: 400});
+        }
+
+        const uploaded = await uploadToVendureAsset({
+            fileBase64: dataUrl,
+            fileName: body.fileName || 'payment-proof.jpg',
+            mimeType: body.mimeType || 'image/jpeg',
+        });
+
+        if (!uploaded) {
             return NextResponse.json(
-                {error: 'No image data provided'},
-                {status: 400},
+                {
+                    error:
+                        'Could not save payment proof to the server. Please try again or use a smaller image.',
+                },
+                {status: 502},
             );
         }
 
-        const fileName = body.fileName || 'payment-proof.jpg';
-        const mimeType = body.mimeType || 'image/jpeg';
-
-        // 1. Upload to Vendure native Asset storage (exact same as product images)
-        try {
-            const assetUrl = await uploadToVendureAsset({
-                fileBase64: dataUrl,
-                fileName,
-                mimeType,
-            });
-            if (assetUrl) {
-                return NextResponse.json({url: assetUrl, provider: 'vendure-asset'});
-            }
-        } catch (err) {
-            console.warn('Vendure asset upload exception:', err);
-        }
-
-        // 2. Fallback: Save directly to asset storage directory
-        const localUrl = await saveToLocalAssetDisk(dataUrl, req);
-        if (localUrl) {
-            return NextResponse.json({url: localUrl, provider: 'local-asset'});
-        }
-
-        return NextResponse.json(
-            {error: 'Could not save payment proof image'},
-            {status: 500},
-        );
+        return NextResponse.json({
+            url: uploaded.url,
+            assetId: uploaded.assetId,
+            provider: 'vendure-asset',
+        });
     } catch (err) {
         console.error('Error handling payment proof upload:', err);
         return NextResponse.json(

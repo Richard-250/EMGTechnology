@@ -12,8 +12,10 @@ export interface MobileMoneyCheckoutDetails {
     proofMimeType: string;
     /** Data URL or raw base64 — cleared after upload */
     proofDataUrl: string;
-    /** Set after successful Cloudinary upload */
+    /** Set after successful Vendure Asset upload */
     proofUrl: string;
+    /** Vendure Asset ID — used by admin to recover the image if URL is wrong */
+    proofAssetId: string;
 }
 
 export interface PaymentMethodCustomFields {
@@ -59,6 +61,7 @@ export interface PaymentDetailsMetadata {
     mobileMoneyProvider?: string;
     paymentReference?: string;
     paymentProofUrl?: string;
+    paymentProofAssetId?: string;
     deliveryDate?: string;
     deliveryMethodName?: string;
 }
@@ -127,6 +130,7 @@ export function buildPaymentMetadata(
             mobileMoneyProvider: paymentMethodCode === 'mtn-rwanda' ? 'MTN Mobile Money' : 'Airtel Money',
             paymentReference: options.paymentReference,
             paymentProofUrl: options.mobile.proofUrl.trim(),
+            paymentProofAssetId: options.mobile.proofAssetId?.trim() || undefined,
             deliveryDate: options.deliveryDate,
             deliveryMethodName: options.deliveryMethodName,
         };
