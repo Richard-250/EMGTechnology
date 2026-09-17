@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sheet';
 import {useTranslations} from 'next-intl';
 import {COMPANY} from '@/lib/company';
-import {SITE_LOGO} from '@/lib/metadata';
+import {SITE_LOGO, SITE_LOGO_LIGHT} from '@/lib/metadata';
 
 interface Collection {
     id: string;
@@ -59,7 +59,14 @@ export function MobileNav({collections}: MobileNavProps) {
                             alt=""
                             width={120}
                             height={43}
-                            className="h-8 w-auto object-contain bg-transparent"
+                            className="h-8 w-auto object-contain bg-transparent dark:hidden"
+                        />
+                        <Image
+                            src={SITE_LOGO_LIGHT}
+                            alt=""
+                            width={120}
+                            height={43}
+                            className="h-8 w-auto object-contain bg-transparent hidden dark:block"
                         />
                         <span className="sr-only">{t('menu')}</span>
                     </SheetTitle>

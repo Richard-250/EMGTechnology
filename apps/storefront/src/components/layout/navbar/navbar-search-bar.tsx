@@ -3,7 +3,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState, useTransition} from 'react';
 import {useSearchParams} from 'next/navigation';
 import {useRouter} from '@/i18n/navigation';
-import {Camera, Clock, Search, X} from 'lucide-react';
+import {Clock, Search, X} from 'lucide-react';
 import Image from 'next/image';
 import {useLocale, useTranslations} from 'next-intl';
 import {cn} from '@/lib/utils';
@@ -20,11 +20,6 @@ import {
 } from '@/lib/search-history';
 import {setProductInteractionOwner} from '@/lib/product-interactions';
 import {rankPlainProductsForDisplay} from '@/lib/product-ranking';
-import {toast} from 'sonner';
-import {
-    setPendingVisualSearchImage,
-    clearPendingVisualSearch,
-} from '@/lib/visual-search-store';
 
 interface BrowseCategory {
     slug: string;
@@ -60,9 +55,7 @@ export function NavbarSearchBar({
     const [historyProducts, setHistoryProducts] = useState<SerializedProductCard[]>([]);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
     const [loadingHistoryProducts, setLoadingHistoryProducts] = useState(false);
-    const [visualSearchActive, setVisualSearchActive] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const catalogPool = useMemo(() => {
@@ -206,13 +199,6 @@ export function NavbarSearchBar({
         e.preventDefault();
         setIsOpen(false);
 
-        if (visualSearchActive) {
-            startTransition(() => {
-                router.push(`/search?visual=1&t=${Date.now()}`);
-            });
-            return;
-        }
-
         if (!searchValue.trim()) return;
         const nextHistory = addSearchHistory(searchValue.trim());
         setHistoryItems(nextHistory);
@@ -253,44 +239,6 @@ export function NavbarSearchBar({
         startTransition(() => router.push(href));
     };
 
-    const handleImageSearch = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        e.target.value = '';
-        if (!file) return;
-        if (!file.type.startsWith('image/')) {
-            toast.error(t('imageSearchInvalid'));
-            return;
-        }
-        if (file.size > 25 * 1024 * 1024) {
-            toast.error(t('imageSearchTooLarge'));
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            const dataUrl = typeof reader.result === 'string' ? reader.result : undefined;
-            setPendingVisualSearchImage(file, dataUrl);
-            setVisualSearchActive(true);
-            setSearchValue('');
-            toast.success(t('imageSearchReady'), {
-                description: t('imageSearchReadyHint'),
-            });
-        };
-        reader.onerror = () => {
-            setPendingVisualSearchImage(file);
-            setVisualSearchActive(true);
-            setSearchValue('');
-            toast.success(t('imageSearchReady'), {
-                description: t('imageSearchReadyHint'),
-            });
-        };
-        reader.readAsDataURL(file);
-    };
-
     const trimmed = searchValue.trim();
     const isTyping = trimmed.length > 0;
     const activeProducts =
@@ -313,49 +261,13 @@ export function NavbarSearchBar({
             >
                 <input
                     type="search"
-                    placeholder={visualSearchActive ? t('imageSearchPlaceholder') : tNav('searchProducts')}
-                    className={cn(
-                        'flex-1 min-w-0 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground',
-                        visualSearchActive && 'text-electric font-medium',
-                    )}
+                    placeholder={tNav('searchProducts')}
+                    className="flex-1 min-w-0 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
                     value={searchValue}
-                    onChange={e => {
-                        const next = e.target.value;
-                        setSearchValue(next);
-                        if (next.trim() && visualSearchActive) {
-                            setVisualSearchActive(false);
-                            clearPendingVisualSearch();
-                        }
-                    }}
+                    onChange={e => setSearchValue(e.target.value)}
                     onFocus={() => setIsOpen(true)}
                     disabled={isPending}
                     autoComplete="off"
-                />
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (visualSearchActive) {
-                            setVisualSearchActive(false);
-                            clearPendingVisualSearch();
-                            return;
-                        }
-                        handleImageSearch();
-                    }}
-                    className={cn(
-                        'flex size-9 shrink-0 items-center justify-center transition-colors',
-                        visualSearchActive ? 'text-electric' : 'text-muted-foreground hover:text-foreground',
-                    )}
-                    aria-label={visualSearchActive ? t('visualSearchClear') : t('searchByImage')}
-                    title={visualSearchActive ? t('visualSearchClear') : t('searchByImage')}
-                >
-                    {visualSearchActive ? <X className="size-4" /> : <Camera className="size-4" />}
-                </button>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageSelected}
                 />
                 <button
                     type="submit"

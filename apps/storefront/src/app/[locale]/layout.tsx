@@ -18,7 +18,7 @@ import {CartConfirmationDrawer} from "@/components/commerce/cart-confirmation-dr
 import {ThemeProvider} from "@/components/providers/theme-provider";
 import {AuthModalProvider} from "@/components/auth/auth-modal-provider";
 import {GoogleAnalytics} from "@/components/analytics/google-analytics";
-import {GA_MEASUREMENT_ID, GOOGLE_SITE_VERIFICATION, SITE_NAME, SITE_URL} from "@/lib/metadata";
+import {GA_MEASUREMENT_ID, GOOGLE_SITE_VERIFICATION, SITE_LOGO_LIGHT, SITE_NAME, SITE_URL} from "@/lib/metadata";
 import {
     buildLocalBusinessJsonLd,
     buildOrganizationJsonLd,
@@ -60,10 +60,10 @@ export async function generateMetadata(): Promise<Metadata> {
         description: t('siteDescription', {siteName: SITE_NAME}),
         icons: {
             icon: [
-                { url: '/logo.png', type: 'image/png', sizes: '32x32' },
+                { url: SITE_LOGO_LIGHT, type: 'image/png', sizes: '32x32' },
             ],
-            apple: '/logo.png',
-            shortcut: '/logo.png',
+            apple: SITE_LOGO_LIGHT,
+            shortcut: SITE_LOGO_LIGHT,
         },
         openGraph: {
             type: "website",
