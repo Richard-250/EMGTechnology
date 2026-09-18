@@ -23,8 +23,6 @@ import { GoogleAuthPlugin } from './plugins/google-auth/google-auth.plugin';
 import { EmailChangeBlockPlugin } from './plugins/email-change-block/email-change-block.plugin';
 import { EmgDiscountPlugin } from './plugins/emg-discount/emg-discount.plugin';
 import { EmgProductAdminPlugin } from './plugins/emg-product-admin/emg-product-admin.plugin';
-// Cloudinary plugin temporarily disabled — native asset upload must stay on local AssetServerPlugin.
-// import { EmgCloudinaryAssetPlugin } from './plugins/emg-cloudinary-asset/emg-cloudinary-asset.plugin';
 import { assertBuiltDashboardInProduction, resolveDashboardAppDir } from './resolve-dashboard-app-dir';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
@@ -278,54 +276,19 @@ export const config: VendureConfig = {
                     value: 'URL of the MoMo/Airtel payment screenshot uploaded by the customer at checkout',
                 }],
             },
-        ],
-        Asset: [
             {
-                name: 'cloudinaryPublicId',
-                type: 'string',
-                public: true,
-                readonly: true,
-                label: [{ languageCode: LanguageCode.en, value: 'Cloudinary public ID' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Cloudinary asset identifier (publicId)' }],
-            },
-            {
-                name: 'cloudinarySecureUrl',
-                type: 'string',
-                public: true,
-                readonly: true,
-                label: [{ languageCode: LanguageCode.en, value: 'Media URL' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Secure Cloudinary CDN URL stored in the database' }],
-            },
-            {
-                name: 'cloudinaryResourceType',
-                type: 'string',
-                public: true,
-                readonly: true,
-                label: [{ languageCode: LanguageCode.en, value: 'Resource type' }],
-                description: [{ languageCode: LanguageCode.en, value: 'image or video' }],
-            },
-            {
-                name: 'cloudinaryFormat',
-                type: 'string',
-                public: true,
-                readonly: true,
-                label: [{ languageCode: LanguageCode.en, value: 'Format' }],
-            },
-            {
-                name: 'cloudinaryDuration',
-                type: 'float',
-                public: true,
-                readonly: true,
-                label: [{ languageCode: LanguageCode.en, value: 'Duration (seconds)' }],
-                description: [{ languageCode: LanguageCode.en, value: 'Video duration where applicable' }],
-            },
-            {
-                name: 'cloudinaryFolder',
+                name: 'paymentProofAssetId',
                 type: 'string',
                 public: false,
                 readonly: true,
-                label: [{ languageCode: LanguageCode.en, value: 'Cloudinary folder' }],
+                label: [{ languageCode: LanguageCode.en, value: 'Payment proof asset ID' }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Vendure Asset ID for the customer payment screenshot',
+                }],
             },
+        ],
+        Asset: [
             {
                 name: 'sourceImageUrl',
                 type: 'string',
@@ -445,6 +408,5 @@ export const config: VendureConfig = {
         EmailChangeBlockPlugin,
         EmgDiscountPlugin,
         EmgProductAdminPlugin,
-        // EmgCloudinaryAssetPlugin — disabled until native createAssets is confirmed working on production
     ],
 };

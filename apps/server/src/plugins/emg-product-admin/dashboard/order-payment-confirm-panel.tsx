@@ -48,6 +48,7 @@ const orderPaymentQuery = graphql(`
                 paymentConfirmedAt
                 deliveryDate
                 paymentProofUrl
+                paymentProofAssetId
             }
             payments {
                 id
@@ -160,7 +161,7 @@ function extractProofUrlFromMetadata(metadata: unknown): string {
             const v = value.trim();
             if (
                 (v.startsWith('http') || v.startsWith('/') || v.startsWith('data:image/')) &&
-                (/payment-proof|\/assets\/|\/preview\/|\/uploads\/|cloudinary|\.(jpe?g|png|webp|gif)(\?|$)/i.test(
+                (/payment-proof|\/assets\/|\/preview\/|\/uploads\/|\.(jpe?g|png|webp|gif)(\?|$)/i.test(
                     v,
                 ) ||
                     /proof/i.test(v))
@@ -252,6 +253,9 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
     }, [payment?.metadata]);
 
     const proofAssetId = useMemo(() => {
+        const fromOrder = (order?.customFields as {paymentProofAssetId?: string} | undefined)
+            ?.paymentProofAssetId;
+        if (fromOrder?.trim()) return fromOrder.trim();
         let id = extractProofAssetId(payment?.metadata);
         if (!id && order?.payments?.length) {
             for (const p of order.payments) {
@@ -260,7 +264,7 @@ export function OrderPaymentConfirmPanel({context}: {context: {entity?: {id?: st
             }
         }
         return id;
-    }, [order?.payments, payment?.metadata]);
+    }, [order?.customFields, order?.payments, payment?.metadata]);
 
     const assetQuery = useQuery({
         queryKey: ['emg-payment-proof-asset', proofAssetId],

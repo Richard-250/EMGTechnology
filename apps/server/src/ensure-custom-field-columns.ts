@@ -12,6 +12,7 @@ const COLUMNS: Array<{table: string; column: string; sqlType: string}> = [
     {table: 'order', column: 'customFieldsPaymentconfirmedbyname', sqlType: 'character varying(255)'},
     {table: 'order', column: 'customFieldsPaymentconfirmedat', sqlType: 'timestamp without time zone'},
     {table: 'order', column: 'customFieldsPaymentproofurl', sqlType: 'text'},
+    {table: 'order', column: 'customFieldsPaymentproofassetid', sqlType: 'character varying(255)'},
     {table: 'global_settings', column: 'customFieldsRwfperusd', sqlType: 'double precision'},
     {table: 'global_settings', column: 'customFieldsOrdernotifymode', sqlType: 'character varying(255)'},
     {

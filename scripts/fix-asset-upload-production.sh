@@ -14,13 +14,17 @@ git pull origin main
 echo "==> Current commit:"
 git log -1 --oneline
 
-echo "==> Verify Cloudinary storage strategy is NOT wired"
+echo "==> Verify Cloudinary plugin is removed (native AssetServerPlugin only)"
 if grep -q "storageStrategyFactory" apps/server/src/vendure-config.ts; then
   echo "ERROR: storageStrategyFactory still present — stop and contact developer."
   exit 1
 fi
-if grep -E '^\s*EmgCloudinaryAssetPlugin' apps/server/src/vendure-config.ts; then
-  echo "ERROR: EmgCloudinaryAssetPlugin still active in plugins list."
+if [ -d apps/server/src/plugins/emg-cloudinary-asset ]; then
+  echo "ERROR: emg-cloudinary-asset plugin directory still exists."
+  exit 1
+fi
+if grep -E 'EmgCloudinaryAssetPlugin|cloudinary' apps/server/src/vendure-config.ts apps/server/package.json; then
+  echo "ERROR: Cloudinary references still present in server config/package."
   exit 1
 fi
 echo "OK: traditional AssetServerPlugin only"

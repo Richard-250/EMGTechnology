@@ -45,10 +45,16 @@ function extractProofUrl(metadata: unknown): string {
     return '';
 }
 
+function extractProofAssetId(metadata: unknown): string {
+    if (!metadata || typeof metadata !== 'object') return '';
+    const meta = metadata as Record<string, unknown>;
+    const id = meta.paymentProofAssetId || meta.proofAssetId || meta.assetId;
+    return typeof id === 'string' && id.trim() ? id.trim() : '';
+}
+
 /**
- * Persist the customer's uploaded payment screenshot URL onto the Order custom field
- * when the order reaches PaymentAuthorized, so the admin order page can always show it
- * without relying only on payment.metadata JSON.
+ * Persist the customer's uploaded payment screenshot URL + Asset ID onto the Order
+ * when it reaches PaymentAuthorized, so the admin order page always shows the proof.
  */
 @Injectable()
 export class PaymentProofPersistListener implements OnModuleInit, OnApplicationBootstrap {
@@ -67,8 +73,6 @@ export class PaymentProofPersistListener implements OnModuleInit, OnApplicationB
     }
 
     async onApplicationBootstrap() {
-        // Backfill existing orders that already have proof in payment.metadata
-        // but are missing order.customFields.paymentProofUrl.
         try {
             const ctx = await this.requestContextService.create({apiType: 'admin'});
             const repo = this.connection.getRepository(ctx, Order);
@@ -88,18 +92,21 @@ export class PaymentProofPersistListener implements OnModuleInit, OnApplicationB
             let saved = 0;
             for (const order of orders) {
                 let proofUrl = '';
+                let assetId = '';
                 for (const payment of [...(order.payments || [])].reverse()) {
-                    proofUrl = extractProofUrl(payment.metadata);
-                    if (proofUrl) break;
+                    if (!proofUrl) proofUrl = extractProofUrl(payment.metadata);
+                    if (!assetId) assetId = extractProofAssetId(payment.metadata);
+                    if (proofUrl && assetId) break;
                 }
-                if (!proofUrl) continue;
+                if (!proofUrl && !assetId) continue;
                 await this.orderService.updateCustomFields(ctx, order.id, {
-                    paymentProofUrl: proofUrl,
+                    ...(proofUrl ? {paymentProofUrl: proofUrl} : {}),
+                    ...(assetId ? {paymentProofAssetId: assetId} : {}),
                 });
                 saved += 1;
             }
             if (saved > 0) {
-                Logger.info(`Backfilled paymentProofUrl on ${saved} existing order(s)`, loggerCtx);
+                Logger.info(`Backfilled payment proof fields on ${saved} existing order(s)`, loggerCtx);
             }
         } catch (err: any) {
             Logger.warn(`Payment proof backfill skipped: ${err?.message || err}`, loggerCtx);
@@ -115,24 +122,33 @@ export class PaymentProofPersistListener implements OnModuleInit, OnApplicationB
             const order = event.order;
             await this.entityHydrator.hydrate(event.ctx, order, {relations: ['payments']});
 
-            const existing = (order.customFields as {paymentProofUrl?: string} | null)
-                ?.paymentProofUrl;
-            if (existing?.trim()) {
+            const existing = (order.customFields as {
+                paymentProofUrl?: string;
+                paymentProofAssetId?: string;
+            } | null) ?? {};
+
+            const payments = order.payments || [];
+            let proofUrl = existing.paymentProofUrl?.trim() || '';
+            let assetId = existing.paymentProofAssetId?.trim() || '';
+
+            for (const payment of [...payments].reverse()) {
+                if (!proofUrl) proofUrl = extractProofUrl(payment.metadata);
+                if (!assetId) assetId = extractProofAssetId(payment.metadata);
+                if (proofUrl && assetId) break;
+            }
+
+            if (!proofUrl && !assetId) {
+                Logger.warn(
+                    `Order #${order.code}: PaymentAuthorized but no payment proof found in payment metadata`,
+                    loggerCtx,
+                );
                 return;
             }
 
-            const payments = order.payments || [];
-            let proofUrl = '';
-            for (const payment of [...payments].reverse()) {
-                proofUrl = extractProofUrl(payment.metadata);
-                if (proofUrl) break;
-            }
-
-            if (!proofUrl) {
-                Logger.warn(
-                    `Order #${order.code}: PaymentAuthorized but no paymentProofUrl found in payment metadata`,
-                    loggerCtx,
-                );
+            if (
+                existing.paymentProofUrl?.trim() === proofUrl &&
+                existing.paymentProofAssetId?.trim() === assetId
+            ) {
                 return;
             }
 
@@ -149,17 +165,18 @@ export class PaymentProofPersistListener implements OnModuleInit, OnApplicationB
                 })();
 
             await this.orderService.updateCustomFields(event.ctx, order.id, {
-                paymentProofUrl: proofUrl,
+                ...(proofUrl ? {paymentProofUrl: proofUrl} : {}),
+                ...(assetId ? {paymentProofAssetId: assetId} : {}),
                 ...(deliveryDate ? {deliveryDate} : {}),
             });
 
             Logger.info(
-                `Order #${order.code}: saved paymentProofUrl on order customFields`,
+                `Order #${order.code}: saved payment proof on order (url=${Boolean(proofUrl)}, assetId=${assetId || 'n/a'})`,
                 loggerCtx,
             );
         } catch (err: any) {
             Logger.warn(
-                `Could not persist payment proof URL: ${err?.message || err}`,
+                `Could not persist payment proof: ${err?.message || err}`,
                 loggerCtx,
             );
         }

@@ -1,5 +1,6 @@
 import {
     EntityHydrator,
+    Logger,
     OrderStateTransitionEvent,
 } from '@vendure/core';
 import {
@@ -7,17 +8,16 @@ import {
     shippingLinesWithMethod,
     transformOrderLineAssetUrls,
 } from '@vendure/email-plugin';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
 import { buildOrderInvoicePdf } from './invoice-pdf';
+
+const loggerCtx = 'OrderConfirmationEmail';
 
 /**
  * Customer order confirmation when admin settles payment (PaymentSettled).
  * Attaches a branded PDF invoice with line items and totals.
  *
- * PDF is written to a temp file and attached by path so the job queue
- * does not serialize a large Buffer.
+ * Uses Buffer content (not a temp file path) so worker processes always
+ * receive the attachment even when jobs run on a different host/process.
  */
 export const orderConfirmationHandler = new EmailEventListener('order-confirmation')
     .on(OrderStateTransitionEvent)
@@ -42,13 +42,15 @@ export const orderConfirmationHandler = new EmailEventListener('order-confirmati
         const shippingLines = shippingLinesWithMethod(event.order);
 
         const invoicePdf = await buildOrderInvoicePdf(event.order);
-        const invoicePath = path.join(
-            os.tmpdir(),
-            `emg-invoice-${event.order.code}-${Date.now()}.pdf`,
+        Logger.info(
+            `Built invoice PDF for order #${event.order.code} (${invoicePdf.length} bytes)`,
+            loggerCtx,
         );
-        fs.writeFileSync(invoicePath, invoicePdf);
 
-        return { shippingLines, invoicePath };
+        return {
+            shippingLines,
+            invoicePdf: invoicePdf.toString('base64'),
+        };
     })
     .setRecipient(event => event.order.customer!.emailAddress)
     .setFrom('{{ fromAddress }}')
@@ -61,7 +63,7 @@ export const orderConfirmationHandler = new EmailEventListener('order-confirmati
     .setAttachments(async event => [
         {
             filename: `EMG-Invoice-${event.order.code}.pdf`,
-            path: event.data.invoicePath,
+            content: Buffer.from(event.data.invoicePdf, 'base64'),
             contentType: 'application/pdf',
         },
     ]);
