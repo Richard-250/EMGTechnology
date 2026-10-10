@@ -63,8 +63,8 @@ rm -f apps/storefront/.next/lock
 rm -rf apps/storefront/.next
 npm run build -w storefront
 
-echo ">>> Restarting storefront..."
-pm2 restart emg-storefront --update-env
+echo ">>> Restarting storefront (direct Next process + watchdog)..."
+pm2 startOrReload ecosystem.config.cjs --update-env
 pm2 save
 
 echo ">>> Health check..."

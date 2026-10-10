@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --port 3002",
     "serve": "next build && next start --port 3002",
-    "serve:only": "next start --port 3002",
+    "serve:only": "next start --port 3002 --hostname 127.0.0.1",
     "lint": "eslint",
     "check-types": "tsc --noEmit"
   },

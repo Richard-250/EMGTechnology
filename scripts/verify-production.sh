@@ -139,6 +139,11 @@ echo ""
 
 # ── 6. Storefront ──────────────────────────────────────────────────────────────
 echo "6. Storefront (port 3002)"
+if curl -sf http://127.0.0.1:3002/api/health >/dev/null 2>&1; then
+  ok "Storefront /api/health responds"
+else
+  bad "Storefront health endpoint down (run: pm2 logs emg-storefront --lines 30)"
+fi
 if curl -sf http://127.0.0.1:3002/en >/dev/null 2>&1; then
   ok "Storefront homepage responds"
 else

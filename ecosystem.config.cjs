@@ -1,6 +1,16 @@
+const common = {
+  restart_delay: 4000,
+  exp_backoff_restart_delay: 1000,
+  max_restarts: 30,
+  min_uptime: '10s',
+  kill_timeout: 8000,
+  autorestart: true,
+};
+
 module.exports = {
   apps: [
     {
+      ...common,
       name: 'emg-server',
       cwd: './apps/server',
       script: 'node',
@@ -9,10 +19,10 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3001,
       },
-      restart_delay: 5000,
-      max_restarts: 10,
+      max_memory_restart: '1200M',
     },
     {
+      ...common,
       name: 'emg-worker',
       cwd: './apps/server',
       script: 'node',
@@ -20,20 +30,33 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
       },
-      restart_delay: 5000,
-      max_restarts: 10,
+      max_memory_restart: '800M',
     },
     {
+      ...common,
       name: 'emg-storefront',
       cwd: './apps/storefront',
-      script: 'npm',
-      args: 'run serve:only',
+      // Run Next directly — do NOT wrap with `npm run`.
+      // npm stays "online" (~40MB) after Next hangs/dies, which caused nginx 502s.
+      script: 'node',
+      args: './node_modules/next/dist/bin/next start --port 3002 --hostname 127.0.0.1',
       env: {
         NODE_ENV: 'production',
         PORT: 3002,
+        HOSTNAME: '127.0.0.1',
       },
-      restart_delay: 5000,
-      max_restarts: 10,
+      max_memory_restart: '900M',
+    },
+    {
+      ...common,
+      name: 'emg-storefront-watchdog',
+      cwd: '.',
+      script: 'node',
+      args: 'scripts/storefront-watchdog.js',
+      env: {
+        NODE_ENV: 'production',
+      },
+      max_memory_restart: '80M',
     },
   ],
 };
