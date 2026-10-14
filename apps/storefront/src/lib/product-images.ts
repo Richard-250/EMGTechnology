@@ -1,9 +1,7 @@
 import {getStoreProductImage, STORE_IMAGES} from '@/lib/store-images';
-import {pickAssetUrl} from '@/lib/cloudinary-url';
 
-function normalizeAssetUrl(url: string, width?: number): string {
-    const normalized = url.replace(/\\/g, '/');
-    return pickAssetUrl(normalized, undefined, width) || normalized;
+function normalizeAssetUrl(url: string, _width?: number): string {
+    return url.replace(/\\/g, '/');
 }
 
 /** Generic seed PNGs from initial import — not real product photos. */
