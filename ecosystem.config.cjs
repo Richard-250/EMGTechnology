@@ -1,3 +1,5 @@
+const path = require('path');
+
 const common = {
   restart_delay: 4000,
   exp_backoff_restart_delay: 1000,
@@ -6,6 +8,13 @@ const common = {
   kill_timeout: 8000,
   autorestart: true,
 };
+
+let nextBin;
+try {
+  nextBin = require.resolve('next/dist/bin/next');
+} catch {
+  nextBin = path.resolve(__dirname, 'node_modules/next/dist/bin/next');
+}
 
 module.exports = {
   apps: [
@@ -39,7 +48,7 @@ module.exports = {
       // Run Next directly — do NOT wrap with `npm run`.
       // npm stays "online" (~40MB) after Next hangs/dies, which caused nginx 502s.
       script: 'node',
-      args: './node_modules/next/dist/bin/next start --port 3002 --hostname 127.0.0.1',
+      args: `${nextBin} start --port 3002 --hostname 127.0.0.1`,
       env: {
         NODE_ENV: 'production',
         PORT: 3002,
